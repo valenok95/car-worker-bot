@@ -1,0 +1,6 @@
+ru:
+  wallentos:
+    carworker:
+      exchange-api:
+        host: https://v6.exchangerate-api.com/
+        method: /v6/${EXCHANGE_KEY}/latest/EUR
