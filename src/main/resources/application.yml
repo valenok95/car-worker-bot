@@ -1,10 +1,10 @@
 ru:
   wallentos:
     carworker:
-      exchange-coefficient: 1.06
+      exchange-coefficient: ${COEFFICIENT}
       exchange-api:
         host: https://v6.exchangerate-api.com/
         method: /v6/${EXCHANGE_KEY}/latest/EUR
 bot:
-  name: carworkerbot
-  key: 6007801894:AAFA-5LxdT7FzzvXrvrb8_DXgJCCgEJGQu0
+  name: ${BOT_NAME}
+  key: ${BOT_KEY}
