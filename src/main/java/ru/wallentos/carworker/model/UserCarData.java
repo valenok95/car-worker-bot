@@ -19,9 +19,9 @@ public class UserCarData {
     @Override
     public String toString() {
         return String.format("""
-                Рынок ввоза %s
-                Возраст: %s
-                Объем двигателя %d""", stock, age, volume);
+                Возраст: %s.
+                Стоимость: %d %s\s
+                Объем двигателя: %d с.с.""", age, price, concurrency, volume);
     }
 
 }

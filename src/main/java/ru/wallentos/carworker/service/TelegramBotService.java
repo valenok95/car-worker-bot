@@ -1,16 +1,17 @@
 package ru.wallentos.carworker.service;
 
+import static ru.wallentos.carworker.service.ExecutionService.MANAGER_MESSAGE;
 import static ru.wallentos.carworker.service.ExecutionService.NEW_CAR;
 import static ru.wallentos.carworker.service.ExecutionService.NORMAL_CAR;
 import static ru.wallentos.carworker.service.ExecutionService.OLD_CAR;
 import static ru.wallentos.carworker.service.ExecutionService.RESET_MESSAGE;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -30,6 +31,8 @@ import ru.wallentos.carworker.model.UserCarData;
 @Slf4j
 @RequiredArgsConstructor
 public class TelegramBotService extends TelegramLongPollingBot {
+    @Value("${ru.wallentos.carworker.manager-link}")
+    public String managerLink;
     private final RestService restService;
     private final BotConfiguration config;
     private final UtilService service;
@@ -70,7 +73,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
             String callbackData = update.getCallbackQuery().getData();
             int messageId = update.getCallbackQuery().getMessage().getMessageId();
             long chatId = update.getCallbackQuery().getMessage().getChatId();
-            if(callbackData.equals(RESET_MESSAGE)){
+            if (callbackData.equals(RESET_MESSAGE)) {
                 startCommandReceived(chatId, update.getCallbackQuery().getMessage().getChat().getFirstName());
                 return;
             }
@@ -127,8 +130,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(service.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
-
-        //executeMessage(service.prepareSendMessage(chatId, text));
     }
 
     private void processIssueDate(long chatId, String receivedText) {
@@ -136,7 +137,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         data.setAge(receivedText);
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.ASK_VOLUME);
-        String text = "Введите объем двигателя в кубических сантиметрах.\nПример: 1998";
+        String text = """
+                Введите объем двигателя в кубических сантиметрах.
+                                
+                Пример: 1995""";
+
         executeMessage(service.prepareSendMessage(chatId, text));
     }
 
@@ -145,21 +150,37 @@ public class TelegramBotService extends TelegramLongPollingBot {
         data.setVolume(Integer.parseInt(receivedText));
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.DATA_PREPARED);
-        String text = String.format("Данные переданы в обработку: %n %s" +
-                " %n Рассчитываем стоимость...", data);
+        String text = String.format("Данные переданы в обработку ⏳ %n %s", data);
+
+
         executeMessage(service.prepareSendMessage(chatId, text));
         processExecuteResult(data, chatId);
     }
 
     private void processExecuteResult(UserCarData data, long chatId) {
         CarPriceResultData resultData = executionService.executeCarPriceResultData(data);
-        String text = String.format("Результаты рассчёта: %n %s", resultData);
+        String text = String.format("""
+                %s
+                ============================
+                        
+                Курс валют:
+                        
+                KRW: %,.3f
+                CNY: %,.1f
+                USD: %,.1f
+                        
+                Что бы заказать авто - пиши менеджеру🔻
+                        """, resultData,executionService.getKrwRub(),
+                executionService.getCnyRub(),executionService.getUsdRub());
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
         InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
+        InlineKeyboardButton manager = new InlineKeyboardButton(MANAGER_MESSAGE);
         reset.setCallbackData(RESET_MESSAGE);
+        manager.setUrl(managerLink);
+        row.add(manager);
         row.add(reset);
         rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
