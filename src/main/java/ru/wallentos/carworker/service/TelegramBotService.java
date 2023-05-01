@@ -150,7 +150,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         data.setVolume(Integer.parseInt(receivedText));
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.DATA_PREPARED);
-        String text = String.format("Данные переданы в обработку ⏳ %n %s", data);
+        String text = String.format("""
+                Данные переданы в обработку ⏳
+                 
+                %s
+                """, data);
         executeMessage(service.prepareSendMessage(chatId, text));
         processExecuteResult(data, chatId);
     }
@@ -159,7 +163,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         CarPriceResultData resultData = executionService.executeCarPriceResultData(data);
         String text = String.format("""
                 %s
-                ============================
                         
                 Курс валют:
                         
@@ -173,14 +176,16 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        List<InlineKeyboardButton> row = new ArrayList<>();
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
         InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
         InlineKeyboardButton manager = new InlineKeyboardButton(MANAGER_MESSAGE);
         reset.setCallbackData(RESET_MESSAGE);
         manager.setUrl(managerLink);
-        row.add(manager);
-        row.add(reset);
-        rows.add(row);
+        row1.add(manager);
+        row2.add(reset);
+        rows.add(row1);
+        rows.add(row2);
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(service.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
     }
@@ -220,8 +225,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         data.setStock(executionService.executeStock(concurrency));
         cache.saveUserCarData(chatId, data);
         String text =
-                String.format("Вы выбрали тип валюты: %s\n Теперь введите стоимость автомобиля в " +
-                                "валюте."
+                String.format("""
+                                Вы выбрали тип валюты: %s 
+                                
+                                Теперь введите стоимость автомобиля в валюте.
+                                """
                         , concurrency);
         executeEditMessageText(text, chatId, messageId);
         cache.setUsersCurrentBotState(chatId, BotState.ASK_PRICE);

@@ -1,7 +1,7 @@
 ru:
   wallentos:
     carworker:
-      manager-link: https://t.me/wallentoss
+      manager-link: T.me/mikhail_ung
       exchange-coefficient: ${COEFFICIENT}
       exchange-api:
         host: https://v6.exchangerate-api.com/

@@ -85,8 +85,8 @@ public class ExecutionService {
     public static final String NEW_CAR = "До 3 лет";
     public static final String NORMAL_CAR = "От 3 до 5 лет";
     public static final String OLD_CAR = "От 5 лет";
-    public static final String RESET_MESSAGE = "Рассчитать ещё один автомобиль.";
-    public static final String MANAGER_MESSAGE = "Связаться с менеджером.";
+    public static final String RESET_MESSAGE = "Рассчитать ещё один автомобиль";
+    public static final String MANAGER_MESSAGE = "Связаться с менеджером";
 
     /**
      * Карта рассчёта таможенной стоимости.
@@ -342,19 +342,19 @@ public class ExecutionService {
      * Курс CNY к рублю.
      */
     public double getCnyRub() {
-        return restService.getConversionRatesMap().get(RUB)/restService.getConversionRatesMap().get(CNY);
+        return coefficient*restService.getConversionRatesMap().get(RUB)/restService.getConversionRatesMap().get(CNY);
     }
     /**
      * Курс USD к рублю.
      */
     public double getUsdRub() {
-        return restService.getConversionRatesMap().get(RUB)/restService.getConversionRatesMap().get(USD);
+        return coefficient*restService.getConversionRatesMap().get(RUB)/restService.getConversionRatesMap().get(USD);
     }
     /**
      * Курс KRW к рублю.
      */
     public double getKrwRub() {
-        return restService.getConversionRatesMap().get(RUB)/restService.getConversionRatesMap().get(KRW);
+        return coefficient*restService.getConversionRatesMap().get(RUB)/restService.getConversionRatesMap().get(KRW);
     }
     
     
