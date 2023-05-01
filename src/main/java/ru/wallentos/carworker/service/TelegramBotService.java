@@ -164,15 +164,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
         String text = String.format("""
                 %s
                         
-                Курс валют:
-                        
-                KRW: %,.3f
-                CNY: %,.1f
-                USD: %,.1f
-                        
                 Что бы заказать авто - пиши менеджеру🔻
-                        """, resultData,executionService.getKrwRub(),
-                executionService.getCnyRub(),executionService.getUsdRub());
+                        """, resultData);
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
