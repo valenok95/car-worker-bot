@@ -151,8 +151,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.DATA_PREPARED);
         String text = String.format("Данные переданы в обработку ⏳ %n %s", data);
-
-
         executeMessage(service.prepareSendMessage(chatId, text));
         processExecuteResult(data, chatId);
     }
