@@ -33,6 +33,8 @@ import ru.wallentos.carworker.model.UserCarData;
 public class TelegramBotService extends TelegramLongPollingBot {
     @Value("${ru.wallentos.carworker.manager-link}")
     public String managerLink;
+    @Value("${ru.wallentos.carworker.disable-china}")
+    public boolean disableChina;
     private final RestService restService;
     private final BotConfiguration config;
     private final UtilService service;
@@ -189,19 +191,25 @@ public class TelegramBotService extends TelegramLongPollingBot {
         //Double rate = restService.getConversionRatesMap().get("USD");
         //String text = String.format("один USD равен %f EUR", rate);
         restService.refreshExchangeRates();
-        String message = "Здравствуйте, " + name + "!\n" +
-                "Я бот для расчета конечной стоимости автомобиля. Выберите валюту покупки.";
+        String message = "Здравствуйте, " + name + "!\n";
+        if (disableChina) {
+            message += "Я бот для расчета конечной стоимости автомобиля. Выберите валюту покупки.";
+        } else {
+            message += "Для расчета автомобиля из южной Кореи выберите USD или KRW, для автомобиля из Китая CNY.";
+        }
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
-        InlineKeyboardButton usdButton = new InlineKeyboardButton(USD);
         InlineKeyboardButton cnyButton = new InlineKeyboardButton(CNY);
+        InlineKeyboardButton usdButton = new InlineKeyboardButton(USD);
         InlineKeyboardButton krwButton = new InlineKeyboardButton(KRW);
         usdButton.setCallbackData(USD);
         cnyButton.setCallbackData(CNY);
         krwButton.setCallbackData(KRW);
         row.add(usdButton);
-        row.add(cnyButton);
+        if (!disableChina) {
+            row.add(cnyButton);
+        }
         row.add(krwButton);
         rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
@@ -210,9 +218,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void processConcurrency(long chatId, int messageId, String concurrency) {
-        //restService.refreshExchangeRates();
-        //Double rate = restService.getConversionRatesMap().get("USD");
-        //String text = String.format("один USD равен %f EUR", rate);
         UserCarData data = cache.getUserCarData(chatId);
         data.setConcurrency(concurrency);
         data.setStock(executionService.executeStock(concurrency));
@@ -220,7 +225,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         String text =
                 String.format("""
                                 Вы выбрали тип валюты: %s 
-                                
+                                                                
                                 Теперь введите стоимость автомобиля в валюте.
                                 """
                         , concurrency);

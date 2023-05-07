@@ -1,11 +1,19 @@
-ru:
-  wallentos:
-    carworker:
-      manager-link: T.me/mikhail_ung
-      exchange-coefficient: ${COEFFICIENT}
-      exchange-api:
-        host: https://v6.exchangerate-api.com/
-        method: /v6/${EXCHANGE_KEY}/latest/EUR
 bot:
   name: ${BOT_NAME}
   key: ${BOT_KEY}
+
+ru:
+  wallentos:
+    carworker:
+      disable-china: false
+      manager-link: T.me/mikhail_ung
+      exchange-coefficient: ${COEFFICIENT}
+      extra-pay-corea:
+        krw: 2500000
+        rub: 70000
+      extra-pay-china:
+        cny: 2500000
+        rub: 70000
+      exchange-api:
+        host: https://v6.exchangerate-api.com/
+        method: /v6/${EXCHANGE_KEY}/latest/EUR

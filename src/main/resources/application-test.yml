@@ -1,4 +1,6 @@
 ru:
   wallentos:
     carworker:
+      disable-china: true
       manager-link: https://t.me/wallentoss
+      

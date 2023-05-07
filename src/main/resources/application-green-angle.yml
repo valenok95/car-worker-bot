@@ -1,0 +1,13 @@
+bot:
+  name: GreenAngleBot
+
+ru:
+  wallentos:
+    carworker:
+      manager-link: https://t.me/mikhail_ung
+      extra-pay-corea:
+        krw: 2500000
+        rub: 130000
+      extra-pay-china:
+        cny: 25000
+        rub: 200000

@@ -15,6 +15,14 @@ public class ExecutionService {
     @Value("${ru.wallentos.carworker.exchange-coefficient}")
     private double coefficient;
     private final RestService restService;
+    @Value("${ru.wallentos.carworker.extra-pay-china.cny}")
+    private int EXTRA_PAY_AMOUNT_CHINA_CNY;
+    @Value("${ru.wallentos.carworker.extra-pay-china.rub}")
+    private int EXTRA_PAY_AMOUNT_CHINA_RUB;
+    @Value("${ru.wallentos.carworker.extra-pay-corea.krw}")
+    private int EXTRA_PAY_AMOUNT_KOREA_KRW;
+    @Value("${ru.wallentos.carworker.extra-pay-corea.rub}")
+    private int EXTRA_PAY_AMOUNT_KOREA_RUB;
     private static final int NEW_CAR_RECYCLING_FEE = 3400;
     private static final int OLD_CAR_RECYCLING_FEE = 5200;
     private static final int CUSTOMS_VALUE_1 = 200_000;
@@ -212,9 +220,11 @@ public class ExecutionService {
         switch (councurrency) {
             case KRW:
             case USD:
-                return convertMoneyFromEuro(convertMoneyToEuro(3_000_000, KRW), RUB) * coefficient + 150_000;
+                return convertMoneyFromEuro(convertMoneyToEuro(EXTRA_PAY_AMOUNT_KOREA_KRW, KRW),
+                        RUB) * coefficient + EXTRA_PAY_AMOUNT_KOREA_RUB;
             default:
-                return convertMoneyFromEuro(convertMoneyToEuro(24_000, CNY), RUB) * coefficient + 210_000;
+                return convertMoneyFromEuro(convertMoneyToEuro(EXTRA_PAY_AMOUNT_CHINA_CNY, CNY),
+                        RUB) * coefficient + EXTRA_PAY_AMOUNT_CHINA_RUB;
         }
     }
 
@@ -342,20 +352,22 @@ public class ExecutionService {
      * Курс CNY к рублю.
      */
     public double getCnyRub() {
-        return coefficient*restService.getConversionRatesMap().get(RUB)/restService.getConversionRatesMap().get(CNY);
+        return coefficient * restService.getConversionRatesMap().get(RUB) / restService.getConversionRatesMap().get(CNY);
     }
+
     /**
      * Курс USD к рублю.
      */
     public double getUsdRub() {
-        return coefficient*restService.getConversionRatesMap().get(RUB)/restService.getConversionRatesMap().get(USD);
+        return coefficient * restService.getConversionRatesMap().get(RUB) / restService.getConversionRatesMap().get(USD);
     }
+
     /**
      * Курс KRW к рублю.
      */
     public double getKrwRub() {
-        return coefficient*restService.getConversionRatesMap().get(RUB)/restService.getConversionRatesMap().get(KRW);
+        return coefficient * restService.getConversionRatesMap().get(RUB) / restService.getConversionRatesMap().get(KRW);
     }
-    
-    
+
+
 }
