@@ -21,6 +21,13 @@ public class UserDataCache implements DataCache {
     }
 
     @Override
+    public void deleteUserCarDataByUserId(long userId) {
+        usersBotStates.remove(userId);
+        usersProfileData.remove(userId);
+        log.info("удалены данные по пользователю с id " + userId);
+    }
+
+    @Override
     public BotState getUsersCurrentBotState(long userId) {
         BotState botState = usersBotStates.get(userId);
         if (botState == null) {

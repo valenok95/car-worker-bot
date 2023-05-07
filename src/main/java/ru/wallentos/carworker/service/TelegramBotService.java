@@ -46,13 +46,13 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        log.info("setting botName: " + config.getName());
+        log.info("getting botName: " + config.getName());
         return config.getName();
     }
 
     @Override
     public String getBotToken() {
-        log.info("setting botKey: " + config.getKey());
+        log.info("getting botKey: " + config.getKey());
         return config.getKey();
     }
 
@@ -163,6 +163,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     private void processExecuteResult(UserCarData data, long chatId) {
         CarPriceResultData resultData = executionService.executeCarPriceResultData(data);
+        cache.deleteUserCarDataByUserId(chatId);
         String text = String.format("""
                 %s
                         
@@ -187,9 +188,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
 
     private void startCommandReceived(long chatId, String name) {
-        //restService.refreshExchangeRates();
-        //Double rate = restService.getConversionRatesMap().get("USD");
-        //String text = String.format("один USD равен %f EUR", rate);
         restService.refreshExchangeRates();
         String message = "Здравствуйте, " + name + "!\n";
         if (disableChina) {

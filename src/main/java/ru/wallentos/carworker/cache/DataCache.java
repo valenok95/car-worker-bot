@@ -11,4 +11,5 @@ public interface DataCache {
     UserCarData getUserCarData(long userId);
 
     void saveUserCarData(long userId, UserCarData userCarData);
+    void deleteUserCarDataByUserId(long userId);
 }
