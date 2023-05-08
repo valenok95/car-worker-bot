@@ -40,7 +40,6 @@ public class CarPriceResultData {
                 getResultPrice(), firstPriceInRubles + extraPayAmount,
                 feeRate + duty + recyclingFee, location);
     }
-
     public void setFirstPriceInRubles(double firstPriceInRubles, double coefficient) {
         this.firstPriceInRubles = firstPriceInRubles * coefficient;
     }
