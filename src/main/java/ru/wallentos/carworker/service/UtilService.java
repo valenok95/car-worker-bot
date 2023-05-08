@@ -1,6 +1,7 @@
 package ru.wallentos.carworker.service;
 
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
@@ -10,6 +11,7 @@ public class UtilService {
     protected SendMessage prepareSendMessage(long chatId, String text, InlineKeyboardMarkup
             inlineKeyboardMarkup) {
         SendMessage message = new SendMessage();
+        message.setParseMode(ParseMode.HTML);
         message.setReplyMarkup(inlineKeyboardMarkup);
         message.setChatId(chatId);
         message.setText(text);

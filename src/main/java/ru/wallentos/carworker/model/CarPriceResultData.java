@@ -28,16 +28,17 @@ public class CarPriceResultData {
     @Override
     public String toString() {
         return String.format(Locale.FRANCE, """
-                        Стоимость автомобиля с учетом доставки и оформления:\s
+                        Итого: <b>%,.0f руб.</b>
+                                                
+                        Стоимость автомобиля с учетом доставки и оформления:
                         %,.0fруб.
                                                 
                         Таможенная пошлина, утилизационный сбор и оформление:
                         %,.0fруб.
-                                                
-                        Итого: %,.0fруб.
-                                                
-                        ❗️Итоговая стоимость указана за автомобиль %s, и включает все расходы, в том числе процедуру таможенной очистки.❗""", firstPriceInRubles + extraPayAmount,
-                feeRate + duty + recyclingFee, getResultPrice(), location);
+                                           
+                        ❗️Итоговая стоимость указана за автомобиль %s и включает все расходы, в том числе процедуру таможенной очистки.❗""", 
+                getResultPrice(), firstPriceInRubles + extraPayAmount,
+                feeRate + duty + recyclingFee, location);
     }
 
     public void setFirstPriceInRubles(double firstPriceInRubles, double coefficient) {
