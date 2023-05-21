@@ -94,6 +94,7 @@ public class ExecutionService {
     public static final String NORMAL_CAR = "От 3 до 5 лет";
     public static final String OLD_CAR = "От 5 лет";
     public static final String RESET_MESSAGE = "Рассчитать ещё один автомобиль";
+    public static final String TO_START_MESSAGE = "Рассчитать автомобиль";
     public static final String MANAGER_MESSAGE = "Связаться с менеджером";
 
     /**

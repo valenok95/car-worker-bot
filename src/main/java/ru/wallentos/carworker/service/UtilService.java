@@ -1,5 +1,11 @@
 package ru.wallentos.carworker.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -7,6 +13,14 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 
 @Service
 public class UtilService {
+    private static final String EUR = "EUR";
+    private static final String RUB = "RUB";
+    private static final String USD = "USD";
+    private static final String KRW = "KRW";
+    private static final String CNY = "CNY";
+    private static final String VALUE = "Value";
+    @Autowired
+    private ObjectMapper mapper;
 
     protected SendMessage prepareSendMessage(long chatId, String text, InlineKeyboardMarkup
             inlineKeyboardMarkup) {
@@ -25,23 +39,33 @@ public class UtilService {
         return message;
     }
 
-/*    protected LocalDate parseDateFromString(String stringDate) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
-        LocalDate resultDate;
+    /**
+     * Преобразовываем из JSON ЦБ курса в формат валют относительно EUR (старый формат)
+     */
+    protected Map<String, Double> backRatesToConversionRatesMap(String jsonString) {
+        double rubRateTmp;
+        double usdRate;
+        double krwRate;
+        double cnyRate;
         try {
-            if (stringDate.length() < 10) {
-                int currentDay = LocalDate.now().getDayOfMonth();
-                if (currentDay < 10) {
-                    stringDate += ".0" + currentDay;
-                } else {
-                    stringDate += "." + currentDay;
-                }
-            }
-            resultDate = LocalDate.parse(stringDate, formatter);
-        } catch (DateTimeException e) {
-            throw new IllegalArgumentException(e);
-        }
-        return resultDate;
-    }*/
+            var valutes = mapper.readTree(jsonString).get("Valute");
 
+            rubRateTmp = valutes.get(EUR).get(VALUE).asDouble();
+            usdRate = rubRateTmp / valutes.get(USD).get(VALUE).asDouble();
+            cnyRate = rubRateTmp / valutes.get(CNY).get(VALUE).asDouble();
+            krwRate = rubRateTmp / valutes.get(KRW).get(VALUE).asDouble() * 1000;
+
+        } catch (JsonMappingException e) {
+            throw new RuntimeException(e);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        Map<String, Double> conversionRatesMap = new HashMap<>();
+        conversionRatesMap.put(RUB, rubRateTmp);
+        conversionRatesMap.put(USD, usdRate);
+        conversionRatesMap.put(CNY, cnyRate);
+        conversionRatesMap.put(KRW, krwRate);
+        return conversionRatesMap;
+    }
 }

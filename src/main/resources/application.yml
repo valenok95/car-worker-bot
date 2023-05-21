@@ -15,5 +15,4 @@ ru:
         cny: 2500000
         rub: 70000
       exchange-api:
-        host: https://v6.exchangerate-api.com/
-        method: /v6/${EXCHANGE_KEY}/latest/EUR
+        host-cbr: https://www.cbr-xml-daily.ru/daily_json.js

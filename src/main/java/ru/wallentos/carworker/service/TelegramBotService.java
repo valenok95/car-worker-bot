@@ -5,18 +5,23 @@ import static ru.wallentos.carworker.service.ExecutionService.NEW_CAR;
 import static ru.wallentos.carworker.service.ExecutionService.NORMAL_CAR;
 import static ru.wallentos.carworker.service.ExecutionService.OLD_CAR;
 import static ru.wallentos.carworker.service.ExecutionService.RESET_MESSAGE;
+import static ru.wallentos.carworker.service.ExecutionService.TO_START_MESSAGE;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -29,20 +34,36 @@ import ru.wallentos.carworker.model.UserCarData;
 @Service
 @Data
 @Slf4j
-@RequiredArgsConstructor
 public class TelegramBotService extends TelegramLongPollingBot {
+
     @Value("${ru.wallentos.carworker.manager-link}")
     public String managerLink;
     @Value("${ru.wallentos.carworker.disable-china}")
     public boolean disableChina;
-    private final RestService restService;
+    @Autowired
+    private RestService restService;
     private final BotConfiguration config;
-    private final UtilService service;
-    private final ExecutionService executionService;
-    private final UserDataCache cache;
+    @Autowired
+    private UtilService service;
+    @Autowired
+    private ExecutionService executionService;
+    @Autowired
+    private UserDataCache cache;
     private static final String USD = "USD";
     private static final String CNY = "CNY";
     private static final String KRW = "KRW";
+
+    public TelegramBotService(BotConfiguration config) {
+        this.config = config;
+        List<BotCommand> listofCommands = new ArrayList<>();
+        listofCommands.add(new BotCommand("/start", "get start"));
+        listofCommands.add(new BotCommand("/cbr", "get CBR rates"));
+        try {
+            this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
+        } catch (TelegramApiException e) {
+            log.error("Error setting bot's command list: " + e.getMessage());
+        }
+    }
 
     @Override
     public String getBotUsername() {
@@ -67,6 +88,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 case "/start":
                     startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
                     break;
+                case "/cbr":
+                    cbrCommandReceived(chatId);
+                    break;
                 default:
                     handleMessage(receivedText, chatId, messageId);
                     break;
@@ -75,7 +99,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
             String callbackData = update.getCallbackQuery().getData();
             int messageId = update.getCallbackQuery().getMessage().getMessageId();
             long chatId = update.getCallbackQuery().getMessage().getChatId();
-            if (callbackData.equals(RESET_MESSAGE)) {
+            if (callbackData.equals(RESET_MESSAGE) || callbackData.equals(TO_START_MESSAGE)) {
                 startCommandReceived(chatId, update.getCallbackQuery().getMessage().getChat().getFirstName());
                 return;
             }
@@ -213,6 +237,30 @@ public class TelegramBotService extends TelegramLongPollingBot {
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(service.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
         cache.setUsersCurrentBotState(chatId, BotState.ASK_CONCURRENCY);
+    }
+
+    private void cbrCommandReceived(long chatId) {
+        restService.refreshExchangeRates();
+        Map<String, Double> rates = restService.getConversionRatesMap();
+        String message = """
+                Курс валют ЦБ :
+                EUR %,.4fруб.
+                USD %,.4fруб.
+                CNY %,.4fруб.
+                                
+                """.formatted(rates.get("RUB"),
+                rates.get("RUB")/ rates.get("USD"),
+                rates.get("RUB")/ rates.get("CNY"));
+
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        InlineKeyboardButton reset = new InlineKeyboardButton(TO_START_MESSAGE);
+        reset.setCallbackData(TO_START_MESSAGE);
+        row1.add(reset);
+        rows.add(row1);
+        inlineKeyboardMarkup.setKeyboard(rows);
+        executeMessage(service.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
     }
 
     private void processConcurrency(long chatId, int messageId, String concurrency) {
