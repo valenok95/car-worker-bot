@@ -376,16 +376,31 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void concurrencyRatesCommandReceived(long chatId) {
-        String message = String.format("""
-                        Текущий курс для рассчёта:
-                            1 KRW = %,.4f
-                            1 CNY = %,.4f
-                            1 USD = %,.4f
-                            """,
-                ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
-                ConfigDataPool.manualConversionRatesMapInRubles.get(CNY),
-                ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
-
+        //TO DO вынести в отдельный метод String
+        String message;
+        if (disableChina) {
+            message = String.format("""
+                            Актуальный курс расчета:
+                            
+                            KRW = %,.4f
+                            USD = %,.4f
+                                
+                                """,
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
+        } else {
+            message = String.format("""
+                            Актуальный курс расчета:
+                            
+                            KRW = %,.4f
+                            CNY = %,.4f
+                            USD = %,.4f
+                                
+                                """,
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(CNY),
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
+        }
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row1 = new ArrayList<>();
