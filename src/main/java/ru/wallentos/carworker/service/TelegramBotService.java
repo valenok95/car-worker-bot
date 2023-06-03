@@ -151,8 +151,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
         if (disableChina) {
             message = String.format("""
                             Актуальный курс расчета:
-                                1 KRW = %,.4f
-                                1 USD = %,.4f
+                            
+                            KRW = %,.4f
+                            USD = %,.4f
                                 
                             Выберите валюту для ручной установки курса:
                                 """,
@@ -161,9 +162,10 @@ public class TelegramBotService extends TelegramLongPollingBot {
         } else {
             message = String.format("""
                             Актуальный курс расчета:
-                                1 KRW = %,.4f
-                                1 CNY = %,.4f
-                                1 USD = %,.4f
+                            
+                            KRW = %,.4f
+                            CNY = %,.4f
+                            USD = %,.4f
                                 
                             Выберите валюту для ручной установки курса:
                                 """,
@@ -350,7 +352,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
         restService.refreshExchangeRates();
         Map<String, Double> rates = restService.getConversionRatesMap();
         String message = """
-                Курс валют ЦБ
+                Курс валют ЦБ:
+                
                 EUR %,.4fруб.
                 USD %,.4fруб.
                 CNY %,.4fруб.
