@@ -63,10 +63,10 @@ public class TelegramBotService extends TelegramLongPollingBot {
     public TelegramBotService(BotConfiguration config) {
         this.config = config;
         List<BotCommand> listofCommands = new ArrayList<>();
-        listofCommands.add(new BotCommand("/start", "get start"));
-        listofCommands.add(new BotCommand("/cbr", "get CBR rates"));
-        listofCommands.add(new BotCommand("/concurrencyrates", "get manual concurrency rates"));
-        listofCommands.add(new BotCommand("/setconcurrency", "set rates"));
+        listofCommands.add(new BotCommand("/start", "Старт"));
+        listofCommands.add(new BotCommand("/cbr", "курс ЦБ"));
+        listofCommands.add(new BotCommand("/concurrencyrates", "Актуальный курс оплаты"));
+        listofCommands.add(new BotCommand("/settingservice", "Сервис"));
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
         } catch (TelegramApiException e) {
@@ -103,7 +103,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 case "/concurrencyrates":
                     concurrencyRatesCommandReceived(chatId);
                     break;
-                case "/setconcurrency":
+                case "/settingservice":
                     setConcurrencyCommandReceived(chatId);
                     break;
                 default:
@@ -147,17 +147,30 @@ public class TelegramBotService extends TelegramLongPollingBot {
         row.add(krwButton);
         rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
-        String message = String.format("""
-                        Текущий курс для рассчёта:
-                            1 KRW = %,.4f
-                            1 CNY = %,.4f
-                            1 USD = %,.4f
-                            
-                        Выберите валюту для ручной установки курса:
-                            """,
-                ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
-                ConfigDataPool.manualConversionRatesMapInRubles.get(CNY),
-                ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
+        String message;
+        if (disableChina) {
+            message = String.format("""
+                            Актуальный курс расчета:
+                                1 KRW = %,.4f
+                                1 USD = %,.4f
+                                
+                            Выберите валюту для ручной установки курса:
+                                """,
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
+        } else {
+            message = String.format("""
+                            Актуальный курс расчета:
+                                1 KRW = %,.4f
+                                1 CNY = %,.4f
+                                1 USD = %,.4f
+                                
+                            Выберите валюту для ручной установки курса:
+                                """,
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(CNY),
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
+        }
         executeMessage(service.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
         cache.setUsersCurrentBotState(chatId, BotState.SET_CONCURRENCY_MENU);
     }
@@ -196,18 +209,21 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     private void processSetConcurrency(long chatId, String receivedText) {
         String concurrency = cache.getUserCarData(chatId).getConcurrency();
-        configDataPool.manualConversionRatesMapInRubles.put(concurrency, Double.valueOf(receivedText));
+        receivedText = receivedText.replace(',', '.');
+        ConfigDataPool.manualConversionRatesMapInRubles.put(concurrency, Double.valueOf(receivedText));
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
         InlineKeyboardButton reset = new InlineKeyboardButton(TO_START_MESSAGE);
         InlineKeyboardButton toSetConcurrencyMenu =
                 new InlineKeyboardButton(TO_SET_CONCURRENCY_MENU);
         toSetConcurrencyMenu.setCallbackData(TO_SET_CONCURRENCY_MENU);
         reset.setCallbackData(TO_START_MESSAGE);
         row1.add(toSetConcurrencyMenu);
-        row1.add(reset);
+        row2.add(reset);
         rows.add(row1);
+        rows.add(row2);
         inlineKeyboardMarkup.setKeyboard(rows);
 
         String message = String.format("Установлен курс: 1 %s = %s RUB", concurrency, receivedText);
@@ -334,14 +350,16 @@ public class TelegramBotService extends TelegramLongPollingBot {
         restService.refreshExchangeRates();
         Map<String, Double> rates = restService.getConversionRatesMap();
         String message = """
-                Курс валют ЦБ :
+                Курс валют ЦБ
                 EUR %,.4fруб.
                 USD %,.4fруб.
                 CNY %,.4fруб.
+                KRW %,.4fруб.
                                 
                 """.formatted(rates.get("RUB"),
                 rates.get("RUB") / rates.get("USD"),
-                rates.get("RUB") / rates.get("CNY"));
+                rates.get("RUB") / rates.get("CNY"),
+                rates.get("RUB") / rates.get("KRW"));
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -353,6 +371,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(service.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
     }
+
     private void concurrencyRatesCommandReceived(long chatId) {
         String message = String.format("""
                         Текущий курс для рассчёта:
