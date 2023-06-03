@@ -7,6 +7,7 @@ ru:
     carworker:
       disable-china: false
       manager-link: T.me/mikhail_ung
+      admin-id: 126866786
       exchange-coefficient: ${COEFFICIENT}
       extra-pay-corea:
         krw: 2500000

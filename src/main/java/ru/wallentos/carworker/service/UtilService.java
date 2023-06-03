@@ -1,5 +1,11 @@
 package ru.wallentos.carworker.service;
 
+import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.EUR;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.KRW;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.RUB;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.USD;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,11 +19,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 
 @Service
 public class UtilService {
-    private static final String EUR = "EUR";
-    private static final String RUB = "RUB";
-    private static final String USD = "USD";
-    private static final String KRW = "KRW";
-    private static final String CNY = "CNY";
     private static final String VALUE = "Value";
     @Autowired
     private ObjectMapper mapper;

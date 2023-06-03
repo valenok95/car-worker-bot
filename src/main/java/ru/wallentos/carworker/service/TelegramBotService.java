@@ -1,11 +1,15 @@
 package ru.wallentos.carworker.service;
 
-import static ru.wallentos.carworker.service.ExecutionService.MANAGER_MESSAGE;
-import static ru.wallentos.carworker.service.ExecutionService.NEW_CAR;
-import static ru.wallentos.carworker.service.ExecutionService.NORMAL_CAR;
-import static ru.wallentos.carworker.service.ExecutionService.OLD_CAR;
-import static ru.wallentos.carworker.service.ExecutionService.RESET_MESSAGE;
-import static ru.wallentos.carworker.service.ExecutionService.TO_START_MESSAGE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.KRW;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.MANAGER_MESSAGE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_CAR;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_CAR;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.RESET_MESSAGE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.TO_SET_CONCURRENCY_MENU;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.TO_START_MESSAGE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.USD;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +31,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.wallentos.carworker.cache.UserDataCache;
 import ru.wallentos.carworker.configuration.BotConfiguration;
+import ru.wallentos.carworker.configuration.ConfigDataPool;
 import ru.wallentos.carworker.model.BotState;
 import ru.wallentos.carworker.model.CarPriceResultData;
 import ru.wallentos.carworker.model.UserCarData;
@@ -38,10 +43,15 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     @Value("${ru.wallentos.carworker.manager-link}")
     public String managerLink;
+
+    @Value("${ru.wallentos.carworker.admin-id}")
+    public int adminId;
     @Value("${ru.wallentos.carworker.disable-china}")
     public boolean disableChina;
     @Autowired
     private RestService restService;
+    @Autowired
+    private ConfigDataPool configDataPool;
     private final BotConfiguration config;
     @Autowired
     private UtilService service;
@@ -49,15 +59,14 @@ public class TelegramBotService extends TelegramLongPollingBot {
     private ExecutionService executionService;
     @Autowired
     private UserDataCache cache;
-    private static final String USD = "USD";
-    private static final String CNY = "CNY";
-    private static final String KRW = "KRW";
 
     public TelegramBotService(BotConfiguration config) {
         this.config = config;
         List<BotCommand> listofCommands = new ArrayList<>();
         listofCommands.add(new BotCommand("/start", "get start"));
         listofCommands.add(new BotCommand("/cbr", "get CBR rates"));
+        listofCommands.add(new BotCommand("/concurrencyrates", "get manual concurrency rates"));
+        listofCommands.add(new BotCommand("/setconcurrency", "set rates"));
         try {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
         } catch (TelegramApiException e) {
@@ -91,6 +100,12 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 case "/cbr":
                     cbrCommandReceived(chatId);
                     break;
+                case "/concurrencyrates":
+                    concurrencyRatesCommandReceived(chatId);
+                    break;
+                case "/setconcurrency":
+                    setConcurrencyCommandReceived(chatId);
+                    break;
                 default:
                     handleMessage(receivedText, chatId, messageId);
                     break;
@@ -103,8 +118,48 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 startCommandReceived(chatId, update.getCallbackQuery().getMessage().getChat().getFirstName());
                 return;
             }
+            if (callbackData.equals(TO_SET_CONCURRENCY_MENU)) {
+                setConcurrencyCommandReceived(chatId);
+                return;
+            }
             handleMessage(callbackData, chatId, messageId);
         }
+    }
+
+    private void setConcurrencyCommandReceived(long chatId) {
+        if (adminId != chatId) {
+            executeMessage(service.prepareSendMessage(chatId, "Доступ к функционалу ограничен"));
+            return;
+        }
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> row = new ArrayList<>();
+        InlineKeyboardButton cnyButton = new InlineKeyboardButton(CNY);
+        InlineKeyboardButton usdButton = new InlineKeyboardButton(USD);
+        InlineKeyboardButton krwButton = new InlineKeyboardButton(KRW);
+        usdButton.setCallbackData(USD);
+        cnyButton.setCallbackData(CNY);
+        krwButton.setCallbackData(KRW);
+        row.add(usdButton);
+        if (!disableChina) {
+            row.add(cnyButton);
+        }
+        row.add(krwButton);
+        rows.add(row);
+        inlineKeyboardMarkup.setKeyboard(rows);
+        String message = String.format("""
+                        Текущий курс для рассчёта:
+                            1 KRW = %,.4f
+                            1 CNY = %,.4f
+                            1 USD = %,.4f
+                            
+                        Выберите валюту для ручной установки курса:
+                            """,
+                ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
+                ConfigDataPool.manualConversionRatesMapInRubles.get(CNY),
+                ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
+        executeMessage(service.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
+        cache.setUsersCurrentBotState(chatId, BotState.SET_CONCURRENCY_MENU);
     }
 
 
@@ -124,6 +179,12 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 case ASK_VOLUME:
                     processVolume(chatId, receivedText);
                     break;
+                case SET_CONCURRENCY_MENU:
+                    processChooseConcurrencyToSet(chatId, messageId, receivedText);
+                    break;
+                case SET_CONCURRENCY:
+                    processSetConcurrency(chatId, receivedText);
+                    break;
                 default:
                     break;
             }
@@ -131,6 +192,27 @@ public class TelegramBotService extends TelegramLongPollingBot {
             executeMessage(service.prepareSendMessage(chatId, "Некорректный формат данных, попробуйте ещё раз."));
             return;
         }
+    }
+
+    private void processSetConcurrency(long chatId, String receivedText) {
+        String concurrency = cache.getUserCarData(chatId).getConcurrency();
+        configDataPool.manualConversionRatesMapInRubles.put(concurrency, Double.valueOf(receivedText));
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        InlineKeyboardButton reset = new InlineKeyboardButton(TO_START_MESSAGE);
+        InlineKeyboardButton toSetConcurrencyMenu =
+                new InlineKeyboardButton(TO_SET_CONCURRENCY_MENU);
+        toSetConcurrencyMenu.setCallbackData(TO_SET_CONCURRENCY_MENU);
+        reset.setCallbackData(TO_START_MESSAGE);
+        row1.add(toSetConcurrencyMenu);
+        row1.add(reset);
+        rows.add(row1);
+        inlineKeyboardMarkup.setKeyboard(rows);
+
+        String message = String.format("Установлен курс: 1 %s = %s RUB", concurrency, receivedText);
+        executeMessage(service.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
+        cache.deleteUserCarDataByUserId(chatId);
     }
 
     private void processPrice(long chatId, String receivedText) {
@@ -188,6 +270,15 @@ public class TelegramBotService extends TelegramLongPollingBot {
     private void processExecuteResult(UserCarData data, long chatId) {
         CarPriceResultData resultData = executionService.executeCarPriceResultData(data);
         cache.deleteUserCarDataByUserId(chatId);
+        log.info("""
+                        Данные рассчёта:
+                        First price in rubles {},
+                        Extra pay amount {},
+                        Fee rate {},
+                        Duty {},
+                        Recycling fee {}
+                        """, resultData.getFirstPriceInRubles(), resultData.getExtraPayAmount(),
+                resultData.getFeeRate(), resultData.getDuty(), resultData.getRecyclingFee());
         String text = String.format("""
                 %s
                         
@@ -249,8 +340,29 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 CNY %,.4fруб.
                                 
                 """.formatted(rates.get("RUB"),
-                rates.get("RUB")/ rates.get("USD"),
-                rates.get("RUB")/ rates.get("CNY"));
+                rates.get("RUB") / rates.get("USD"),
+                rates.get("RUB") / rates.get("CNY"));
+
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        InlineKeyboardButton reset = new InlineKeyboardButton(TO_START_MESSAGE);
+        reset.setCallbackData(TO_START_MESSAGE);
+        row1.add(reset);
+        rows.add(row1);
+        inlineKeyboardMarkup.setKeyboard(rows);
+        executeMessage(service.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
+    }
+    private void concurrencyRatesCommandReceived(long chatId) {
+        String message = String.format("""
+                        Текущий курс для рассчёта:
+                            1 KRW = %,.4f
+                            1 CNY = %,.4f
+                            1 USD = %,.4f
+                            """,
+                ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
+                ConfigDataPool.manualConversionRatesMapInRubles.get(CNY),
+                ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -277,6 +389,24 @@ public class TelegramBotService extends TelegramLongPollingBot {
                         , concurrency);
         executeEditMessageText(text, chatId, messageId);
         cache.setUsersCurrentBotState(chatId, BotState.ASK_PRICE);
+    }
+
+    private void processChooseConcurrencyToSet(long chatId, int messageId, String concurrency) {
+        String text =
+                String.format("""
+                                Вы выбрали тип валюты: %s 
+                                                                
+                                Теперь введите курс валюты к рублю.
+                                                                
+                                Например 1.234
+                                В таком случае будет установлен курс 1 %s = 1.234 RUB
+                                """
+                        , concurrency, concurrency);
+        executeEditMessageText(text, chatId, messageId);
+        UserCarData data = cache.getUserCarData(chatId);
+        data.setConcurrency(concurrency);
+        cache.saveUserCarData(chatId, data);
+        cache.setUsersCurrentBotState(chatId, BotState.SET_CONCURRENCY);
     }
 
 

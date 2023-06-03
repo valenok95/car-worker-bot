@@ -2,6 +2,7 @@ package ru.wallentos.carworker.service;
 
 import java.util.Map;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -10,22 +11,26 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 @Data
+@Slf4j
 public class RestService {
     @Value("${ru.wallentos.carworker.exchange-api.host-cbr}")
     private String cbrMethod;
-    @Autowired
     private RestTemplate restTemplate;
-    @Autowired
+
     private UtilService utilService;
     private Map<String, Double> conversionRatesMap;
 
+    @Autowired
+    public RestService(RestTemplate restTemplate, UtilService utilService) {
+        this.restTemplate = restTemplate;
+        this.utilService = utilService;
+    }
 
     public void refreshExchangeRates() {
-        // 126866786 айди Миши
         ResponseEntity<String> response
                 = restTemplate.getForEntity(cbrMethod, String.class);
         conversionRatesMap = utilService.backRatesToConversionRatesMap(response.getBody());
-        System.out.println("курс обновлён" + conversionRatesMap);
+        log.info("курс обновлён {}", conversionRatesMap);
 
     }
 }

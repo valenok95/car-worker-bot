@@ -1,159 +1,43 @@
 package ru.wallentos.carworker.service;
 
-import java.util.AbstractMap;
-import java.util.LinkedHashMap;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.KRW;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.LAST_FEE_RATE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_CAR;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_CAR_RECYCLING_FEE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_CAR;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_CAR_PRICE_FLAT_RATE_MAX;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR_PRICE_FLAT_RATE_MAX;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR_RECYCLING_FEE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.RUB;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.USD;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.feeRateMap;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.newCarCustomsMap;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.normalCarCustomsMap;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.oldCarCustomsMap;
+
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.wallentos.carworker.configuration.ConfigDataPool;
 import ru.wallentos.carworker.model.CarPriceResultData;
 import ru.wallentos.carworker.model.UserCarData;
 
 @Service
-@RequiredArgsConstructor
 public class ExecutionService {
-    @Value("${ru.wallentos.carworker.exchange-coefficient}")
-    private double coefficient;
-    private final RestService restService;
-    @Value("${ru.wallentos.carworker.extra-pay-china.cny}")
-    private int EXTRA_PAY_AMOUNT_CHINA_CNY;
-    @Value("${ru.wallentos.carworker.extra-pay-china.rub}")
-    private int EXTRA_PAY_AMOUNT_CHINA_RUB;
-    @Value("${ru.wallentos.carworker.extra-pay-corea.krw}")
-    private int EXTRA_PAY_AMOUNT_KOREA_KRW;
-    @Value("${ru.wallentos.carworker.extra-pay-corea.rub}")
-    private int EXTRA_PAY_AMOUNT_KOREA_RUB;
-    private static final int NEW_CAR_RECYCLING_FEE = 3400;
-    private static final int OLD_CAR_RECYCLING_FEE = 5200;
-    private static final int CUSTOMS_VALUE_1 = 200_000;
-    private static final String RUB = "RUB";
-    private static final String USD = "USD";
-    private static final String KRW = "KRW";
-    private static final String CNY = "CNY";
-    private static final int FEE_RATE_1 = 775;
-    private static final int CUSTOMS_VALUE_2 = 450_000;
-    private static final int FEE_RATE_2 = 1550;
-    private static final int CUSTOMS_VALUE_3 = 1_200_000;
-    private static final int FEE_RATE_3 = 3100;
-    private static final int CUSTOMS_VALUE_4 = 2_700_000;
-    private static final int FEE_RATE_4 = 8530;
-    private static final int CUSTOMS_VALUE_5 = 4_200_000;
-    private static final int FEE_RATE_5 = 12000;
-    private static final int CUSTOMS_VALUE_6 = 5_500_000;
-    private static final int FEE_RATE_6 = 15500;
-    private static final int CUSTOMS_VALUE_7 = 7_000_000;
-    private static final int FEE_RATE_7 = 20000;
-    private static final int CUSTOMS_VALUE_8 = 8_000_000;
-    private static final int FEE_RATE_8 = 23000;
-    private static final int CUSTOMS_VALUE_9 = 9_000_000;
-    private static final int FEE_RATE_9 = 25000;
-    private static final int CUSTOMS_VALUE_10 = 10_000_000;
-    private static final int FEE_RATE_10 = 27000;
-    private static final int LAST_FEE_RATE = 30000;
-    private static final int NEW_CAR_PRICE_DUTY_1 = 8500;
-    private static final Map.Entry<Double, Double> NEW_CAR_PRICE_FLAT_RATE_1 =
-            new AbstractMap.SimpleEntry<>(0.54, 2.5);
-    private static final int NEW_CAR_PRICE_DUTY_2 = 16700;
-    private static final Map.Entry<Double, Double> NEW_CAR_PRICE_FLAT_RATE_2 =
-            new AbstractMap.SimpleEntry<>(0.48, 3.5);
-    private static final int NEW_CAR_PRICE_DUTY_3 = 42300;
-    private static final Map.Entry<Double, Double> NEW_CAR_PRICE_FLAT_RATE_3 =
-            new AbstractMap.SimpleEntry<>(0.48, 5.5);
-    private static final int NEW_CAR_PRICE_DUTY_4 = 84500;
-    private static final Map.Entry<Double, Double> NEW_CAR_PRICE_FLAT_RATE_4 =
-            new AbstractMap.SimpleEntry<>(0.48, 7.5);
-    private static final int NEW_CAR_PRICE_DUTY_5 = 169000;
-    private static final Map.Entry<Double, Double> NEW_CAR_PRICE_FLAT_RATE_5 =
-            new AbstractMap.SimpleEntry<>(0.48, 15d);
-    private static final Map.Entry<Double, Double> NEW_CAR_PRICE_MAX_FLAT_RATE =
-            new AbstractMap.SimpleEntry<>(0.48, 20d);
-    private static final int NORMAL_CAR_ENGINE_VOLUME_DUTY_1 = 1000;
-    private static final double NORMAL_CAR_PRICE_FLAT_RATE_1 = 1.5;
-    private static final int NORMAL_CAR_ENGINE_VOLUME_DUTY_2 = 1500;
-    private static final double NORMAL_CAR_PRICE_FLAT_RATE_2 = 1.7;
-    private static final int NORMAL_CAR_ENGINE_VOLUME_DUTY_3 = 1800;
-    private static final double NORMAL_CAR_PRICE_FLAT_RATE_3 = 2.5;
-    private static final int NORMAL_CAR_ENGINE_VOLUME_DUTY_4 = 2300;
-    private static final double NORMAL_CAR_PRICE_FLAT_RATE_4 = 2.7;
-    private static final int NORMAL_CAR_ENGINE_VOLUME_DUTY_5 = 3000;
-    private static final double NORMAL_CAR_PRICE_FLAT_RATE_5 = 3;
-    private static final double NORMAL_CAR_PRICE_FLAT_RATE_MAX = 3.6;
-    private static final int OLD_CAR_ENGINE_VOLUME_DUTY_1 = 1000;
-    private static final double OLD_CAR_PRICE_FLAT_RATE_1 = 3;
-    private static final int OLD_CAR_ENGINE_VOLUME_DUTY_2 = 1500;
-    private static final double OLD_CAR_PRICE_FLAT_RATE_2 = 3.2;
-    private static final int OLD_CAR_ENGINE_VOLUME_DUTY_3 = 1800;
-    private static final double OLD_CAR_PRICE_FLAT_RATE_3 = 3.5;
-    private static final int OLD_CAR_ENGINE_VOLUME_DUTY_4 = 2300;
-    private static final double OLD_CAR_PRICE_FLAT_RATE_4 = 4.8;
-    private static final int OLD_CAR_ENGINE_VOLUME_DUTY_5 = 3000;
-    private static final double OLD_CAR_PRICE_FLAT_RATE_5 = 5;
-    private static final double OLD_CAR_PRICE_FLAT_RATE_MAX = 5.7;
+    private RestService restService;
+    private ConfigDataPool configDataPool;
 
-    public static final String NEW_CAR = "До 3 лет";
-    public static final String NORMAL_CAR = "От 3 до 5 лет";
-    public static final String OLD_CAR = "От 5 лет";
-    public static final String RESET_MESSAGE = "Рассчитать ещё один автомобиль";
-    public static final String TO_START_MESSAGE = "Рассчитать автомобиль";
-    public static final String MANAGER_MESSAGE = "Связаться с менеджером";
-
-    /**
-     * Карта рассчёта таможенной стоимости.
-     */
-    private static final Map<Integer, Integer> feeRateMap = new LinkedHashMap<>() {
-        {
-            put(CUSTOMS_VALUE_1, FEE_RATE_1);
-            put(CUSTOMS_VALUE_2, FEE_RATE_2);
-            put(CUSTOMS_VALUE_3, FEE_RATE_3);
-            put(CUSTOMS_VALUE_4, FEE_RATE_4);
-            put(CUSTOMS_VALUE_5, FEE_RATE_5);
-            put(CUSTOMS_VALUE_6, FEE_RATE_6);
-            put(CUSTOMS_VALUE_7, FEE_RATE_7);
-            put(CUSTOMS_VALUE_8, FEE_RATE_8);
-            put(CUSTOMS_VALUE_9, FEE_RATE_9);
-            put(CUSTOMS_VALUE_10, FEE_RATE_10);
-        }
-    };
-
-    /**
-     * Карта рассчёта размера пошлины для нового автомобиля.
-     */
-    private static final Map<Integer, Map.Entry<Double, Double>> newCarCustomsMap = new LinkedHashMap<>() {
-        {
-            put(NEW_CAR_PRICE_DUTY_1, NEW_CAR_PRICE_FLAT_RATE_1);
-            put(NEW_CAR_PRICE_DUTY_2, NEW_CAR_PRICE_FLAT_RATE_2);
-            put(NEW_CAR_PRICE_DUTY_3, NEW_CAR_PRICE_FLAT_RATE_3);
-            put(NEW_CAR_PRICE_DUTY_4, NEW_CAR_PRICE_FLAT_RATE_4);
-            put(NEW_CAR_PRICE_DUTY_5, NEW_CAR_PRICE_FLAT_RATE_5);
-        }
-    };
-    /**
-     * Карта рассчёта размера пошлины для автомобиля от 3 до 5 лет.
-     */
-    private static final Map<Integer, Double> normalCarCustomsMap =
-            new LinkedHashMap<>() {
-                {
-                    put(NORMAL_CAR_ENGINE_VOLUME_DUTY_1, NORMAL_CAR_PRICE_FLAT_RATE_1);
-                    put(NORMAL_CAR_ENGINE_VOLUME_DUTY_2, NORMAL_CAR_PRICE_FLAT_RATE_2);
-                    put(NORMAL_CAR_ENGINE_VOLUME_DUTY_3, NORMAL_CAR_PRICE_FLAT_RATE_3);
-                    put(NORMAL_CAR_ENGINE_VOLUME_DUTY_4, NORMAL_CAR_PRICE_FLAT_RATE_4);
-                    put(NORMAL_CAR_ENGINE_VOLUME_DUTY_5, NORMAL_CAR_PRICE_FLAT_RATE_5);
-                }
-            };
-    /**
-     * Карта рассчёта размера пошлины для автомобиля от 5 лет.
-     */
-    private static final Map<Integer, Double> oldCarCustomsMap =
-            new LinkedHashMap<>() {
-                {
-                    put(OLD_CAR_ENGINE_VOLUME_DUTY_1, OLD_CAR_PRICE_FLAT_RATE_1);
-                    put(OLD_CAR_ENGINE_VOLUME_DUTY_2, OLD_CAR_PRICE_FLAT_RATE_2);
-                    put(OLD_CAR_ENGINE_VOLUME_DUTY_3, OLD_CAR_PRICE_FLAT_RATE_3);
-                    put(OLD_CAR_ENGINE_VOLUME_DUTY_4, OLD_CAR_PRICE_FLAT_RATE_4);
-                    put(OLD_CAR_ENGINE_VOLUME_DUTY_5, OLD_CAR_PRICE_FLAT_RATE_5);
-                }
-            };
-
+    @Autowired
+    public ExecutionService(RestService restService, ConfigDataPool configDataPool) {
+        this.restService = restService;
+        this.configDataPool = configDataPool;
+        restService.refreshExchangeRates();
+        double rub = restService.getConversionRatesMap().get("RUB");
+        restService.getConversionRatesMap().forEach((key, value) -> {
+            configDataPool.manualConversionRatesMapInRubles.put(key, rub * configDataPool.coefficient / value);
+        });
+    }
 
     /**
      * Сбор за таможенные операции.
@@ -166,7 +50,6 @@ public class ExecutionService {
         double carPriceInRubles = convertMoneyFromEuro(rawCarPriceInEuro, RUB);
         int resultFeeRate = LAST_FEE_RATE;
         for (Map.Entry<Integer, Integer> pair : feeRateMap.entrySet()) {
-            System.out.println(pair.getKey() + " " + pair.getValue());
             if (carPriceInRubles < pair.getKey()) {
                 resultFeeRate = pair.getValue();
                 break;
@@ -180,16 +63,18 @@ public class ExecutionService {
         resultData.setCarCategory(getCarCategory(userCarData.getAge()));
         resultData.setAge(userCarData.getAge());
         resultData.setFeeRate(getFeeRateFromCarPriceInRubles(userCarData.getPriceInEuro()));
-        resultData.setDuty(calculateDutyInRubles(userCarData.getPriceInEuro(),
-                getCarCategory(userCarData.getAge()), userCarData.getVolume()));
+        resultData.setDuty(calculateDutyInRubles(userCarData.getPriceInEuro(), getCarCategory(userCarData.getAge()), userCarData.getVolume()));
         resultData.setRecyclingFee(calculateRecyclingFeeInRubles(getCarCategory(userCarData.getAge())));
-        resultData.setFirstPriceInRubles(convertMoneyFromEuro(userCarData.getPriceInEuro(), RUB),
-                coefficient);
-        resultData.setExtraPayAmount(executeExtraPayAmountInRubles(userCarData.getConcurrency()));
+        resultData.setFirstPriceInRubles(calculateFirstCarPriceInRublesByUserCarData(userCarData));
+        resultData.setExtraPayAmount(executeExtraPayAmountInRublesByUserCarData(userCarData));
         resultData.setStock(executeStock(userCarData.getConcurrency()));
         resultData.setLocation(executeLocation(userCarData.getConcurrency()));
 
         return resultData;
+    }
+
+    private double calculateFirstCarPriceInRublesByUserCarData(UserCarData userCarData) {
+        return userCarData.getPrice() * configDataPool.manualConversionRatesMapInRubles.get(userCarData.getConcurrency());
     }
 
 //стоимость которую ввел пользователь + extra pay 
@@ -217,15 +102,15 @@ public class ExecutionService {
         }
     }
 
-    private double executeExtraPayAmountInRubles(String councurrency) {
-        switch (councurrency) {
+    private double executeExtraPayAmountInRublesByUserCarData(UserCarData userCarData) {
+        switch (userCarData.getConcurrency()) {
             case KRW:
             case USD:
-                return convertMoneyFromEuro(convertMoneyToEuro(EXTRA_PAY_AMOUNT_KOREA_KRW, KRW),
-                        RUB) * coefficient + EXTRA_PAY_AMOUNT_KOREA_RUB;
+                return configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW * configDataPool.manualConversionRatesMapInRubles.get(KRW)
+                        + configDataPool.EXTRA_PAY_AMOUNT_KOREA_RUB;
             default:
-                return convertMoneyFromEuro(convertMoneyToEuro(EXTRA_PAY_AMOUNT_CHINA_CNY, CNY),
-                        RUB) * coefficient + EXTRA_PAY_AMOUNT_CHINA_RUB;
+                return configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY * configDataPool.manualConversionRatesMapInRubles.get(CNY)
+                        + configDataPool.EXTRA_PAY_AMOUNT_CHINA_RUB;
         }
     }
 
@@ -262,9 +147,8 @@ public class ExecutionService {
      * @return стоимость пошлины
      */
     private double calculateNewCarDutyInRubles(double carPriceInEuro, int carVolume) {
-        double resultCarDuty = getMaxFromPair(NEW_CAR_PRICE_MAX_FLAT_RATE, carPriceInEuro, carVolume);
+        double resultCarDuty = getMaxFromPair(ConfigDataPool.NEW_CAR_PRICE_MAX_FLAT_RATE, carPriceInEuro, carVolume);
         for (Map.Entry<Integer, Map.Entry<Double, Double>> pair : newCarCustomsMap.entrySet()) {
-            System.out.println(pair.getKey() + " " + pair.getValue());
             if (carPriceInEuro <= pair.getKey()) {
                 resultCarDuty = getMaxFromPair(pair.getValue(), carPriceInEuro, carVolume);
                 break;
@@ -282,7 +166,6 @@ public class ExecutionService {
     private double calculateNormalCarDutyInRubles(int carVolume) {
         double resultCarDuty = carVolume * NORMAL_CAR_PRICE_FLAT_RATE_MAX;
         for (Map.Entry<Integer, Double> pair : normalCarCustomsMap.entrySet()) {
-            System.out.println(pair.getKey() + " " + pair.getValue());
             if (carVolume <= pair.getKey()) {
                 resultCarDuty = carVolume * pair.getValue();
                 break;
@@ -300,7 +183,6 @@ public class ExecutionService {
     private double calculateOldCarDutyInRubles(int carVolume) {
         double resultCarDuty = carVolume * OLD_CAR_PRICE_FLAT_RATE_MAX;
         for (Map.Entry<Integer, Double> pair : oldCarCustomsMap.entrySet()) {
-            System.out.println(pair.getKey() + " " + pair.getValue());
             if (carVolume <= pair.getKey()) {
                 resultCarDuty = carVolume * pair.getValue();
                 break;
@@ -317,7 +199,6 @@ public class ExecutionService {
      */
     private int calculateRecyclingFeeInRubles(int carCategory) {
         return carCategory > 1 ? OLD_CAR_RECYCLING_FEE : NEW_CAR_RECYCLING_FEE;
-
     }
 
     /**
@@ -348,27 +229,4 @@ public class ExecutionService {
         double priceByVolume = pair.getValue() * carVolume;
         return Math.max(priceByVolume, priceByPercent);
     }
-
-    /**
-     * Курс CNY к рублю.
-     */
-    public double getCnyRub() {
-        return coefficient * restService.getConversionRatesMap().get(RUB) / restService.getConversionRatesMap().get(CNY);
-    }
-
-    /**
-     * Курс USD к рублю.
-     */
-    public double getUsdRub() {
-        return coefficient * restService.getConversionRatesMap().get(RUB) / restService.getConversionRatesMap().get(USD);
-    }
-
-    /**
-     * Курс KRW к рублю.
-     */
-    public double getKrwRub() {
-        return coefficient * restService.getConversionRatesMap().get(RUB) / restService.getConversionRatesMap().get(KRW);
-    }
-
-
 }
