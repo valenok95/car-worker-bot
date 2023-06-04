@@ -376,7 +376,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void concurrencyRatesCommandReceived(long chatId) {
-        //TO DO вынести в отдельный метод String
+        //TO DO вынести в отдельный метод String get
         String message;
         if (disableChina) {
             message = String.format("""
