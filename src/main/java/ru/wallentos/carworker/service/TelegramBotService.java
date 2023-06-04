@@ -150,7 +150,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         String message;
         if (disableChina) {
             message = String.format("""
-                            Актуальный курс расчета:
+                            Актуальный курс оплаты:
                                                         
                             KRW = %,.4f
                             USD = %,.4f
@@ -161,7 +161,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
         } else {
             message = String.format("""
-                            Актуальный курс расчета:
+                            Актуальный курс оплаты:
                                                         
                             KRW = %,.4f
                             CNY = %,.4f
@@ -380,11 +380,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         String message;
         if (disableChina) {
             message = String.format("""
-                            Актуальный курс расчета:
+                            Актуальный курс оплаты:
                                                         
                             KRW = %,.4f RUB
                             USD = %,.4f RUB
-                            USD = %,.4f KRW
+                            USD = %,.2f KRW
                                 
                                 """,
                     ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
@@ -392,12 +392,12 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     restService.getCbrUsdKrwMinus20());
         } else {
             message = String.format("""
-                            Актуальный курс расчета:
+                            Актуальный курс оплаты:
                                                         
                             KRW = %,.4f RUB
                             CNY = %,.4f RUB
                             USD = %,.4f RUB
-                            USD = %,.4f KRW
+                            USD = %,.2f KRW
                                 
                                 """,
                     ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
@@ -441,7 +441,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 String.format("""
                         Здравствуйте, %s! 
                                                         
-                        Для расчёта автомобиля введите стоимость автомобиля в валюте KRW.
+                        Для расчёта автомобиля введите стоимость в KRW.
                         """, name);
         executeMessage(service.prepareSendMessage(chatId, text));
         cache.setUsersCurrentBotState(chatId, BotState.ASK_PRICE);
