@@ -19,6 +19,7 @@ public class RestService {
 
     private UtilService utilService;
     private Map<String, Double> conversionRatesMap;
+    private double cbrUsdKrwMinus20;
 
     @Autowired
     public RestService(RestTemplate restTemplate, UtilService utilService) {
@@ -31,7 +32,7 @@ public class RestService {
                 = restTemplate.getForEntity(cbrMethod, String.class);
         conversionRatesMap = utilService.backRatesToConversionRatesMap(response.getBody());
         log.info("курс обновлён {}", conversionRatesMap);
-
+        cbrUsdKrwMinus20 = (conversionRatesMap.get("KRW") / conversionRatesMap.get("USD")) - 20;
     }
 }
 

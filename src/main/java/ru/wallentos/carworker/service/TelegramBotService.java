@@ -34,7 +34,7 @@ import ru.wallentos.carworker.configuration.BotConfiguration;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
 import ru.wallentos.carworker.model.BotState;
 import ru.wallentos.carworker.model.CarPriceResultData;
-import ru.wallentos.carworker.model.UserCarData;
+import ru.wallentos.carworker.model.UserCarInputData;
 
 @Service
 @Data
@@ -234,7 +234,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void processPrice(long chatId, String receivedText) {
-        UserCarData data = cache.getUserCarData(chatId);
+        UserCarInputData data = cache.getUserCarData(chatId);
         int priceInConcurrency = Integer.parseInt(receivedText);
         data.setPrice(priceInConcurrency);
         data.setPriceInEuro(executionService.convertMoneyToEuro(priceInConcurrency, data.getConcurrency()));
@@ -259,7 +259,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void processIssueDate(long chatId, String receivedText) {
-        UserCarData data = cache.getUserCarData(chatId);
+        UserCarInputData data = cache.getUserCarData(chatId);
         data.setAge(receivedText);
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.ASK_VOLUME);
@@ -272,7 +272,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void processVolume(long chatId, String receivedText) {
-        UserCarData data = cache.getUserCarData(chatId);
+        UserCarInputData data = cache.getUserCarData(chatId);
         data.setVolume(Integer.parseInt(receivedText));
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.DATA_PREPARED);
@@ -285,7 +285,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         processExecuteResult(data, chatId);
     }
 
-    private void processExecuteResult(UserCarData data, long chatId) {
+    private void processExecuteResult(UserCarInputData data, long chatId) {
         CarPriceResultData resultData = executionService.executeCarPriceResultData(data);
         cache.deleteUserCarDataByUserId(chatId);
         log.info("""
@@ -413,7 +413,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void processConcurrency(long chatId, int messageId, String concurrency) {
-        UserCarData data = cache.getUserCarData(chatId);
+        UserCarInputData data = cache.getUserCarData(chatId);
         data.setConcurrency(concurrency);
         data.setStock(executionService.executeStock(concurrency));
         cache.saveUserCarData(chatId, data);
@@ -440,7 +440,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                                 """
                         , concurrency, concurrency);
         executeEditMessageText(text, chatId, messageId);
-        UserCarData data = cache.getUserCarData(chatId);
+        UserCarInputData data = cache.getUserCarData(chatId);
         data.setConcurrency(concurrency);
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.SET_CONCURRENCY);

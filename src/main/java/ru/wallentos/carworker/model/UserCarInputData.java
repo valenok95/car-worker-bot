@@ -7,7 +7,8 @@ import lombok.experimental.FieldDefaults;
 
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UserCarData {
+public class UserCarInputData {
+    boolean isSanctionCar;
     String concurrency;
     int price;
     double priceInEuro;

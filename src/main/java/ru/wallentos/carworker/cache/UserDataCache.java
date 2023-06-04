@@ -5,14 +5,14 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.wallentos.carworker.model.BotState;
-import ru.wallentos.carworker.model.UserCarData;
+import ru.wallentos.carworker.model.UserCarInputData;
 
 
 @Component
 @Slf4j
 public class UserDataCache implements DataCache {
     private static Map<Long, BotState> usersBotStates = new HashMap<>();
-    private static Map<Long, UserCarData> usersProfileData = new HashMap<>();
+    private static Map<Long, UserCarInputData> usersProfileData = new HashMap<>();
 
     @Override
     public void setUsersCurrentBotState(long userId, BotState botState) {
@@ -38,17 +38,17 @@ public class UserDataCache implements DataCache {
     }
 
     @Override
-    public UserCarData getUserCarData(long userId) {
-        UserCarData userCarData = usersProfileData.get(userId);
-        if (userCarData == null) {
-            userCarData = new UserCarData();
+    public UserCarInputData getUserCarData(long userId) {
+        UserCarInputData userCarInputData = usersProfileData.get(userId);
+        if (userCarInputData == null) {
+            userCarInputData = new UserCarInputData();
         }
-        return userCarData;
+        return userCarInputData;
     }
 
     @Override
-    public void saveUserCarData(long userId, UserCarData userCarData) {
-        usersProfileData.put(userId, userCarData);
+    public void saveUserCarData(long userId, UserCarInputData userCarInputData) {
+        usersProfileData.put(userId, userCarInputData);
     }
     public static void resetUserData(long userId){
         usersBotStates.remove(userId);

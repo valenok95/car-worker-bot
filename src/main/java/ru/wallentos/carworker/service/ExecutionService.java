@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
 import ru.wallentos.carworker.model.CarPriceResultData;
-import ru.wallentos.carworker.model.UserCarData;
+import ru.wallentos.carworker.model.UserCarInputData;
 
 @Service
 public class ExecutionService {
@@ -58,23 +58,36 @@ public class ExecutionService {
         return resultFeeRate;
     }
 
-    public CarPriceResultData executeCarPriceResultData(UserCarData userCarData) {
+    public CarPriceResultData executeCarPriceResultData(UserCarInputData userCarInputData) {
         CarPriceResultData resultData = new CarPriceResultData();
-        resultData.setCarCategory(getCarCategory(userCarData.getAge()));
-        resultData.setAge(userCarData.getAge());
-        resultData.setFeeRate(getFeeRateFromCarPriceInRubles(userCarData.getPriceInEuro()));
-        resultData.setDuty(calculateDutyInRubles(userCarData.getPriceInEuro(), getCarCategory(userCarData.getAge()), userCarData.getVolume()));
-        resultData.setRecyclingFee(calculateRecyclingFeeInRubles(getCarCategory(userCarData.getAge())));
-        resultData.setFirstPriceInRubles(calculateFirstCarPriceInRublesByUserCarData(userCarData));
-        resultData.setExtraPayAmount(executeExtraPayAmountInRublesByUserCarData(userCarData));
-        resultData.setStock(executeStock(userCarData.getConcurrency()));
-        resultData.setLocation(executeLocation(userCarData.getConcurrency()));
-
+        resultData.setCarCategory(getCarCategory(userCarInputData.getAge()));
+        resultData.setAge(userCarInputData.getAge());
+        if (KRW.equals(userCarInputData.getConcurrency())) {
+            userCarInputData.setSanctionCar(isSanctionCar(userCarInputData.getPrice()));
+        }
+        resultData.setAge(userCarInputData.getAge());
+        resultData.setFeeRate(getFeeRateFromCarPriceInRubles(userCarInputData.getPriceInEuro()));
+        resultData.setDuty(calculateDutyInRubles(userCarInputData.getPriceInEuro(), getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume()));
+        resultData.setRecyclingFee(calculateRecyclingFeeInRubles(getCarCategory(userCarInputData.getAge())));
+        resultData.setFirstPriceInRubles(calculateFirstCarPriceInRublesByUserCarData(userCarInputData));
+        resultData.setExtraPayAmount(executeExtraPayAmountInRublesByUserCarData(userCarInputData));
+        resultData.setStock(executeStock(userCarInputData.getConcurrency()));
+        resultData.setLocation(executeLocation(userCarInputData.getConcurrency()));
         return resultData;
     }
 
-    private double calculateFirstCarPriceInRublesByUserCarData(UserCarData userCarData) {
-        return userCarData.getPrice() * configDataPool.manualConversionRatesMapInRubles.get(userCarData.getConcurrency());
+    private double calculateFirstCarPriceInRublesByUserCarData(UserCarInputData userCarInputData) {
+        String currentConcurrency = userCarInputData.getConcurrency();
+        if (currentConcurrency.equals(KRW) && !userCarInputData.isSanctionCar()) {
+            return (userCarInputData.getPrice() / restService.getCbrUsdKrwMinus20())
+                    * configDataPool.manualConversionRatesMapInRubles.get(USD);
+        } else {
+            return userCarInputData.getPrice() * configDataPool.manualConversionRatesMapInRubles.get(currentConcurrency);
+        }
+    }
+
+    private boolean isSanctionCar(double priceInKrw) {
+        return priceInKrw / restService.getCbrUsdKrwMinus20() > 50_000;
     }
 
 //стоимость которую ввел пользователь + extra pay 
@@ -102,16 +115,38 @@ public class ExecutionService {
         }
     }
 
-    private double executeExtraPayAmountInRublesByUserCarData(UserCarData userCarData) {
-        switch (userCarData.getConcurrency()) {
+    /**
+     * Рассчитываем доп взносы. Если тачка санкционная, то рассчитываем определённым образом (getExtraPayAmountForSanctionCar).
+     *
+     * @param userCarInputData
+     * @return
+     */
+    private double executeExtraPayAmountInRublesByUserCarData(UserCarInputData userCarInputData) {
+        switch (userCarInputData.getConcurrency()) {
             case KRW:
+                return configDataPool.EXTRA_PAY_AMOUNT_KOREA_RUB + (userCarInputData.isSanctionCar() ?
+                        getExtraKrwPayAmountNormalConvertation() :
+                        getExtraKrwPayAmountDoubleConvertation());
             case USD:
-                return configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW * configDataPool.manualConversionRatesMapInRubles.get(KRW)
-                        + configDataPool.EXTRA_PAY_AMOUNT_KOREA_RUB;
+                return configDataPool.EXTRA_PAY_AMOUNT_KOREA_RUB + getExtraKrwPayAmountNormalConvertation();
             default:
                 return configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY * configDataPool.manualConversionRatesMapInRubles.get(CNY)
                         + configDataPool.EXTRA_PAY_AMOUNT_CHINA_RUB;
         }
+    }
+
+    private double getExtraKrwPayAmountNormalConvertation() {
+        return configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW * configDataPool.manualConversionRatesMapInRubles.get(KRW);
+    }
+
+    /**
+     * Если эквивалент тачки стоит меньше, чем 50 000$ то (KRW для взносов делим на (курс KRW/USD по
+     * ЦБ минус 20) и умножаем на ручной курс USD.
+     */
+    private double getExtraKrwPayAmountDoubleConvertation() {
+        double usdAmount =
+                configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW / restService.getCbrUsdKrwMinus20();
+        return usdAmount * configDataPool.manualConversionRatesMapInRubles.get(USD);
     }
 
 

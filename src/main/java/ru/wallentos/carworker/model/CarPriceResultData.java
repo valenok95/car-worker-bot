@@ -20,6 +20,7 @@ public class CarPriceResultData {
     String stock;
     String age;
     String location;
+    String sanctionMessage = "Санкционный авто, ";
 
     public double getResultPrice() {
         return firstPriceInRubles + feeRate + duty + recyclingFee + extraPayAmount;
