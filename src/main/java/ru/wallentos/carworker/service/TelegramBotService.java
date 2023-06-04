@@ -151,7 +151,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         if (disableChina) {
             message = String.format("""
                             Актуальный курс расчета:
-                            
+                                                        
                             KRW = %,.4f
                             USD = %,.4f
                                 
@@ -162,7 +162,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         } else {
             message = String.format("""
                             Актуальный курс расчета:
-                            
+                                                        
                             KRW = %,.4f
                             CNY = %,.4f
                             USD = %,.4f
@@ -322,22 +322,22 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     private void startCommandReceived(long chatId, String name) {
         restService.refreshExchangeRates();
-        String message = "Здравствуйте, " + name + "!\n";
+        String message = String.format("""
+                Здравствуйте, %s!
+                        
+                Для расчета автомобиля из южной Кореи выберите KRW, для автомобиля из Китая CNY.
+                """, name);
         if (disableChina) {
-            message += "Я бот для расчета конечной стоимости автомобиля. Выберите валюту покупки.";
-        } else {
-            message += "Для расчета автомобиля из южной Кореи выберите USD или KRW, для автомобиля из Китая CNY.";
+            processKrwConcurrency(chatId, name);
+            return;
         }
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
         InlineKeyboardButton cnyButton = new InlineKeyboardButton(CNY);
-        InlineKeyboardButton usdButton = new InlineKeyboardButton(USD);
         InlineKeyboardButton krwButton = new InlineKeyboardButton(KRW);
-        usdButton.setCallbackData(USD);
         cnyButton.setCallbackData(CNY);
         krwButton.setCallbackData(KRW);
-        row.add(usdButton);
         if (!disableChina) {
             row.add(cnyButton);
         }
@@ -353,7 +353,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         Map<String, Double> rates = restService.getConversionRatesMap();
         String message = """
                 Курс валют ЦБ:
-                
+                                
                 EUR %,.4fруб.
                 USD %,.4fруб.
                 CNY %,.4fруб.
@@ -381,25 +381,29 @@ public class TelegramBotService extends TelegramLongPollingBot {
         if (disableChina) {
             message = String.format("""
                             Актуальный курс расчета:
-                            
-                            KRW = %,.4f
-                            USD = %,.4f
+                                                        
+                            KRW = %,.4f RUB
+                            USD = %,.4f RUB
+                            USD = %,.4f KRW
                                 
                                 """,
                     ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
-                    ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(USD),
+                    restService.getCbrUsdKrwMinus20());
         } else {
             message = String.format("""
                             Актуальный курс расчета:
-                            
-                            KRW = %,.4f
-                            CNY = %,.4f
-                            USD = %,.4f
+                                                        
+                            KRW = %,.4f RUB
+                            CNY = %,.4f RUB
+                            USD = %,.4f RUB
+                            USD = %,.4f KRW
                                 
                                 """,
                     ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
                     ConfigDataPool.manualConversionRatesMapInRubles.get(CNY),
-                    ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(USD),
+                    restService.getCbrUsdKrwMinus20());
         }
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -419,12 +423,27 @@ public class TelegramBotService extends TelegramLongPollingBot {
         cache.saveUserCarData(chatId, data);
         String text =
                 String.format("""
-                                Вы выбрали тип валюты: %s 
+                                Тип валюты: %s 
                                                                 
                                 Теперь введите стоимость автомобиля в валюте.
                                 """
                         , concurrency);
         executeEditMessageText(text, chatId, messageId);
+        cache.setUsersCurrentBotState(chatId, BotState.ASK_PRICE);
+    }
+
+    private void processKrwConcurrency(long chatId, String name) {
+        UserCarInputData data = cache.getUserCarData(chatId);
+        data.setConcurrency(KRW);
+        data.setStock(executionService.executeStock(KRW));
+        cache.saveUserCarData(chatId, data);
+        String text =
+                String.format("""
+                        Здравствуйте, %s! 
+                                                        
+                        Для расчёта автомобиля введите стоимость автомобиля в валюте KRW.
+                        """, name);
+        executeMessage(service.prepareSendMessage(chatId, text));
         cache.setUsersCurrentBotState(chatId, BotState.ASK_PRICE);
     }
 

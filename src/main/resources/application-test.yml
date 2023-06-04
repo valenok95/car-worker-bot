@@ -1,6 +1,6 @@
 ru:
   wallentos:
     carworker:
-      disable-china: true
+      disable-china: false
       manager-link: https://t.me/wallentoss
       admin-id: 352955292
