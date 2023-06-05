@@ -62,7 +62,7 @@ public class ExecutionService {
         CarPriceResultData resultData = new CarPriceResultData();
         resultData.setCarCategory(getCarCategory(userCarInputData.getAge()));
         resultData.setAge(userCarInputData.getAge());
-        if (KRW.equals(userCarInputData.getConcurrency())) {
+        if (KRW.equals(userCarInputData.getCurrency())) {
             userCarInputData.setSanctionCar(isSanctionCar(userCarInputData.getPrice()));
         }
         resultData.setAge(userCarInputData.getAge());
@@ -70,19 +70,26 @@ public class ExecutionService {
         resultData.setDuty(calculateDutyInRubles(userCarInputData.getPriceInEuro(), getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume()));
         resultData.setRecyclingFee(calculateRecyclingFeeInRubles(getCarCategory(userCarInputData.getAge())));
         resultData.setFirstPriceInRubles(calculateFirstCarPriceInRublesByUserCarData(userCarInputData));
-        resultData.setExtraPayAmount(executeExtraPayAmountInRublesByUserCarData(userCarInputData));
-        resultData.setStock(executeStock(userCarInputData.getConcurrency()));
-        resultData.setLocation(executeLocation(userCarInputData.getConcurrency()));
+//валютная надбавка  и рублёвая надбавка (Брокерские расходы, СВХ, СБКТС)
+        double extraPayAmountRublePart = executeRubExtraPayAmountInRublesByUserCarData(userCarInputData);
+        double extraPayAmountCurrencyPart =
+                executeValuteExtraPayAmountInRublesByUserCarData(userCarInputData);
+        resultData.setExtraPayAmountInRubles(extraPayAmountRublePart);
+        resultData.setExtraPayAmountInCurrency(extraPayAmountCurrencyPart);
+
+        resultData.setExtraPayAmount(extraPayAmountRublePart + extraPayAmountCurrencyPart);
+        resultData.setStock(executeStock(userCarInputData.getCurrency()));
+        resultData.setLocation(executeLocation(userCarInputData.getCurrency()));
         return resultData;
     }
 
     private double calculateFirstCarPriceInRublesByUserCarData(UserCarInputData userCarInputData) {
-        String currentConcurrency = userCarInputData.getConcurrency();
-        if (currentConcurrency.equals(KRW) && !userCarInputData.isSanctionCar()) {
+        String currentCurrency = userCarInputData.getCurrency();
+        if (currentCurrency.equals(KRW) && !userCarInputData.isSanctionCar()) {
             return (userCarInputData.getPrice() / restService.getCbrUsdKrwMinus20())
                     * configDataPool.manualConversionRatesMapInRubles.get(USD);
         } else {
-            return userCarInputData.getPrice() * configDataPool.manualConversionRatesMapInRubles.get(currentConcurrency);
+            return userCarInputData.getPrice() * configDataPool.manualConversionRatesMapInRubles.get(currentCurrency);
         }
     }
 
@@ -95,8 +102,8 @@ public class ExecutionService {
     //пошлина
 
 
-    public String executeStock(String concurrency) {
-        switch (concurrency) {
+    public String executeStock(String currency) {
+        switch (currency) {
             case KRW:
             case USD:
                 return "Корея";
@@ -105,8 +112,8 @@ public class ExecutionService {
         }
     }
 
-    public String executeLocation(String concurrency) {
-        switch (concurrency) {
+    public String executeLocation(String currency) {
+        switch (currency) {
             case KRW:
             case USD:
                 return "до Владивостока";
@@ -116,22 +123,33 @@ public class ExecutionService {
     }
 
     /**
-     * Рассчитываем доп взносы. Если тачка санкционная, то рассчитываем определённым образом (getExtraPayAmountForSanctionCar).
-     *
-     * @param userCarInputData
-     * @return
+     * Рассчитываем доп взносы. Рублёвая часть. Брокерские расходы, СВХ, СБКТС.
      */
-    private double executeExtraPayAmountInRublesByUserCarData(UserCarInputData userCarInputData) {
-        switch (userCarInputData.getConcurrency()) {
+    private double executeRubExtraPayAmountInRublesByUserCarData(UserCarInputData userCarInputData) {
+        switch (userCarInputData.getCurrency()) {
             case KRW:
-                return configDataPool.EXTRA_PAY_AMOUNT_KOREA_RUB + (userCarInputData.isSanctionCar() ?
+            case USD:
+                return configDataPool.EXTRA_PAY_AMOUNT_KOREA_RUB;
+            default:
+                return configDataPool.EXTRA_PAY_AMOUNT_CHINA_RUB;
+        }
+    }
+
+
+    /**
+     * Рассчитываем доп взносы. Валютная часть. если тачка дешевле 50 000 USD - то двойная
+     * конвертация.
+     */
+    private double executeValuteExtraPayAmountInRublesByUserCarData(UserCarInputData userCarInputData) {
+        switch (userCarInputData.getCurrency()) {
+            case KRW:
+                return (userCarInputData.isSanctionCar() ?
                         getExtraKrwPayAmountNormalConvertation() :
                         getExtraKrwPayAmountDoubleConvertation());
             case USD:
-                return configDataPool.EXTRA_PAY_AMOUNT_KOREA_RUB + getExtraKrwPayAmountNormalConvertation();
+                return getExtraKrwPayAmountNormalConvertation();
             default:
-                return configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY * configDataPool.manualConversionRatesMapInRubles.get(CNY)
-                        + configDataPool.EXTRA_PAY_AMOUNT_CHINA_RUB;
+                return configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY * configDataPool.manualConversionRatesMapInRubles.get(CNY);
         }
     }
 
@@ -150,12 +168,12 @@ public class ExecutionService {
     }
 
 
-    private double convertMoneyFromEuro(double count, String toConcurrency) {
-        return count * restService.getConversionRatesMap().get(toConcurrency);
+    private double convertMoneyFromEuro(double count, String toCurrency) {
+        return count * restService.getConversionRatesMap().get(toCurrency);
     }
 
-    public double convertMoneyToEuro(double count, String fromConcurrency) {
-        return count / restService.getConversionRatesMap().get(fromConcurrency);
+    public double convertMoneyToEuro(double count, String fromCurrency) {
+        return count / restService.getConversionRatesMap().get(fromCurrency);
     }
 
     /**

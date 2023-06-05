@@ -5,9 +5,9 @@ package ru.wallentos.carworker.model;
  */
 
 public enum BotState {
-    SET_CONCURRENCY_MENU,
-    SET_CONCURRENCY,
-    ASK_CONCURRENCY,
+    SET_CURRENCY_MENU,
+    SET_CURRENCY,
+    ASK_CURRENCY,
     ASK_PRICE,
     ASK_ISSUE_DATE,
     ASK_VOLUME,

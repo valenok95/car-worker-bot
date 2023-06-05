@@ -9,7 +9,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserCarInputData {
     boolean isSanctionCar;
-    String concurrency;
+    String currency;
     int price;
     double priceInEuro;
     LocalDate issueDate;
@@ -22,7 +22,7 @@ public class UserCarInputData {
         return String.format("""
                 Возраст: %s.
                 Стоимость: %d %s\s
-                Объем двигателя: %d с.с.""", age, price, concurrency, volume);
+                Объем двигателя: %d с.с.""", age, price, currency, volume);
     }
 
 }
