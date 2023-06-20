@@ -63,7 +63,7 @@ public class CarPriceResultData {
                         По вопросам проведения платежа и заказа авто обратитесь к нашему менеджеру @KorexAdmin.
                         
                         <a href="https://t.me/korexautotradeofficial">🔗Официальный телеграмм канал</a>
-                        <a href="https://t.me/korexautotradeofficial/705">🔗Видео инструкция по сайту</a>
+                        <a href="https://t.me/korexautotradeofficial/705">🔗Видео инструкция по сайту Encar</a>
                         """, 
                 getResultPrice(), firstPriceInRubles + extraPayAmountInCurrency,
                 extraPayAmountInRubles,
