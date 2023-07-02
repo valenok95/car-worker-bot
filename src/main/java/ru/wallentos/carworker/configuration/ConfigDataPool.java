@@ -16,12 +16,16 @@ public class ConfigDataPool {
     public static final String USD = "USD";
     public static final String KRW = "KRW";
     public static final String CNY = "CNY";
+    public static final String LINK_BUTTON = "Расчёт по ссылке";
+    public static final String MANUAL_BUTTON = "Расчёт вручную";
     @Value("${ru.wallentos.carworker.exchange-coefficient}")
     public double coefficient;
     @Value("${ru.wallentos.carworker.extra-pay-china.cny}")
     public int EXTRA_PAY_AMOUNT_CHINA_CNY;
     @Value("${ru.wallentos.carworker.extra-pay-china.rub}")
     public int EXTRA_PAY_AMOUNT_CHINA_RUB;
+    @Value("${ru.wallentos.carworker.enable-krw-link-mode}")
+    public boolean enableKrwLinkMode;
     @Value("${ru.wallentos.carworker.extra-pay-corea.krw}")
     public int EXTRA_PAY_AMOUNT_KOREA_KRW;
     @Value("${ru.wallentos.carworker.extra-pay-corea.rub}")
@@ -93,6 +97,7 @@ public class ConfigDataPool {
     public static final String NEW_CAR = "До 3 лет";
     public static final String NORMAL_CAR = "От 3 до 5 лет";
     public static final String OLD_CAR = "От 5 лет";
+    public static final String CANCEL_MESSAGE = "Отмена";
     public static final String RESET_MESSAGE = "Рассчитать ещё один автомобиль";
     public static final String TO_START_MESSAGE = "Рассчитать автомобиль";
     public static final String TO_SET_CURRENCY_MENU = "Меню установки валюты";

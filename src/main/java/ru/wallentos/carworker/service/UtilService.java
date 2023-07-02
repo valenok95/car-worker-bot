@@ -11,13 +11,18 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import ru.wallentos.carworker.exceptions.GetCarDetailException;
 
 @Service
+@Slf4j
 public class UtilService {
     private static final String VALUE = "Value";
     @Autowired
@@ -68,5 +73,46 @@ public class UtilService {
         conversionRatesMap.put(CNY, cnyRate);
         conversionRatesMap.put(KRW, krwRate);
         return conversionRatesMap;
+    }
+
+    /**
+     * Вытащить из ссылки carId.
+     */
+    public String parseLinkToCarId(String link) throws GetCarDetailException {
+        try {
+            if (link.contains("fem.encar.com")) {
+                return parseFemEncarLinkToCarId(link);
+            } else if (link.contains("encar.com")) {
+                return parseEncarLinkToCarId(link);
+            }else {
+                throw new RuntimeException("неопознанная ссылка " + link);
+            }
+        } catch (Exception e){
+            String errorMessage = String.format("Ошибка при обработке ссылки, carId должен " +
+                    "состоять состоит из 8 цифр");
+            log.error(errorMessage);
+            throw new GetCarDetailException(errorMessage);
+        }
+        
+    }
+
+    /**
+     * Вытащить из ссылки fem.encar.com.
+     */
+    private String parseFemEncarLinkToCarId(String link) {
+        Pattern pattern = Pattern.compile("detail\\/(\\d{8})");
+        Matcher matcher = pattern.matcher(link);
+        matcher.find();
+        return matcher.group(1);
+    }
+
+    /**
+     * Вытащить из ссылки encar.com.
+     */
+    private String parseEncarLinkToCarId(String link) {
+        Pattern pattern = Pattern.compile("carid=(\\d{8})");
+        Matcher matcher = pattern.matcher(link);
+        matcher.find();
+        return matcher.group(1);
     }
 }

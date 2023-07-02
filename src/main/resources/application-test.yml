@@ -1,6 +1,7 @@
 ru:
   wallentos:
     carworker:
-      disable-china: true
+      korex-mode: true
+      enable-krw-link-mode: true
       manager-link: https://t.me/wallentoss
       admin-id: 352955292

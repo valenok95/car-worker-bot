@@ -7,6 +7,7 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_CAR_RECYCLING_FEE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_CAR_PRICE_FLAT_RATE_MAX;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR_PRICE_FLAT_RATE_MAX;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR_RECYCLING_FEE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.RUB;
@@ -16,6 +17,10 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.newCarCustomsM
 import static ru.wallentos.carworker.configuration.ConfigDataPool.normalCarCustomsMap;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.oldCarCustomsMap;
 
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.Period;
+import java.time.YearMonth;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,7 +40,8 @@ public class ExecutionService {
         restService.refreshExchangeRates();
         double rub = restService.getConversionRatesMap().get("RUB");
         restService.getConversionRatesMap().forEach((key, value) -> {
-            configDataPool.manualConversionRatesMapInRubles.put(key, rub * configDataPool.coefficient / value);
+            ConfigDataPool.manualConversionRatesMapInRubles.put(key,
+                    rub * configDataPool.coefficient / value);
         });
     }
 
@@ -60,6 +66,7 @@ public class ExecutionService {
 
     public CarPriceResultData executeCarPriceResultData(UserCarInputData userCarInputData) {
         CarPriceResultData resultData = new CarPriceResultData();
+        resultData.setCarId(userCarInputData.getCarId());
         resultData.setCarCategory(getCarCategory(userCarInputData.getAge()));
         resultData.setAge(userCarInputData.getAge());
         if (KRW.equals(userCarInputData.getCurrency())) {
@@ -87,9 +94,9 @@ public class ExecutionService {
         String currentCurrency = userCarInputData.getCurrency();
         if (currentCurrency.equals(KRW) && !userCarInputData.isSanctionCar()) {
             return (userCarInputData.getPrice() / restService.getCbrUsdKrwMinus20())
-                    * configDataPool.manualConversionRatesMapInRubles.get(USD);
+                    * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
         } else {
-            return userCarInputData.getPrice() * configDataPool.manualConversionRatesMapInRubles.get(currentCurrency);
+            return userCarInputData.getPrice() * ConfigDataPool.manualConversionRatesMapInRubles.get(currentCurrency);
         }
     }
 
@@ -149,12 +156,12 @@ public class ExecutionService {
             case USD:
                 return getExtraKrwPayAmountNormalConvertation();
             default:
-                return configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY * configDataPool.manualConversionRatesMapInRubles.get(CNY);
+                return configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY * ConfigDataPool.manualConversionRatesMapInRubles.get(CNY);
         }
     }
 
     private double getExtraKrwPayAmountNormalConvertation() {
-        return configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW * configDataPool.manualConversionRatesMapInRubles.get(KRW);
+        return configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW * ConfigDataPool.manualConversionRatesMapInRubles.get(KRW);
     }
 
     /**
@@ -164,7 +171,7 @@ public class ExecutionService {
     private double getExtraKrwPayAmountDoubleConvertation() {
         double usdAmount =
                 configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW / restService.getCbrUsdKrwMinus20();
-        return usdAmount * configDataPool.manualConversionRatesMapInRubles.get(USD);
+        return usdAmount * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
     }
 
 
@@ -275,11 +282,60 @@ public class ExecutionService {
     }
 
     /**
+     * Вычисляем категорию по дате автомобиля.
+     * 1- до трех лет
+     * 2- от трех до пяти лет
+     * 3- свыше пяти лет
+     *
+     * @return возрастная категория
+     */
+    private String calculateCarAgeByLocalDate(LocalDate localDate) {
+        Period period = Period.between(localDate, LocalDate.now());
+        int carYearsOld = period.getYears();
+        if (carYearsOld < 3) {
+            return NEW_CAR;
+        } else if (carYearsOld <= 5) {
+            return NORMAL_CAR;
+        } else {
+            return OLD_CAR;
+        }
+    }
+
+    /**
+     * Вычисляем категорию по месяцу и году.
+     * 1- до трех лет
+     * 2- от трех до пяти лет
+     * 3- свыше пяти лет
+     *
+     * @return возрастная категория
+     */
+    public String calculateCarAgeByRawDate(int year, int month) {
+        LocalDate oldDate = LocalDate.of(year, month, YearMonth.of(year, month).lengthOfMonth());
+        return calculateCarAgeByLocalDate(oldDate);
+    }
+
+    /**
      * Считаем наибольшее значение пошлины, либо по кубам либо по умножению на процент.
      */
     private double getMaxFromPair(Map.Entry<Double, Double> pair, double carPriceInEuro, int carVolume) {
         double priceByPercent = pair.getKey() * carPriceInEuro;
         double priceByVolume = pair.getValue() * carVolume;
         return Math.max(priceByVolume, priceByPercent);
+    }
+
+    /**
+     * Проверка, включен ли МОД для определённой валюты.
+     * когда добавится расчёт по ссылке для других валют, пополним.
+     *
+     * @param currency
+     * @return
+     */
+    public boolean isLinkModeEnabled(String currency) {
+        switch (currency) {
+            case KRW:
+                return configDataPool.isEnableKrwLinkMode();
+            default:
+                return false;
+        }
     }
 }

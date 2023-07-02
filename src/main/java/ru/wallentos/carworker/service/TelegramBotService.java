@@ -1,8 +1,11 @@
 package ru.wallentos.carworker.service;
 
+import static ru.wallentos.carworker.configuration.ConfigDataPool.CANCEL_MESSAGE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.KRW;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.LINK_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.MANAGER_MESSAGE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.MANUAL_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR;
@@ -32,8 +35,10 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.wallentos.carworker.cache.UserDataCache;
 import ru.wallentos.carworker.configuration.BotConfiguration;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
+import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.model.BotState;
 import ru.wallentos.carworker.model.CarPriceResultData;
+import ru.wallentos.carworker.model.EncarDto;
 import ru.wallentos.carworker.model.UserCarInputData;
 
 @Service
@@ -46,15 +51,17 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     @Value("${ru.wallentos.carworker.admin-id}")
     public int adminId;
-    @Value("${ru.wallentos.carworker.disable-china}")
-    public boolean disableChina;
+    @Value("${ru.wallentos.carworker.korex-mode}")
+    public boolean korexMode;
     @Autowired
     private RestService restService;
     @Autowired
     private ConfigDataPool configDataPool;
     private final BotConfiguration config;
     @Autowired
-    private UtilService service;
+    private UtilService utilService;
+    @Autowired
+    private RedisCacheService redisCacheService;
     @Autowired
     private ExecutionService executionService;
     @Autowired
@@ -88,10 +95,12 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage() && update.getMessage().hasText()) {
+        if (update.hasCallbackQuery()) {
+            String callbackData = update.getCallbackQuery().getData();
+            handleCallbackData(callbackData, update);
+        } else if (update.hasMessage() && update.getMessage().hasText()) {
             String receivedText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
-            int messageId = update.getMessage().getMessageId();
             log.info("message received: " + receivedText);
             switch (receivedText) {
                 case "/start":
@@ -107,28 +116,49 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     setCurrencyCommandReceived(chatId);
                     break;
                 default:
-                    handleMessage(receivedText, chatId, messageId);
+                    handleMessage(update, receivedText);
                     break;
             }
-        } else if (update.hasCallbackQuery()) {
-            String callbackData = update.getCallbackQuery().getData();
-            int messageId = update.getCallbackQuery().getMessage().getMessageId();
-            long chatId = update.getCallbackQuery().getMessage().getChatId();
-            if (callbackData.equals(RESET_MESSAGE) || callbackData.equals(TO_START_MESSAGE)) {
+        } else {
+            unrecognizedCommandReceived(update.getMessage().getChatId());
+        }
+    }
+
+    private void handleCallbackData(String callbackData, Update update) {
+        long chatId = update.getCallbackQuery().getMessage().getChatId();
+        BotState currentState = cache.getUsersCurrentBotState(chatId);
+        switch (callbackData) {
+            case TO_START_MESSAGE, RESET_MESSAGE, CANCEL_MESSAGE:
                 startCommandReceived(chatId, update.getCallbackQuery().getMessage().getChat().getFirstName());
                 return;
-            }
-            if (callbackData.equals(TO_SET_CURRENCY_MENU)) {
+            case TO_SET_CURRENCY_MENU:
                 setCurrencyCommandReceived(chatId);
                 return;
-            }
-            handleMessage(callbackData, chatId, messageId);
+            case LINK_BUTTON:
+                processAskLink(update);
+                return;
+            case MANUAL_BUTTON:
+                processManualCalculation(chatId);
+                return;
+        }
+        switch (currentState) {
+            case ASK_CURRENCY:
+                applyCurrencyAndDefineCalculateMode(chatId, callbackData);
+                break;
+            case SET_CURRENCY_MENU:
+                processChooseCurrencyToSet(update, callbackData);
+                break;
+            case ASK_ISSUE_DATE:
+                processIssueDate(chatId, callbackData);
+                break;
+            default:
+                break;
         }
     }
 
     private void setCurrencyCommandReceived(long chatId) {
         if (adminId != chatId) {
-            executeMessage(service.prepareSendMessage(chatId, "Доступ к функционалу ограничен"));
+            executeMessage(utilService.prepareSendMessage(chatId, "Доступ к функционалу ограничен"));
             return;
         }
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
@@ -141,14 +171,14 @@ public class TelegramBotService extends TelegramLongPollingBot {
         cnyButton.setCallbackData(CNY);
         krwButton.setCallbackData(KRW);
         row.add(usdButton);
-        if (!disableChina) {
+        if (!korexMode) {
             row.add(cnyButton);
         }
         row.add(krwButton);
         rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
         String message;
-        if (disableChina) {
+        if (korexMode) {
             message = String.format("""
                             Актуальный курс оплаты:
                                                         
@@ -173,38 +203,33 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     ConfigDataPool.manualConversionRatesMapInRubles.get(CNY),
                     ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
         }
-        executeMessage(service.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
+        executeMessage(utilService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
         cache.setUsersCurrentBotState(chatId, BotState.SET_CURRENCY_MENU);
     }
 
 
-    private void handleMessage(String receivedText, long chatId, int messageId) {
+    private void handleMessage(Update update, String receivedText) {
+        long chatId = update.getMessage().getChatId();
         BotState currentState = cache.getUsersCurrentBotState(chatId);
         try {
             switch (currentState) {
-                case ASK_CURRENCY:
-                    processCurrency(chatId, messageId, receivedText);
-                    break;
                 case ASK_PRICE:
                     processPrice(chatId, receivedText);
-                    break;
-                case ASK_ISSUE_DATE:
-                    processIssueDate(chatId, receivedText);
                     break;
                 case ASK_VOLUME:
                     processVolume(chatId, receivedText);
                     break;
-                case SET_CURRENCY_MENU:
-                    processChooseCurrencyToSet(chatId, messageId, receivedText);
-                    break;
                 case SET_CURRENCY:
                     processSetCurrency(chatId, receivedText);
+                    break;
+                case WAITING_FOR_LINK:
+                    processCalculateByLink(chatId, receivedText);
                     break;
                 default:
                     break;
             }
         } catch (IllegalArgumentException e) {
-            executeMessage(service.prepareSendMessage(chatId, "Некорректный формат данных, попробуйте ещё раз."));
+            executeMessage(utilService.prepareSendMessage(chatId, "Некорректный формат данных, попробуйте ещё раз."));
             return;
         }
     }
@@ -229,7 +254,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         inlineKeyboardMarkup.setKeyboard(rows);
 
         String message = String.format("Установлен курс: 1 %s = %s RUB", currency, receivedText);
-        executeMessage(service.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
+        executeMessage(utilService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
         cache.deleteUserCarDataByUserId(chatId);
     }
 
@@ -255,7 +280,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         row.add(oldCar);
         rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
-        executeMessage(service.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
+        executeMessage(utilService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
     }
 
     private void processIssueDate(long chatId, String receivedText) {
@@ -268,7 +293,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                                 
                 Пример: 1995""";
 
-        executeMessage(service.prepareSendMessage(chatId, text));
+        executeMessage(utilService.prepareSendMessage(chatId, text));
     }
 
     private void processVolume(long chatId, String receivedText) {
@@ -276,16 +301,16 @@ public class TelegramBotService extends TelegramLongPollingBot {
         data.setVolume(Integer.parseInt(receivedText));
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.DATA_PREPARED);
-        String text = String.format("""
-                Данные переданы в обработку ⏳
-                 
-                %s
-                """, data);
-        executeMessage(service.prepareSendMessage(chatId, text));
         processExecuteResult(data, chatId);
     }
 
     private void processExecuteResult(UserCarInputData data, long chatId) {
+        String dataPreparedtext = String.format("""
+                Данные переданы в обработку ⏳
+                 
+                %s
+                """, data);
+        executeMessage(utilService.prepareSendMessage(chatId, dataPreparedtext));
         CarPriceResultData resultData = executionService.executeCarPriceResultData(data);
         cache.deleteUserCarDataByUserId(chatId);
         log.info("""
@@ -300,9 +325,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
                         """, resultData.getFirstPriceInRubles(), resultData.getExtraPayAmountInRubles(),
                 resultData.getExtraPayAmountInCurrency(), resultData.getExtraPayAmount(),
                 resultData.getFeeRate(), resultData.getDuty(), resultData.getRecyclingFee());
-        String text;
-        if (disableChina) {
-            text = resultData.getDisableChinaMessage();
+        String text = "";
+        if (korexMode) {
+            text = resultData.getKorexModeMessage();
         } else {
             text = String.format("""
                     %s
@@ -323,21 +348,21 @@ public class TelegramBotService extends TelegramLongPollingBot {
         rows.add(row1);
         rows.add(row2);
         inlineKeyboardMarkup.setKeyboard(rows);
-        executeMessage(service.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
+        executeMessage(utilService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
     }
 
 
     private void startCommandReceived(long chatId, String name) {
         restService.refreshExchangeRates();
+        if (korexMode) {
+            processKorexStart(chatId, name);
+            return;
+        }
         String message = String.format("""
                 Здравствуйте, %s!
                         
                 Для расчета автомобиля из южной Кореи выберите KRW, для автомобиля из Китая CNY.
                 """, name);
-        if (disableChina) {
-            processKrwCurrency(chatId, name);
-            return;
-        }
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
@@ -345,13 +370,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         InlineKeyboardButton krwButton = new InlineKeyboardButton(KRW);
         cnyButton.setCallbackData(CNY);
         krwButton.setCallbackData(KRW);
-        if (!disableChina) {
-            row.add(cnyButton);
-        }
+        row.add(cnyButton);
         row.add(krwButton);
         rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
-        executeMessage(service.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
+        executeMessage(utilService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
         cache.setUsersCurrentBotState(chatId, BotState.ASK_CURRENCY);
     }
 
@@ -379,13 +402,13 @@ public class TelegramBotService extends TelegramLongPollingBot {
         row1.add(reset);
         rows.add(row1);
         inlineKeyboardMarkup.setKeyboard(rows);
-        executeMessage(service.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
+        executeMessage(utilService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
     }
 
     private void currencyRatesCommandReceived(long chatId) {
         //TO DO вынести в отдельный метод String get
         String message;
-        if (disableChina) {
+        if (korexMode) {
             message = String.format("""
                             Актуальный курс оплаты:
                                                         
@@ -420,14 +443,33 @@ public class TelegramBotService extends TelegramLongPollingBot {
         row1.add(reset);
         rows.add(row1);
         inlineKeyboardMarkup.setKeyboard(rows);
-        executeMessage(service.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
+        executeMessage(utilService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
     }
 
-    private void processCurrency(long chatId, int messageId, String currency) {
+    /**
+     * callback process.
+     * Проверяем доступен ли выбор режима расчёта (link/manual) для валюты.
+     *
+     * @param currency
+     */
+    private void applyCurrencyAndDefineCalculateMode(long chatId, String currency) {
         UserCarInputData data = cache.getUserCarData(chatId);
         data.setCurrency(currency);
         data.setStock(executionService.executeStock(currency));
         cache.saveUserCarData(chatId, data);
+        if (executionService.isLinkModeEnabled(currency)) {
+            processChooseModeForCalculation(chatId);
+        } else {
+            processManualCalculation(chatId);
+        }
+    }
+
+    /**
+     * Расчёт автомобиля ВРУЧНУЮ.
+     */
+    private void processManualCalculation(long chatId) {
+        UserCarInputData data = cache.getUserCarData(chatId);
+        String currency = data.getCurrency();
         String text =
                 String.format("""
                                 Тип валюты: %s 
@@ -435,26 +477,131 @@ public class TelegramBotService extends TelegramLongPollingBot {
                                 Теперь введите стоимость автомобиля в валюте.
                                 """
                         , currency);
-        executeEditMessageText(text, chatId, messageId);
+        executeMessage(utilService.prepareSendMessage(chatId, text));
         cache.setUsersCurrentBotState(chatId, BotState.ASK_PRICE);
     }
 
-    private void processKrwCurrency(long chatId, String name) {
+    /**
+     * Процесс выбора способа расчёта ВРУЧНУЮ/ПО ССЫЛКЕ. 2 кнопки.
+     */
+    private void processChooseModeForCalculation(long chatId) {
+        String message = """
+                Выберите вариант расчёта 🔻
+                """;
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        InlineKeyboardButton linkModeButton = new InlineKeyboardButton(LINK_BUTTON);
+        InlineKeyboardButton manualModeButton = new InlineKeyboardButton(MANUAL_BUTTON);
+        linkModeButton.setCallbackData(LINK_BUTTON);
+        manualModeButton.setCallbackData(MANUAL_BUTTON);
+        row1.add(linkModeButton);
+        row2.add(manualModeButton);
+        rows.add(row1);
+        rows.add(row2);
+        inlineKeyboardMarkup.setKeyboard(rows);
+        executeMessage(utilService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
+        cache.setUsersCurrentBotState(chatId, BotState.ASK_CALCULATION_MODE);
+
+        //// перехватываем callBack в зависимости от BUTTON кидаем либо в ручной расчёт(метод 
+        // уже есть) , либо по ссылке (добавить метод по ссылке для krw и метод определения 
+        // ссылочного метода по валюте) 
+        // ссылке. валюту присваеваем ДО
+    }
+
+    /**
+     * Пользователь выбрал расчёт по ссылке.
+     * Вспоминаем его валюту и спрашиваем соответствующую ссылку.
+     *
+     * @param update
+     */
+    private void processAskLink(Update update) {
+        long chatId = update.getCallbackQuery().getMessage().getChatId();
+        var data = cache.getUserCarData(chatId);
+        switch (data.getCurrency()) {
+            case KRW -> processAskEncarLink(update);
+        }
+    }
+
+    private void processAskEncarLink(Update update) {
+        long chatId = update.getCallbackQuery().getMessage().getChatId();
+        executeMessage(utilService.prepareSendMessage(chatId, "Вставьте ссылку с сайта Encar.com"));
+        cache.setUsersCurrentBotState(chatId, BotState.WAITING_FOR_LINK);
+    }
+
+    /**
+     * Используем полученную ссылку для расчёта стоимости автомобиля.
+     *
+     * @param link
+     */
+    private void processCalculateByLink(long chatId, String link) {
+        var data = cache.getUserCarData(chatId);
+        switch (data.getCurrency()) {
+            case KRW -> processCalculateByEncarLink(chatId, link);
+        }
+    }
+
+    /**
+     * Расчитываем стоимость по ссылке encar.com
+     *
+     * @param chatId
+     * @param link
+     */
+    private void processCalculateByEncarLink(long chatId, String link) {
+        String carId;
+        /// получаем encarDto и преобразуем его в UserInputData 
+        // пробуем получить из кэша, затем получаем из интернета
+        EncarDto encarDto;
+        try {
+            carId = utilService.parseLinkToCarId(link);
+            encarDto = redisCacheService.fetchAndUpdateEncarDtoByCarId(carId);
+        } catch (GetCarDetailException e) {
+            String errorMessage = """
+                    Ошибка получения данных с сайта Encar.com
+                                        
+                    Проверьте правильность ссылки и переотправьте...
+                    """;
+            InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            InlineKeyboardButton cancelButton = new InlineKeyboardButton(CANCEL_MESSAGE);
+            cancelButton.setCallbackData(CANCEL_MESSAGE);
+            row.add(cancelButton);
+            rows.add(row);
+            inlineKeyboardMarkup.setKeyboard(rows);
+            executeMessage(utilService.prepareSendMessage(chatId, errorMessage, inlineKeyboardMarkup));
+            return;
+        }
         UserCarInputData data = cache.getUserCarData(chatId);
-        data.setCurrency(KRW);
-        data.setStock(executionService.executeStock(KRW));
-        cache.saveUserCarData(chatId, data);
+        int priceInCurrency = encarDto.getRawCarPrice() * 10_000;
+        data.setPrice(priceInCurrency);
+        data.setPriceInEuro(executionService.convertMoneyToEuro(priceInCurrency, data.getCurrency()));
+        data.setVolume(encarDto.getRawCarPower());
+        data.setAge(executionService.calculateCarAgeByRawDate(encarDto.getRawCarYear(), encarDto.getRawCarMonth()));
+        data.setCarId(encarDto.getCarId());
+        processExecuteResult(data, chatId);
+    }
+
+
+    private void processKorexStart(long chatId, String name) {
         String text =
                 String.format("""
                         Здравствуйте, %s! 
-                                                        
-                        Для расчёта автомобиля введите стоимость в KRW.
                         """, name);
-        executeMessage(service.prepareSendMessage(chatId, text));
-        cache.setUsersCurrentBotState(chatId, BotState.ASK_PRICE);
+        executeMessage(utilService.prepareSendMessage(chatId, text));
+        applyCurrencyAndDefineCalculateMode(chatId, KRW);
+
     }
 
-    private void processChooseCurrencyToSet(long chatId, int messageId, String currency) {
+    /**
+     * callback process.
+     *
+     * @param update
+     * @param currency
+     */
+    private void processChooseCurrencyToSet(Update update, String currency) {
+        long chatId = update.getCallbackQuery().getMessage().getChatId();
         String text =
                 String.format("""
                                 Вы выбрали тип валюты: %s 
@@ -465,7 +612,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                                 В таком случае будет установлен курс 1 %s = 1.234 RUB
                                 """
                         , currency, currency);
-        executeEditMessageText(text, chatId, messageId);
+        executeEditMessageText(text, chatId, update.getCallbackQuery().getMessage().getMessageId());
         UserCarInputData data = cache.getUserCarData(chatId);
         data.setCurrency(currency);
         cache.saveUserCarData(chatId, data);
@@ -474,7 +621,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
 
     private void unrecognizedCommandReceived(long chatId) {
-        executeMessage(service.prepareSendMessage(chatId, "Команда не распознана, чтобы начать - нажмите /start"));
+        executeMessage(utilService.prepareSendMessage(chatId, "Команда не распознана, чтобы начать - нажмите /start"));
     }
 
     private void executeEditMessageText(String text, long chatId, int messageId) {

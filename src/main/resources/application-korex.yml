@@ -4,7 +4,8 @@ bot:
 ru:
   wallentos:
     carworker:
-      disable-china: true
+      korex-mode: true
+      enable-krw-link-mode: true
       manager-link: https://t.me/korexadmin
       extra-pay-corea:
         krw: 2500000

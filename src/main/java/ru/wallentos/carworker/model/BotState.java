@@ -11,5 +11,7 @@ public enum BotState {
     ASK_PRICE,
     ASK_ISSUE_DATE,
     ASK_VOLUME,
+    ASK_CALCULATION_MODE,
+    WAITING_FOR_LINK,
     DATA_PREPARED
 }

@@ -16,6 +16,7 @@ public class CarPriceResultData {
     double extraPayAmount;
     double extraPayAmountInCurrency;
     double extraPayAmountInRubles;
+    int carId;
     /**
      * Рынок ввоза.
      */
@@ -26,6 +27,13 @@ public class CarPriceResultData {
 
     public double getResultPrice() {
         return firstPriceInRubles + feeRate + duty + recyclingFee + extraPayAmount;
+    }
+
+    private String getLinkString() {
+        return carId != 0 ? String.format("""
+                
+                <a href="https://fem.encar.com/cars/detail/%d">🔗Ссылка на автомобиль</a>                
+                """, carId) : "";
     }
 
     @Override
@@ -39,11 +47,12 @@ public class CarPriceResultData {
                         Таможенная пошлина и утилизационный сбор:
                         %,.0fруб.
                                            
-                        ❗️Итоговая стоимость указана за автомобиль %s и включает все расходы, в том числе процедуру таможенной очистки.❗""", 
+                        ❗️Итоговая стоимость указана за автомобиль %s и включает все расходы, в том числе процедуру таможенной очистки.❗""",
                 getResultPrice(), firstPriceInRubles + extraPayAmount,
                 feeRate + duty + recyclingFee, location);
     }
-    public String getDisableChinaMessage() {
+
+    public String getKorexModeMessage() {
         return String.format(Locale.FRANCE, """
                         Стоимость автомобиля под ключ во Владивостоке:
                         <u><b>%,.0f ₽</b></u>
@@ -55,18 +64,18 @@ public class CarPriceResultData {
                         %,.0f ₽
                                                 
                         Таможенная пошлина и утилизационный сбор: %,.0f ₽ 
-                                                
+                        %s               
                         ‼️Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Корее, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину‼️
                                                 
                         Актуальный курс оплаты наличными и курсы ЦБ вы можете найти в меню.
                                                 
                         По вопросам проведения платежа и заказа авто обратитесь к нашему менеджеру @KorexAdmin.
-                        
+                                                
                         <a href="https://t.me/korexautotradeofficial">🔗Официальный телеграмм канал</a>
                         <a href="https://t.me/korexautotradeofficial/705">🔗Видео инструкция по сайту Encar</a>
-                        """, 
+                        """,
                 getResultPrice(), firstPriceInRubles + extraPayAmountInCurrency,
                 extraPayAmountInRubles,
-                feeRate + duty + recyclingFee);
+                feeRate + duty + recyclingFee, getLinkString());
     }
 }
