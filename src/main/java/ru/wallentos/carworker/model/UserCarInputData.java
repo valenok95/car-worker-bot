@@ -24,7 +24,7 @@ public class UserCarInputData {
         return String.format(Locale.FRANCE, """
                 Возраст: %s.
                 Стоимость: %d %s\s
-                Объем двигателя: %d с.с.""", age, price, currency, volume);
+                Объем двигателя: %d cc""", age, price, currency, volume);
 
 
     }
