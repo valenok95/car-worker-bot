@@ -7,5 +7,5 @@ ru:
       manager-link: https://t.me/wallentoss
       admin-id: 352955292
       update-cache-job:
-        master-bot: {IS_MASTER_BOT}
-        cron: {CRON}
+        master-bot: ${IS_MASTER_BOT}
+        cron: ${CRON}
