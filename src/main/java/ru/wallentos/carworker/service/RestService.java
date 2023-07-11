@@ -76,7 +76,8 @@ public class RestService {
 
             EncarDto dto = encarConverter.convertToDto(encarEntity);
             if (dto.getRawCarPrice() == 0) {
-                String errorMessage = String.format("Error while getting info by id %s ", carId);
+                String errorMessage = String.format("Error while getting info by id %s from " +
+                        "document %s ", carId, document);
                 log.error(errorMessage + dto);
                 throw new GetCarDetailException(errorMessage);
             }
