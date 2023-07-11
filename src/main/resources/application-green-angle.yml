@@ -5,6 +5,7 @@ ru:
   wallentos:
     carworker:
       manager-link: https://t.me/mikhail_ung
+      currencies: KRW, CNY
       extra-pay-corea:
         krw: 2500000
         rub: 130000

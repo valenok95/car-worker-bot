@@ -10,6 +10,7 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.RESET_MESSAGE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.RUB;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.TO_SET_CURRENCY_MENU;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.TO_START_MESSAGE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.USD;
@@ -156,6 +157,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         }
     }
 
+    /**
+     * Ручная установка валюты для курса оплаты.
+     *
+     * @param chatId
+     */
     private void setCurrencyCommandReceived(long chatId) {
         if (adminId != chatId) {
             executeMessage(utilService.prepareSendMessage(chatId, "Доступ к функционалу ограничен"));
@@ -164,45 +170,28 @@ public class TelegramBotService extends TelegramLongPollingBot {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
-        InlineKeyboardButton cnyButton = new InlineKeyboardButton(CNY);
+        StringBuilder builder = new StringBuilder("");
         InlineKeyboardButton usdButton = new InlineKeyboardButton(USD);
-        InlineKeyboardButton krwButton = new InlineKeyboardButton(KRW);
+        configDataPool.getCurrencies().forEach(currency ->
+        {
+            InlineKeyboardButton button = new InlineKeyboardButton(currency);
+            button.setCallbackData(currency);
+            row.add(button);
+            builder.append(String.format("%n%s = %,.4f ₽", currency,
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(currency)));
+        });
+        String message = String.format("""
+                        Актуальный курс оплаты:            
+                        %s
+                        USD = %,.4f  ₽
+                            
+                        Выберите валюту для ручной установки курса:
+                            """, builder,
+                ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
         usdButton.setCallbackData(USD);
-        cnyButton.setCallbackData(CNY);
-        krwButton.setCallbackData(KRW);
         row.add(usdButton);
-        if (!korexMode) {
-            row.add(cnyButton);
-        }
-        row.add(krwButton);
         rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
-        String message;
-        if (korexMode) {
-            message = String.format("""
-                            Актуальный курс оплаты:
-                                                        
-                            KRW = %,.4f
-                            USD = %,.4f
-                                
-                            Выберите валюту для ручной установки курса:
-                                """,
-                    ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
-                    ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
-        } else {
-            message = String.format("""
-                            Актуальный курс оплаты:
-                                                        
-                            KRW = %,.4f
-                            CNY = %,.4f
-                            USD = %,.4f
-                                
-                            Выберите валюту для ручной установки курса:
-                                """,
-                    ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
-                    ConfigDataPool.manualConversionRatesMapInRubles.get(CNY),
-                    ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
-        }
         executeMessage(utilService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
         cache.setUsersCurrentBotState(chatId, BotState.SET_CURRENCY_MENU);
     }
@@ -253,7 +242,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         rows.add(row2);
         inlineKeyboardMarkup.setKeyboard(rows);
 
-        String message = String.format("Установлен курс: 1 %s = %s RUB", currency, receivedText);
+        String message = String.format("Установлен курс: 1 %s = %s  ₽", currency, receivedText);
         executeMessage(utilService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
         cache.deleteUserCarDataByUserId(chatId);
     }
@@ -325,16 +314,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
                         """, resultData.getFirstPriceInRubles(), resultData.getExtraPayAmountInRubles(),
                 resultData.getExtraPayAmountInCurrency(), resultData.getExtraPayAmount(),
                 resultData.getFeeRate(), resultData.getDuty(), resultData.getRecyclingFee());
-        String text = "";
-        if (korexMode) {
-            text = resultData.getKorexModeMessage();
-        } else {
-            text = String.format("""
-                    %s
-                            
-                    Что бы заказать авто - пиши менеджеру🔻
-                            """, resultData);
-        }
+        String text = utilService.getResultMessageByBotNameAndCurrency(config.getName(),
+                data.getCurrency(), resultData);
+
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row1 = new ArrayList<>();
@@ -353,9 +335,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
 
     private void startCommandReceived(long chatId, String name) {
-        restService.refreshExchangeRates();
-        if (korexMode) {
+        if (korexMode) { //singleCurrencyMode
             processKorexStart(chatId, name);
+            restService.refreshExchangeRates();
             return;
         }
         String message = String.format("""
@@ -376,23 +358,26 @@ public class TelegramBotService extends TelegramLongPollingBot {
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(utilService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
         cache.setUsersCurrentBotState(chatId, BotState.ASK_CURRENCY);
+        restService.refreshExchangeRates();
     }
 
     private void cbrCommandReceived(long chatId) {
         restService.refreshExchangeRates();
         Map<String, Double> rates = restService.getConversionRatesMap();
+        StringBuilder builder = new StringBuilder("");
+        configDataPool.getCurrencies().forEach(currency ->
+        {
+            builder.append(String.format("%n%s %,.4f ₽", currency,
+                    rates.get(RUB) / rates.get(currency)));
+        });
         String message = """
                 Курс валют ЦБ:
                                 
-                EUR %,.4fруб.
-                USD %,.4fруб.
-                CNY %,.4fруб.
-                KRW %,.4fруб.
+                EUR %,.4f ₽
+                USD %,.4f ₽%s
                                 
-                """.formatted(rates.get("RUB"),
-                rates.get("RUB") / rates.get("USD"),
-                rates.get("RUB") / rates.get("CNY"),
-                rates.get("RUB") / rates.get("KRW"));
+                """.formatted(rates.get(RUB),
+                rates.get(RUB) / rates.get(USD), builder);
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -406,42 +391,29 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void currencyRatesCommandReceived(long chatId) {
-        //TO DO вынести в отдельный метод String get
-        String message;
-        if (korexMode) {
-            message = String.format("""
-                            Актуальный курс оплаты:
-                                                        
-                            KRW = %,.4f RUB
-                            USD = %,.4f RUB
-                            USD = %,.2f KRW
-                                
-                                """,
-                    ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
-                    ConfigDataPool.manualConversionRatesMapInRubles.get(USD),
-                    restService.getCbrUsdKrwMinus20());
-        } else {
-            message = String.format("""
-                            Актуальный курс оплаты:
-                                                        
-                            KRW = %,.4f RUB
-                            CNY = %,.4f RUB
-                            USD = %,.4f RUB
-                            USD = %,.2f KRW
-                                
-                                """,
-                    ConfigDataPool.manualConversionRatesMapInRubles.get(KRW),
-                    ConfigDataPool.manualConversionRatesMapInRubles.get(CNY),
-                    ConfigDataPool.manualConversionRatesMapInRubles.get(USD),
-                    restService.getCbrUsdKrwMinus20());
+        StringBuilder builder = new StringBuilder("");
+        configDataPool.getCurrencies().forEach(currency ->
+        {
+            builder.append(String.format("%n%s = %,.4f  ₽", currency,
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(currency)));
+        });
+        if (configDataPool.getCurrencies().contains(KRW)) {
+            builder.append(String.format("%nUSD = %,.2f ₩",
+                    restService.getCbrUsdKrwMinus20()));
         }
+        String message = String.format("""
+                        Актуальный курс оплаты:
+                                                    
+                        USD = %,.4f  ₽%s
+                            """,
+                ConfigDataPool.manualConversionRatesMapInRubles.get(USD), builder);
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<InlineKeyboardButton> row = new ArrayList<>();
         InlineKeyboardButton reset = new InlineKeyboardButton(TO_START_MESSAGE);
         reset.setCallbackData(TO_START_MESSAGE);
-        row1.add(reset);
-        rows.add(row1);
+        row.add(reset);
+        rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(utilService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
     }
@@ -503,11 +475,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(utilService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
         cache.setUsersCurrentBotState(chatId, BotState.ASK_CALCULATION_MODE);
-
-        //// перехватываем callBack в зависимости от BUTTON кидаем либо в ручной расчёт(метод 
-        // уже есть) , либо по ссылке (добавить метод по ссылке для krw и метод определения 
-        // ссылочного метода по валюте) 
-        // ссылке. валюту присваеваем ДО
     }
 
     /**
@@ -550,8 +517,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
      */
     private void processCalculateByEncarLink(long chatId, String link) {
         String carId;
-        /// получаем encarDto и преобразуем его в UserInputData 
-        // пробуем получить из кэша, затем получаем из интернета
         EncarDto encarDto;
         try {
             carId = utilService.parseLinkToCarId(link);
@@ -591,7 +556,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
                         """, name);
         executeMessage(utilService.prepareSendMessage(chatId, text));
         applyCurrencyAndDefineCalculateMode(chatId, KRW);
-
     }
 
     /**
@@ -609,7 +573,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                                 Теперь введите курс валюты к рублю.
                                                                 
                                 Например 1.234
-                                В таком случае будет установлен курс 1 %s = 1.234 RUB
+                                В таком случае будет установлен курс 1 %s = 1.234  ₽
                                 """
                         , currency, currency);
         executeEditMessageText(text, chatId, update.getCallbackQuery().getMessage().getMessageId());

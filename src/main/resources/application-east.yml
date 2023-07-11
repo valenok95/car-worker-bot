@@ -1,5 +1,5 @@
 bot:
-  name: KorexCalcBot
+  name: EastWayCalcBot
   
 ru:
   wallentos:
@@ -7,9 +7,7 @@ ru:
       korex-mode: true
       currencies: KRW
       enable-krw-link-mode: true
-      manager-link: https://t.me/korexadmin
+      manager-link: https://t.me/Mikhail_Ung
       extra-pay-corea:
         krw: 2500000
-        rub: 100000
-      update-cache-job:
-        master-bot: true
+        rub: 180000

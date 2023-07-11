@@ -1,7 +1,10 @@
 ru:
   wallentos:
     carworker:
-      korex-mode: true
+      korex-mode: false
+      currencies: KRW, CNY
       enable-krw-link-mode: true
       manager-link: https://t.me/wallentoss
       admin-id: 352955292
+      update-cache-job:
+        master-bot: false

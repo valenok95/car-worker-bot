@@ -20,6 +20,9 @@ ru:
         host-cbr: https://www.cbr-xml-daily.ru/daily_json.js
         host-naver: https://finance.naver.com/marketindex/exchangeDetail.nhn?marketindexCd=FX_USDKRW
         host-encar: http://www.encar.com/dc/dc_cardetailview.do?carid=
+      update-cache-job:
+        master-bot: false
+        cron: 0 0/30 * * * *
         
 spring:
   data:

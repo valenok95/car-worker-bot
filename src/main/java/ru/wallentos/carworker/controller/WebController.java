@@ -8,17 +8,19 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.wallentos.carworker.cache.EncarCache;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.service.RedisCacheService;
+import ru.wallentos.carworker.service.RestService;
 import ru.wallentos.carworker.service.UtilService;
 
 @RestController
 public class WebController {
-    // private final RestService restService;
+    private final RestService restService;
     private final EncarCache encarCache;
     private final RedisCacheService redisCacheService;
     private final UtilService utilService;
 
     @Autowired
-    public WebController(EncarCache encarCache, RedisCacheService redisCacheService, UtilService utilService) {
+    public WebController(RestService restService, EncarCache encarCache, RedisCacheService redisCacheService, UtilService utilService) {
+        this.restService = restService;
         this.encarCache = encarCache;
         this.redisCacheService = redisCacheService;
         this.utilService = utilService;
@@ -30,10 +32,10 @@ public class WebController {
         return ResponseEntity.ok().build();
     }*/
 
-/*    @GetMapping("/getEncarByIdJsoup")
-    public ResponseEntity<?> getCarByIdJsoup(@RequestParam String carId) {
+    @GetMapping("/getEncarByIdJsoup")
+    public ResponseEntity<?> getCarByIdJsoup(@RequestParam String carId) throws GetCarDetailException {
         return ResponseEntity.accepted().body(restService.getEncarDataByJsoup(carId));
-    }*/
+    }
 
     @GetMapping("/getEncarByIdRedis")
     public ResponseEntity<?> getCarByIdRedis(@RequestParam String carId) {

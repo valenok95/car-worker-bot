@@ -3,6 +3,7 @@ package ru.wallentos.carworker.configuration;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,8 @@ import org.springframework.context.annotation.Configuration;
 @Data
 @Configuration
 public class ConfigDataPool {
+    @Value(value = "${ru.wallentos.carworker.currencies}")
+    private List<String> currencies;
     public static final String EUR = "EUR";
     public static final String RUB = "RUB";
     public static final String USD = "USD";
