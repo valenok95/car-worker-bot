@@ -46,14 +46,12 @@ public class WebController {
     public ResponseEntity<?> getCarById(@RequestParam String carId) throws GetCarDetailException {
         return ResponseEntity.accepted().body(redisCacheService.fetchAndUpdateEncarDtoByCarId(carId));
     }
-/*
 
     @GetMapping("/updateCookie")
     public ResponseEntity<?> updateCookie() {
-        restService.updateCookie();
+        redisCacheService.updateEncarCache();
         return ResponseEntity.ok().build();
     }
-*/
 
     @GetMapping("/parseFemLink")
     public ResponseEntity<?> parseFemLink(@RequestParam String input) throws GetCarDetailException {

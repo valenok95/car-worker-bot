@@ -63,7 +63,6 @@ public class RestService {
 
     public EncarDto getEncarDataByJsoup(String carId) throws GetCarDetailException {
         try {
-            String errorMessage = String.format("Ошибка при получении авто по id %s", carId);
             var connection = Jsoup.connect(encarMethod + carId).userAgent("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0");
             connection.execute();
             var document = Jsoup.parse(connection.execute().body());
@@ -77,12 +76,13 @@ public class RestService {
 
             EncarDto dto = encarConverter.convertToDto(encarEntity);
             if (dto.getRawCarPrice() == 0) {
-                log.error(errorMessage);
+                String errorMessage = String.format("Error while getting info by id %s ", carId);
+                log.error(errorMessage+dto);
                 throw new GetCarDetailException(errorMessage);
             }
             return dto;
         } catch (IOException e) {
-            String errorMessage = String.format("Ошибка при получении авто по id %s", carId);
+            String errorMessage = String.format("Error while getting info by id %s", carId);
             throw new GetCarDetailException(errorMessage);
         }
     }
