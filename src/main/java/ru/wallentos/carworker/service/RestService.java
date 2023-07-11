@@ -65,6 +65,7 @@ public class RestService {
         try {
             var connection = Jsoup.connect(encarMethod + carId).userAgent("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0");
             connection.execute();
+            connection.execute();
             var document = Jsoup.parse(connection.execute().body());
             var encarEntity = new EncarEntity(
                     carId,
