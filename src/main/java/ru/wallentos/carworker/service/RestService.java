@@ -72,12 +72,12 @@ public class RestService {
                     document.select("meta[name=WT.z_year]").attr("content"),
                     document.select("meta[name=WT.z_month]").attr("content"),
                     document.select("input[name=dsp]").attr("value"));
-            log.info("response received");
+            log.info("response received {}", document);
 
             EncarDto dto = encarConverter.convertToDto(encarEntity);
             if (dto.getRawCarPrice() == 0) {
                 String errorMessage = String.format("Error while getting info by id %s ", carId);
-                log.error(errorMessage+dto);
+                log.error(errorMessage + dto);
                 throw new GetCarDetailException(errorMessage);
             }
             return dto;
