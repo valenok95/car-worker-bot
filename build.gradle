@@ -1,15 +1,12 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.0.4'
+    id 'org.springframework.boot' version '3.1.1'
     id 'io.spring.dependency-management' version '1.1.0'
 }
 
 group = 'ru.wallentos'
 version = '0.0.1-SNAPSHOT'
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
+sourceCompatibility = '17'
 
 repositories {
     mavenCentral()
@@ -25,7 +22,6 @@ dependencies {
     testImplementation group: 'com.squareup.okhttp3', name: 'mockwebserver', version: '4.10.0'
     implementation group: 'org.jsoup', name: 'jsoup', version: '1.15.3'
     implementation group: 'org.modelmapper', name: 'modelmapper', version: '3.1.1'
-    implementation group: 'com.microsoft.playwright', name: 'playwright', version: '1.32.0'
     implementation('org.springframework.boot:spring-boot-starter-data-redis')
     
 }

@@ -5,9 +5,6 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
-import com.microsoft.playwright.Browser;
-import com.microsoft.playwright.BrowserType;
-import com.microsoft.playwright.Playwright;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -45,14 +42,4 @@ public class SpringConfiguration {
         // Add some specific configuration here. Key serializers, etc.
         return template;
     }
-
-    @Bean
-    public Browser playWrightBrowser() {
-        Playwright playwright = Playwright.create();
-        BrowserType.LaunchOptions options = new BrowserType.LaunchOptions();
-        options.setHeadless(false);
-
-        return playwright.firefox().launch(options);
-    }
-
 }

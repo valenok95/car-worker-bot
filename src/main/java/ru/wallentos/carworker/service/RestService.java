@@ -1,13 +1,10 @@
 package ru.wallentos.carworker.service;
 
-import com.microsoft.playwright.Browser;
-import com.microsoft.playwright.Page;
 import java.io.IOException;
 import java.util.Map;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -30,7 +27,6 @@ public class RestService {
     @Value("${ru.wallentos.carworker.exchange-api.host-encar}")
     private String encarMethod;
     private RestTemplate restTemplate;
-    private Browser browser;
     private String cookie = "someCookie";
 
     private UtilService utilService;
@@ -38,17 +34,14 @@ public class RestService {
     private RedisTemplate redisTemplate;
     private Map<String, Double> conversionRatesMap;
     private double cbrUsdKrwMinus20;
-    private Page page;
 
     @Autowired
     public RestService(RestTemplate restTemplate, UtilService utilService,
-                       EncarConverter encarConverter, RedisTemplate redisTemplate, Browser browser) {
+                       EncarConverter encarConverter, RedisTemplate redisTemplate) {
         this.restTemplate = restTemplate;
         this.utilService = utilService;
         this.encarConverter = encarConverter;
         this.redisTemplate = redisTemplate;
-        this.browser = browser;
-        page = browser.newPage();
     }
 
     public void refreshExchangeRates() {
@@ -70,7 +63,7 @@ public class RestService {
 
     public EncarDto getEncarDataByJsoup(String carId) throws GetCarDetailException {
         try {
-            var connection = Jsoup.connect(encarMethod + carId).userAgent("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0");
+            var connection = Jsoup.connect(encarMethod + carId).userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
             connection.execute();
             connection.execute();
             var document = Jsoup.parse(connection.execute().body());
@@ -92,22 +85,6 @@ public class RestService {
             String errorMessage = String.format("Error while getting info by id %s",
                     carId);
             throw new GetCarDetailException(errorMessage);
-        }
-    }
-
-    public void getEncarPageByJsoup(String carId) {
-        page.navigate(encarMethod + carId);
-    }
-
-    public void closePage() {
-        if (!page.isClosed()) {
-            page.close();
-        }
-    }
-
-    public void openPage() {
-        if (page.isClosed()) {
-            page = browser.newPage();
         }
     }
 }

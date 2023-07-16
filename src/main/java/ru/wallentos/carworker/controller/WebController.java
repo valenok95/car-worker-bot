@@ -25,12 +25,7 @@ public class WebController {
         this.redisCacheService = redisCacheService;
         this.utilService = utilService;
     }
-/*
-    @PostMapping("/callback/update")
-    public ResponseEntity<?> onUpdateReceived(@RequestBody Update update) {
-        updateProcessor.processUpdate(update);
-        return ResponseEntity.ok().build();
-    }*/
+
 
     @GetMapping("/getEncarByIdJsoup")
     public ResponseEntity<?> getCarByIdJsoup(@RequestParam String carId) throws GetCarDetailException {
@@ -45,22 +40,6 @@ public class WebController {
     @GetMapping("/getEncarById")
     public ResponseEntity<?> getCarById(@RequestParam String carId) throws GetCarDetailException {
         return ResponseEntity.accepted().body(redisCacheService.fetchAndUpdateEncarDtoByCarId(carId));
-    }
-
-    @GetMapping("/getPageById")
-    public ResponseEntity executeCarPageById(@RequestParam String carId) {
-        restService.getEncarPageByJsoup(carId);
-        return ResponseEntity.accepted().build();
-    }
-
-    @GetMapping("/openPage")
-    public void openPage() {
-        restService.openPage();
-    }
-
-    @GetMapping("/closePage")
-    public void closePage() {
-        restService.closePage();
     }
 
     @GetMapping("/updateCache")
