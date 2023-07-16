@@ -47,8 +47,24 @@ public class WebController {
         return ResponseEntity.accepted().body(redisCacheService.fetchAndUpdateEncarDtoByCarId(carId));
     }
 
-    @GetMapping("/updateCookie")
-    public ResponseEntity<?> updateCookie() {
+    @GetMapping("/getPageById")
+    public ResponseEntity executeCarPageById(@RequestParam String carId) {
+        restService.getEncarPageByJsoup(carId);
+        return ResponseEntity.accepted().build();
+    }
+
+    @GetMapping("/openPage")
+    public void openPage() {
+        restService.openPage();
+    }
+
+    @GetMapping("/closePage")
+    public void closePage() {
+        restService.closePage();
+    }
+
+    @GetMapping("/updateCache")
+    public ResponseEntity<?> updateCache() {
         redisCacheService.updateEncarCache();
         return ResponseEntity.ok().build();
     }

@@ -23,8 +23,7 @@ public class RedisCacheServiceCron {
     public void updateCache() {
         if (isMasterBot) {
             log.info("Начинаем обновление КЭШа");
-            long count = redisCacheService.updateEncarCache();
-            log.info("Обновлено {} записей", count);
+            redisCacheService.updateEncarCache();
         }
     }
 }

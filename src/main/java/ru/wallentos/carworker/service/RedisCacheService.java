@@ -38,23 +38,22 @@ public class RedisCacheService {
     /**
      * Запускаем обновление КЭШа.
      */
-    public long updateEncarCache() {
+    public void updateEncarCache() {
         List<String> allKeys = encarCache.getAllKeys();
-        allKeys.forEach(carId -> {
-            try {
-                updateEncarCacheByCarId(carId);
-            } catch (GetCarDetailException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        return allKeys.size();
+        log.info("Received {} keys to update", allKeys.size());
+        allKeys.forEach(this::updateEncarCacheByCarId);
     }
 
     /**
      * Запускаем обновление КЭШа.
      */
-    private void updateEncarCacheByCarId(String carId) throws GetCarDetailException { // 
-        var encarDto = restService.getEncarDataByJsoup(carId);
+    private void updateEncarCacheByCarId(String carId) { // 
+        EncarDto encarDto = null;
+        try {
+            encarDto = restService.getEncarDataByJsoup(carId);
+        } catch (GetCarDetailException e) {
+            log.error("can not update car ");
+        }
         encarCache.saveEncarDto(carId, encarDto);
         log.info("Обновлены данные для тачки:{}", encarDto);
     }
