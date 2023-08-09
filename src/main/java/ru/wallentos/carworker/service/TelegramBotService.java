@@ -37,6 +37,7 @@ import ru.wallentos.carworker.cache.UserDataCache;
 import ru.wallentos.carworker.configuration.BotConfiguration;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
+import ru.wallentos.carworker.exceptions.RecaptchaException;
 import ru.wallentos.carworker.model.BotState;
 import ru.wallentos.carworker.model.CarPriceResultData;
 import ru.wallentos.carworker.model.EncarDto;
@@ -521,11 +522,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         try {
             carId = utilService.parseLinkToCarId(link);
             encarDto = redisCacheService.fetchAndUpdateEncarDtoByCarId(carId);
-        } catch (GetCarDetailException e) {
+        } catch (GetCarDetailException | RecaptchaException e) {
             String errorMessage = """
                     Ошибка получения данных с сайта Encar.com
                                         
-                    Проверьте правильность ссылки и переотправьте...
+                    Попробуйте позже...
                     """;
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> rows = new ArrayList<>();

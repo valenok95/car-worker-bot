@@ -117,6 +117,25 @@ public class UtilService {
         matcher.find();
         return matcher.group(1);
     }
+    /**
+     * Вытащить siteKey со строки каптчи.
+     */
+    public String parseCaptchaKey(String string) {
+        Pattern pattern = Pattern.compile("execute\\(\\'(.+?(?=\\'))");
+        Matcher matcher = pattern.matcher(string);
+        matcher.find();
+        return matcher.group(1);
+    }
+    /**
+     * Вытащить action со строки каптчи.
+     */
+    public String parseCaptchaAction(String string) {
+        Pattern pattern = Pattern.compile("action: \\'(.+?(?=\\'))");
+        Matcher matcher = pattern.matcher(string);
+        matcher.find();
+        return matcher.group(1);
+    }
+
 
 
     protected String getResultMessageByBotNameAndCurrency(String botName, String currency, CarPriceResultData resultData) {

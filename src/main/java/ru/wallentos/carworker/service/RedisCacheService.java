@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.wallentos.carworker.cache.EncarCache;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
+import ru.wallentos.carworker.exceptions.RecaptchaException;
 import ru.wallentos.carworker.model.EncarDto;
 
 @Service
@@ -23,7 +24,7 @@ public class RedisCacheService {
      * @param carId
      * @return
      */
-    public EncarDto fetchAndUpdateEncarDtoByCarId(String carId) throws GetCarDetailException { // сделать приватным
+    public EncarDto fetchAndUpdateEncarDtoByCarId(String carId) throws GetCarDetailException, RecaptchaException { // сделать приватным
         EncarDto result = encarCache.getEncarDtoByCarId(carId);
         if (Objects.nonNull(result)) {
             log.info("Получили в КЭШе авто id {}", carId);
@@ -53,6 +54,8 @@ public class RedisCacheService {
             encarDto = restService.getEncarDataByJsoup(carId);
         } catch (GetCarDetailException e) {
             log.error("can not update car ");
+        } catch (RecaptchaException e) {
+            throw new RuntimeException(e);
         }
         encarCache.saveEncarDto(carId, encarDto);
         log.info("Обновлены данные для тачки:{}", encarDto);
