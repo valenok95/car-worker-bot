@@ -29,6 +29,8 @@ public class ConfigDataPool {
     public int EXTRA_PAY_AMOUNT_CHINA_RUB;
     @Value("${ru.wallentos.carworker.enable-krw-link-mode}")
     public boolean enableKrwLinkMode;
+    @Value("${ru.wallentos.carworker.disable-double-convertation}")
+    public boolean disableDoubleConvertation;
     @Value("${ru.wallentos.carworker.extra-pay-corea.krw}")
     public int EXTRA_PAY_AMOUNT_KOREA_KRW;
     @Value("${ru.wallentos.carworker.extra-pay-corea.rub}")

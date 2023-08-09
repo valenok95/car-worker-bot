@@ -10,6 +10,7 @@ ru:
       manager-link: T.me/mikhail_ung
       admin-id: 126866786
       exchange-coefficient: ${COEFFICIENT}
+      disable-double-convertation: false
       extra-pay-corea:
         krw: 2500000
         rub: 70000
@@ -23,7 +24,7 @@ ru:
       update-cache-job:
         master-bot: false
         cron: 0 0/30 * * * *
-        
+
 spring:
   data:
     redis:

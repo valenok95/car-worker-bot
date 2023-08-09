@@ -163,7 +163,8 @@ public class ExecutionService {
     private double executeValuteExtraPayAmountInRublesByUserCarData(UserCarInputData userCarInputData) {
         switch (userCarInputData.getCurrency()) {
             case KRW:
-                return (userCarInputData.isSanctionCar() ?
+                return (configDataPool.disableDoubleConvertation ||
+                        userCarInputData.isSanctionCar() ?
                         getExtraKrwPayAmountNormalConvertation() :
                         getExtraKrwPayAmountDoubleConvertation());
             case USD:
