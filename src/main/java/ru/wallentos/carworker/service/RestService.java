@@ -3,7 +3,6 @@ package ru.wallentos.carworker.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Objects;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -78,17 +77,10 @@ public class RestService {
             String valueJson =
                     document.select("script:containsData(PRELOADED_STATE)").get(0).childNodes().get(0).toString().replace("__PRELOADED_STATE__ = ", "");
             var json = mapper.readTree(valueJson);
-            if (Objects.isNull(json.get("cars").get("base").get("advertisement").get("price"))) {
-                if (document.toString().contains("recaptcha")) {
-                    String errorMessage = "Требуется решение каптчи.";
-                    log.warn(errorMessage);
-                    throw new RecaptchaException(errorMessage);
-                } else {
-                    String errorMessage = String.format("Error while getting info by id %s from " +
-                            "document %s", carId, connection.get());
-                    log.error(errorMessage);
-                    throw new GetCarDetailException(errorMessage);
-                }
+            if (document.toString().contains("recaptcha")) {
+                String errorMessage = "Требуется решение каптчи.";
+                log.warn(errorMessage);
+                throw new RecaptchaException(errorMessage);
             }
             var encarEntity = new EncarEntity(
                     carId,
@@ -100,7 +92,7 @@ public class RestService {
         } catch (RecaptchaException e) {
             recaptchaService.solveReCaptcha(encarMethod + carId, document);
             throw e;
-        } catch (GetCarDetailException | IOException e) {
+        } catch (IOException | NullPointerException e) {
             String errorMessage = String.format("Error while getting info by id %s",
                     carId);
             throw new GetCarDetailException(errorMessage);
