@@ -18,7 +18,6 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.normalCarCusto
 import static ru.wallentos.carworker.configuration.ConfigDataPool.oldCarCustomsMap;
 
 import java.time.LocalDate;
-import java.time.Month;
 import java.time.Period;
 import java.time.YearMonth;
 import java.util.Map;
@@ -108,24 +107,37 @@ public class ExecutionService {
 
     //пошлина
 
-
+    /**
+     * Определяем рынок по валюте
+     *
+     * @param currency
+     * @return
+     */
     public String executeStock(String currency) {
         switch (currency) {
-            case KRW:
-            case USD:
+            case KRW, USD:
                 return "Корея";
-            default:
+            case CNY:
                 return "Китай";
+            default:
+                return "Неизвестный регион";
         }
     }
 
+    /**
+     * Опрежеляем до куда доставка
+     *
+     * @param currency
+     * @return
+     */
     public String executeLocation(String currency) {
         switch (currency) {
-            case KRW:
-            case USD:
+            case KRW, USD:
                 return "до Владивостока";
-            default:
+            case CNY:
                 return "до Уссурийска";
+            default:
+                return "неизвестно до куда";
         }
     }
 
@@ -134,11 +146,12 @@ public class ExecutionService {
      */
     private double executeRubExtraPayAmountInRublesByUserCarData(UserCarInputData userCarInputData) {
         switch (userCarInputData.getCurrency()) {
-            case KRW:
-            case USD:
+            case KRW, USD:
                 return configDataPool.EXTRA_PAY_AMOUNT_KOREA_RUB;
-            default:
+            case CNY:
                 return configDataPool.EXTRA_PAY_AMOUNT_CHINA_RUB;
+            default:
+                return 0;
         }
     }
 
@@ -155,8 +168,10 @@ public class ExecutionService {
                         getExtraKrwPayAmountDoubleConvertation());
             case USD:
                 return getExtraKrwPayAmountNormalConvertation();
-            default:
+            case CNY:
                 return configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY * ConfigDataPool.manualConversionRatesMapInRubles.get(CNY);
+            default:
+                return 0;
         }
     }
 

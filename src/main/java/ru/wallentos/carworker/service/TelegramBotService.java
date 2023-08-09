@@ -336,8 +336,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
 
     private void startCommandReceived(long chatId, String name) {
-        if (korexMode) { //singleCurrencyMode
-            processKorexStart(chatId, name);
+        if (configDataPool.isSingleCurrencyMode()) { //singleCurrencyMode не спрашиваем валюту
+            processSingleCurrencyStart(chatId, name);
             restService.refreshExchangeRates();
             return;
         }
@@ -549,14 +549,19 @@ public class TelegramBotService extends TelegramLongPollingBot {
         processExecuteResult(data, chatId);
     }
 
-
-    private void processKorexStart(long chatId, String name) {
+    /**
+     * Процесс обработки одной валюты - single valute Mode
+     *
+     * @param chatId
+     * @param name
+     */
+    private void processSingleCurrencyStart(long chatId, String name) {
         String text =
                 String.format("""
                         Здравствуйте, %s! 
                         """, name);
         executeMessage(utilService.prepareSendMessage(chatId, text));
-        applyCurrencyAndDefineCalculateMode(chatId, KRW);
+        applyCurrencyAndDefineCalculateMode(chatId, configDataPool.singleCurrency());
     }
 
     /**

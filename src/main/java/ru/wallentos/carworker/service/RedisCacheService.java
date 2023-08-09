@@ -49,15 +49,16 @@ public class RedisCacheService {
      * Запускаем обновление КЭШа.
      */
     private void updateEncarCacheByCarId(String carId) { // 
-        EncarDto encarDto = null;
+        EncarDto encarDto;
         try {
             encarDto = restService.getEncarDataByJsoup(carId);
+            encarCache.saveEncarDto(carId, encarDto);
+            log.info("Обновлены данные для тачки:{}", encarDto);
         } catch (GetCarDetailException e) {
             log.error("can not update car ");
+            encarCache.deleteEncarDtoByCarId(carId);
         } catch (RecaptchaException e) {
             throw new RuntimeException(e);
         }
-        encarCache.saveEncarDto(carId, encarDto);
-        log.info("Обновлены данные для тачки:{}", encarDto);
     }
 }

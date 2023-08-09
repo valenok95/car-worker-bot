@@ -3,6 +3,7 @@ package ru.wallentos.carworker.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -77,16 +78,7 @@ public class RestService {
             String valueJson =
                     document.select("script:containsData(PRELOADED_STATE)").get(0).childNodes().get(0).toString().replace("__PRELOADED_STATE__ = ", "");
             var json = mapper.readTree(valueJson);
-           // json.get()
-          
-            var encarEntity = new EncarEntity(
-                    carId,
-                    json.get("cars").get("base").get("advertisement").get("price").asText(),
-                    json.get("cars").get("base").get("category").get("formYear").asText(),
-                    json.get("cars").get("base").get("category").get("yearMonth").asText().substring(4,6),
-                    json.get("cars").get("base").get("spec").get("displacement").asText());
-            EncarDto dto = encarConverter.convertToDto(encarEntity);
-            if (dto.getRawCarPrice() == 0) {
+            if (Objects.isNull(json.get("cars").get("base").get("advertisement").get("price"))) {
                 if (document.toString().contains("recaptcha")) {
                     String errorMessage = "Требуется решение каптчи.";
                     log.warn(errorMessage);
@@ -94,11 +86,17 @@ public class RestService {
                 } else {
                     String errorMessage = String.format("Error while getting info by id %s from " +
                             "document %s", carId, connection.get());
-                    log.error(errorMessage + dto);
+                    log.error(errorMessage);
                     throw new GetCarDetailException(errorMessage);
                 }
             }
-            return dto;
+            var encarEntity = new EncarEntity(
+                    carId,
+                    json.get("cars").get("base").get("advertisement").get("price").asText(),
+                    json.get("cars").get("base").get("category").get("formYear").asText(),
+                    json.get("cars").get("base").get("category").get("yearMonth").asText().substring(4, 6),
+                    json.get("cars").get("base").get("spec").get("displacement").asText());
+            return encarConverter.convertToDto(encarEntity);
         } catch (RecaptchaException e) {
             recaptchaService.solveReCaptcha(encarMethod + carId, document);
             throw e;

@@ -206,7 +206,7 @@ public class UtilService {
                                                 
                         По вопросам проведения платежа и заказа авто обратитесь к нашему менеджеру @Mikhail_Ung.
                                                 
-                        <a href="https://t.me/East_Way">🔗Официальный телеграмм канал</a>
+                        <a href="https://t.me/EastWayOfficial">🔗Официальный телеграмм канал</a>
                         """,
                 resultData.getResultPrice(),
                 resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),

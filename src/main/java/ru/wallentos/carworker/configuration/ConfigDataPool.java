@@ -163,4 +163,19 @@ public class ConfigDataPool {
                 }
             };
 
+    /**
+     * одновалютный режим
+     */
+    public boolean isSingleCurrencyMode() {
+        return currencies.size() == 1;
+    }
+
+    /**
+     * валюта одновалютного режима.
+     */
+    public String singleCurrency() {
+        return currencies.get(0);
+    }
+
+
 }
