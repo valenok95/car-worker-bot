@@ -3,10 +3,14 @@ package ru.wallentos.carworker.service;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.KRW;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.LAST_FEE_RATE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_BIG_CAR_RECYCLING_FEE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_CAR_RECYCLING_FEE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_MID_CAR_RECYCLING_FEE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_BIG_CAR_RECYCLING_FEE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_CAR_PRICE_FLAT_RATE_MAX;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_MID_CAR_RECYCLING_FEE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR_PRICE_FLAT_RATE_MAX;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR_RECYCLING_FEE;
@@ -74,7 +78,7 @@ public class ExecutionService {
         resultData.setAge(userCarInputData.getAge());
         resultData.setFeeRate(getFeeRateFromCarPriceInRubles(userCarInputData.getPriceInEuro()));
         resultData.setDuty(calculateDutyInRubles(userCarInputData.getPriceInEuro(), getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume()));
-        resultData.setRecyclingFee(calculateRecyclingFeeInRubles(getCarCategory(userCarInputData.getAge())));
+        resultData.setRecyclingFee(calculateRecyclingFeeInRubles(getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume()));
         resultData.setFirstPriceInRubles(calculateFirstCarPriceInRublesByUserCarData(userCarInputData));
 //валютная надбавка  и рублёвая надбавка (Брокерские расходы, СВХ, СБКТС)
         double extraPayAmountRublePart = executeRubExtraPayAmountInRublesByUserCarData(userCarInputData);
@@ -269,12 +273,25 @@ public class ExecutionService {
 
     /**
      * Рассчёт утилизационного сбора.
+     * <p>
+     * На автомобили до трех лет, объемом двигателя от 3001 до 3500 включительно утилизационный
+     * сбор составляет теперь 970 000₽
+     * Так же до трех лет объемом от 3501 утилизационный сбор составляет 1 235 200₽
+     * На автомобили от 3 до 5 лет
+     * Объемом двигателя от 3001 до 3500 включительно утилизационный сбор составляет 1 485 000₽
+     * Так же от 3 до 5 объемом от 3501 утилизационный сбор составляет 1 623 800₽
      *
      * @param carCategory категория авто
      * @return стоимость утилизационного сбора
      */
-    private int calculateRecyclingFeeInRubles(int carCategory) {
-        return carCategory > 1 ? OLD_CAR_RECYCLING_FEE : NEW_CAR_RECYCLING_FEE;
+    private int calculateRecyclingFeeInRubles(int carCategory, int volume) {
+        if (volume <= 3000) {
+            return carCategory > 1 ? OLD_CAR_RECYCLING_FEE : NEW_CAR_RECYCLING_FEE;
+        } else if (volume <= 3500) {
+            return carCategory > 1 ? NORMAL_MID_CAR_RECYCLING_FEE : NEW_MID_CAR_RECYCLING_FEE;
+        } else {
+            return carCategory > 1 ? NORMAL_BIG_CAR_RECYCLING_FEE : NEW_BIG_CAR_RECYCLING_FEE;
+        }
     }
 
     /**
