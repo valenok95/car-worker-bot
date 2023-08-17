@@ -4,6 +4,7 @@ ru:
       korex-mode: false
       currencies: KRW
       enable-krw-link-mode: true
+      enable-krw-auction-mode: true
       manager-link: https://t.me/wallentoss
       admin-id: 352955292
       update-cache-job:

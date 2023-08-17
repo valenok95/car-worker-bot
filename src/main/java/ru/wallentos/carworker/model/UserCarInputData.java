@@ -13,6 +13,8 @@ public class UserCarInputData {
     boolean isSanctionCar;
     String currency;
     int price;
+    double userAuctionStartPrice;
+    double userAuctionResultPrice;
     double priceInEuro;
     LocalDate issueDate;
     int volume;

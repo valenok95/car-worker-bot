@@ -126,6 +126,7 @@ public class UtilService {
         matcher.find();
         return matcher.group(1);
     }
+
     /**
      * Вытащить action со строки каптчи.
      */
@@ -154,6 +155,12 @@ public class UtilService {
                     Что бы заказать авто - пиши менеджеру🔻
                             """, resultData);
         }
+    }
+
+    protected String getAuctionKrwResultMessage(double resultKrwPrice) {
+        return String.format(Locale.FRANCE, """
+                Ваша ставка на аукционе %,.0f KRW
+                """, resultKrwPrice);
     }
 
     private String getKorexMessageByResultData(CarPriceResultData resultData) {

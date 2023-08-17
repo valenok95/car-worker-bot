@@ -20,16 +20,21 @@ public class ConfigDataPool {
     public static final String KRW = "KRW";
     public static final String CNY = "CNY";
     public static final String LINK_BUTTON = "Расчёт по ссылке";
+    public static final String AUCTION_BUTTON = "Расчёт ставки на аукционе";
     public static final String MANUAL_BUTTON = "Расчёт вручную";
     @Value("${ru.wallentos.carworker.exchange-coefficient}")
     public double coefficient;
+    @Value("${ru.wallentos.carworker.auction-coefficient:0}")
+    public double auctionCoefficient;
     @Value("${ru.wallentos.carworker.extra-pay-china.cny}")
     public int EXTRA_PAY_AMOUNT_CHINA_CNY;
     @Value("${ru.wallentos.carworker.extra-pay-china.rub}")
     public int EXTRA_PAY_AMOUNT_CHINA_RUB;
-    @Value("${ru.wallentos.carworker.enable-krw-link-mode}")
+    @Value("${ru.wallentos.carworker.enable-krw-link-mode:false}")
     public boolean enableKrwLinkMode;
-    @Value("${ru.wallentos.carworker.disable-double-convertation}")
+    @Value("${ru.wallentos.carworker.enable-krw-auction-mode:false}")
+    public boolean enableKrwAuctionMode;
+    @Value("${ru.wallentos.carworker.disable-double-convertation:false}")
     public boolean disableDoubleConvertation;
     @Value("${ru.wallentos.carworker.extra-pay-corea.krw}")
     public int EXTRA_PAY_AMOUNT_KOREA_KRW;

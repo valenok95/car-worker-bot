@@ -43,8 +43,7 @@ public class ExecutionService {
         restService.refreshExchangeRates();
         double rub = restService.getConversionRatesMap().get("RUB");
         restService.getConversionRatesMap().forEach((key, value) -> {
-            ConfigDataPool.manualConversionRatesMapInRubles.put(key,
-                    rub * configDataPool.coefficient / value);
+            ConfigDataPool.manualConversionRatesMapInRubles.put(key, rub * configDataPool.coefficient / value);
         });
     }
 
@@ -67,6 +66,12 @@ public class ExecutionService {
         return resultFeeRate;
     }
 
+    /**
+     * Расчёт стоимости автомобиля под ключ с учётом всех расходов.
+     *
+     * @param userCarInputData
+     * @return
+     */
     public CarPriceResultData executeCarPriceResultData(UserCarInputData userCarInputData) {
         CarPriceResultData resultData = new CarPriceResultData();
         resultData.setCarId(userCarInputData.getCarId());
@@ -81,9 +86,8 @@ public class ExecutionService {
         resultData.setRecyclingFee(calculateRecyclingFeeInRubles(getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume()));
         resultData.setFirstPriceInRubles(calculateFirstCarPriceInRublesByUserCarData(userCarInputData));
 //валютная надбавка  и рублёвая надбавка (Брокерские расходы, СВХ, СБКТС)
-        double extraPayAmountRublePart = executeRubExtraPayAmountInRublesByUserCarData(userCarInputData);
-        double extraPayAmountCurrencyPart =
-                executeValuteExtraPayAmountInRublesByUserCarData(userCarInputData);
+        double extraPayAmountRublePart = executeRubExtraPayAmountInRublesByUserCarData(userCarInputData.getCurrency());
+        double extraPayAmountCurrencyPart = executeValuteExtraPayAmountInRublesByUserCarData(userCarInputData.getCurrency(), userCarInputData.isSanctionCar());
         resultData.setExtraPayAmountInRubles(extraPayAmountRublePart);
         resultData.setExtraPayAmountInCurrency(extraPayAmountCurrencyPart);
 
@@ -93,11 +97,49 @@ public class ExecutionService {
         return resultData;
     }
 
+
+    /**
+     * Расчёт ставки аукциона исходя из данных пользователя.
+     *
+     * @param userCarInputData
+     * @return
+     */
+    public int executeAuctionResultInKrw(UserCarInputData userCarInputData) {
+        double resultAuctionPriceInKrw;
+        double auctionCleanPriceInRub = userCarInputData.getUserAuctionStartPrice()
+                - executeRubExtraPayAmountInRublesByUserCarData(KRW)
+                - 100_000 // Брокерские расходы 100 тыс. руб.
+                - executeValuteExtraPayAmountInRublesByUserCarData(KRW, true);
+        double dutyAuctionInRubles;
+        // Для новой тачки считаем таможню в евро от 70% чистой стоимости (без комиссий)
+        // Для авто от 3 лет считаем таможню как для цены 10 000EUR
+        if (userCarInputData.getAge().equals(NEW_CAR)) {
+            dutyAuctionInRubles =
+                    calculateDutyInRubles(convertMoneyToEuro(auctionCleanPriceInRub * (1 - configDataPool.auctionCoefficient), RUB),
+                            getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume());
+        } else {
+            dutyAuctionInRubles = calculateDutyInRubles(10_000, getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume());
+        }
+        double resultAuctionPriceInRub = auctionCleanPriceInRub - dutyAuctionInRubles;
+        resultAuctionPriceInKrw =
+                (resultAuctionPriceInRub) / ConfigDataPool.manualConversionRatesMapInRubles.get(KRW);
+
+        return roundDoubleToInt(resultAuctionPriceInKrw, 50_000); // округляем в меньшую сторону
+    }
+
+    /**
+     * Округлить число
+     *
+     * @param resultAuctionPriceInKrw
+     */
+    private int roundDoubleToInt(double resultAuctionPriceInKrw, int round) {
+        return ((int) resultAuctionPriceInKrw / round) * round;
+    }
+
     private double calculateFirstCarPriceInRublesByUserCarData(UserCarInputData userCarInputData) {
         String currentCurrency = userCarInputData.getCurrency();
         if (currentCurrency.equals(KRW) && !userCarInputData.isSanctionCar()) {
-            return (userCarInputData.getPrice() / restService.getCbrUsdKrwMinus20())
-                    * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
+            return (userCarInputData.getPrice() / restService.getCbrUsdKrwMinus20()) * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
         } else {
             return userCarInputData.getPrice() * ConfigDataPool.manualConversionRatesMapInRubles.get(currentCurrency);
         }
@@ -148,8 +190,8 @@ public class ExecutionService {
     /**
      * Рассчитываем доп взносы. Рублёвая часть. Брокерские расходы, СВХ, СБКТС.
      */
-    private double executeRubExtraPayAmountInRublesByUserCarData(UserCarInputData userCarInputData) {
-        switch (userCarInputData.getCurrency()) {
+    private double executeRubExtraPayAmountInRublesByUserCarData(String currency) {
+        switch (currency) {
             case KRW, USD:
                 return configDataPool.EXTRA_PAY_AMOUNT_KOREA_RUB;
             case CNY:
@@ -164,13 +206,10 @@ public class ExecutionService {
      * Рассчитываем доп взносы. Валютная часть. если тачка дешевле 50 000 USD - то двойная
      * конвертация.
      */
-    private double executeValuteExtraPayAmountInRublesByUserCarData(UserCarInputData userCarInputData) {
-        switch (userCarInputData.getCurrency()) {
+    private double executeValuteExtraPayAmountInRublesByUserCarData(String currency, boolean isSanctionCar) {
+        switch (currency) {
             case KRW:
-                return (configDataPool.disableDoubleConvertation ||
-                        userCarInputData.isSanctionCar() ?
-                        getExtraKrwPayAmountNormalConvertation() :
-                        getExtraKrwPayAmountDoubleConvertation());
+                return (configDataPool.disableDoubleConvertation || isSanctionCar ? getExtraKrwPayAmountNormalConvertation() : getExtraKrwPayAmountDoubleConvertation());
             case USD:
                 return getExtraKrwPayAmountNormalConvertation();
             case CNY:
@@ -189,8 +228,7 @@ public class ExecutionService {
      * ЦБ минус 20) и умножаем на ручной курс USD.
      */
     private double getExtraKrwPayAmountDoubleConvertation() {
-        double usdAmount =
-                configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW / restService.getCbrUsdKrwMinus20();
+        double usdAmount = configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW / restService.getCbrUsdKrwMinus20();
         return usdAmount * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
     }
 
@@ -367,6 +405,21 @@ public class ExecutionService {
         switch (currency) {
             case KRW:
                 return configDataPool.isEnableKrwLinkMode();
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Проверка, включен ли МОД для расчёта ставки на аукционе.
+     *
+     * @param currency
+     * @return
+     */
+    public boolean isAuctionModeEnabled(String currency) {
+        switch (currency) {
+            case KRW:
+                return configDataPool.isEnableKrwAuctionMode();
             default:
                 return false;
         }
