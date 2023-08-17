@@ -7,7 +7,7 @@ ru:
       currencies: KRW
       enable-krw-link-mode: ${ENABLE_KRW_LINK_MODE}
       disable-double-convertation: true
-      manager-link: @EastWayAdmin
+      manager-link: https://t.me/EastWayAdmin
       extra-pay-corea:
         krw: 3500000
         rub: 130000
