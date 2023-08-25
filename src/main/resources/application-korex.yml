@@ -9,6 +9,7 @@ ru:
       enable-krw-auction-mode: true
       auction-coefficient: ${AUCTION_COEFFICIENT}
       manager-link: https://t.me/korexadmin
+      user-prefix: "user_korex_"
       extra-pay-corea:
         krw: 2500000
         rub: 100000

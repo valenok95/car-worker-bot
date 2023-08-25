@@ -25,14 +25,14 @@ public class RedisCacheService {
      * @return
      */
     public EncarDto fetchAndUpdateEncarDtoByCarId(String carId) throws GetCarDetailException, RecaptchaException { // сделать приватным
-        EncarDto result = encarCache.getEncarDtoByCarId(carId);
+        EncarDto result = encarCache.getById(carId);
         if (Objects.nonNull(result)) {
             log.info("Получили в КЭШе авто id {}", carId);
             return result;
         }
         log.info("Попробуем найти и добавить в КЭШ автомобиль с id {}", carId);
         result = restService.getEncarDataByJsoup(carId);
-        encarCache.saveEncarDto(carId, result);
+        encarCache.save(carId, result);
         return result;
     }
 
@@ -52,11 +52,11 @@ public class RedisCacheService {
         EncarDto encarDto;
         try {
             encarDto = restService.getEncarDataByJsoup(carId);
-            encarCache.saveEncarDto(carId, encarDto);
+            encarCache.save(carId, encarDto);
             log.info("Обновлены данные для тачки:{}", encarDto);
         } catch (GetCarDetailException e) {
             log.error("can not update car ");
-            encarCache.deleteEncarDtoByCarId(carId);
+            encarCache.deleteById(carId);
         } catch (RecaptchaException e) {
             throw new RuntimeException(e);
         }

@@ -10,6 +10,7 @@ ru:
       auction-coefficient: ${AUCTION_COEFFICIENT}
       disable-double-convertation: true
       manager-link: https://t.me/EastWayAdmin
+      user-prefix: "user_east_"
       extra-pay-corea:
         krw: 3500000
         rub: 130000

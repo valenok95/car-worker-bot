@@ -38,7 +38,7 @@ public class WebController {
 
     @GetMapping("/getEncarByIdRedis")
     public ResponseEntity<?> getCarByIdRedis(@RequestParam String carId) {
-        return ResponseEntity.accepted().body(encarCache.getEncarDtoByCarId(carId));
+        return ResponseEntity.accepted().body(encarCache.getById(carId));
     }
 
     @GetMapping("/getEncarById")

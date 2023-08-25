@@ -5,11 +5,11 @@ import java.util.List;
 import ru.wallentos.carworker.model.EncarDto;
 
 public interface RedisCache {
-    void saveEncarDto(String carId, EncarDto encarDto);
+    void save(String id, Object value);
 
-    EncarDto getEncarDtoByCarId(String carId);
+    Object getById(String id);
 
-    void deleteEncarDtoByCarId(String carId);
+    void deleteById(String id);
     
     List<String> getAllKeys();
 }

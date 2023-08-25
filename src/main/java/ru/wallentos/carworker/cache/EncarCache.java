@@ -9,26 +9,28 @@ import ru.wallentos.carworker.model.EncarDto;
 
 @Repository
 public class EncarCache implements RedisCache {
+
+    private final String carPrefix = "car_";
     @Autowired
     private RedisTemplate<String, EncarDto> redisTemplate;
 
     @Override
-    public void saveEncarDto(String carId, EncarDto encarDto) {
-        redisTemplate.opsForValue().set(carId, encarDto);
+    public void save(String id, Object value) {
+        redisTemplate.opsForValue().set(carPrefix + id, (EncarDto) value);
     }
 
     @Override
-    public EncarDto getEncarDtoByCarId(String carId) {
-        return redisTemplate.opsForValue().get(carId);
+    public EncarDto getById(String id) {
+        return redisTemplate.opsForValue().get(carPrefix + id);
     }
 
     @Override
-    public void deleteEncarDtoByCarId(String carId) {
-        redisTemplate.delete(carId);
+    public void deleteById(String id) {
+        redisTemplate.delete(carPrefix + id);
     }
-    
+
     @Override
     public List<String> getAllKeys() {
-        return Objects.requireNonNull(redisTemplate.keys("*")).stream().toList();
+        return Objects.requireNonNull(redisTemplate.keys(carPrefix + "*")).stream().toList();
     }
 }
