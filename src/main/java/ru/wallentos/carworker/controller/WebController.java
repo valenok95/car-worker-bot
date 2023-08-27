@@ -8,26 +8,29 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.wallentos.carworker.cache.EncarCache;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
+import ru.wallentos.carworker.service.EncarCacheService;
 import ru.wallentos.carworker.service.RecaptchaService;
-import ru.wallentos.carworker.service.RedisCacheService;
 import ru.wallentos.carworker.service.RestService;
+import ru.wallentos.carworker.service.SubscribeService;
 import ru.wallentos.carworker.service.UtilService;
 
 @RestController
 public class WebController {
     private final RestService restService;
     private final EncarCache encarCache;
-    private final RedisCacheService redisCacheService;
+    private final EncarCacheService encarCacheService;
     private final UtilService utilService;
     private final RecaptchaService recaptchaService;
+    private final SubscribeService subscribeService;
 
     @Autowired
-    public WebController(RestService restService, EncarCache encarCache, RedisCacheService redisCacheService, UtilService utilService, RecaptchaService recaptchaService) {
+    public WebController(RestService restService, EncarCache encarCache, EncarCacheService encarCacheService, UtilService utilService, RecaptchaService recaptchaService, SubscribeService subscribeService) {
         this.restService = restService;
         this.encarCache = encarCache;
-        this.redisCacheService = redisCacheService;
+        this.encarCacheService = encarCacheService;
         this.utilService = utilService;
         this.recaptchaService = recaptchaService;
+        this.subscribeService = subscribeService;
     }
 
 
@@ -43,12 +46,20 @@ public class WebController {
 
     @GetMapping("/getEncarById")
     public ResponseEntity<?> getCarById(@RequestParam String carId) throws GetCarDetailException, RecaptchaException {
-        return ResponseEntity.accepted().body(redisCacheService.fetchAndUpdateEncarDtoByCarId(carId));
+        return ResponseEntity.accepted().body(encarCacheService.fetchAndUpdateEncarDtoByCarId(carId));
     }
 
     @GetMapping("/updateCache")
     public ResponseEntity<?> updateCache() {
-        redisCacheService.updateEncarCache();
+        encarCacheService.updateEncarCache();
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/sub")
+    public ResponseEntity<?> subtest() {
+        subscribeService.subscribeUser(1234567);
+        subscribeService.unSubscribeUser(1234567);
+        subscribeService.getSubscribers();
         return ResponseEntity.ok().build();
     }
 
@@ -56,6 +67,7 @@ public class WebController {
     public ResponseEntity<?> parseFemLink(@RequestParam String input) throws GetCarDetailException {
         return ResponseEntity.ok(utilService.parseLinkToCarId(input));
     }
+
     @GetMapping("/solveCaptcha")
     public ResponseEntity<?> parseFemLink() {
         recaptchaService.solveReCaptchaDemo();

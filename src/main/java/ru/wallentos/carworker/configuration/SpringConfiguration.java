@@ -12,7 +12,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.web.client.RestTemplate;
-import ru.wallentos.carworker.model.EncarDto;
 
 @Configuration
 public class SpringConfiguration {
@@ -22,8 +21,8 @@ public class SpringConfiguration {
     }
 
     @Bean
-    public RedisTemplate<String, EncarDto> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, EncarDto> template = new RedisTemplate<>();
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
 

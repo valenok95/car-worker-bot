@@ -1,8 +1,10 @@
 package ru.wallentos.carworker.service;
 
 import static ru.wallentos.carworker.configuration.ConfigDataPool.AUCTION_BUTTON;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.CANCEL_MESSAGE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.CANCEL_BUTTON;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.CANCEL_MAILING_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.CONFIRM_MAILING_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.KRW;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.LINK_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.MANAGER_MESSAGE;
@@ -20,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
@@ -52,9 +56,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     @Value("${ru.wallentos.carworker.manager-link}")
     public String managerLink;
-
-    @Value("${ru.wallentos.carworker.admin-id}")
-    public int adminId;
     @Autowired
     private RestService restService;
     @Autowired
@@ -63,9 +64,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
     @Autowired
     private UtilService utilService;
     @Autowired
-    private RedisCacheService redisCacheService;
+    private EncarCacheService encarCacheService;
     @Autowired
     private ExecutionService executionService;
+    @Autowired
+    private SubscribeService subscribeService;
     @Autowired
     private UserDataCache cache;
 
@@ -117,20 +120,75 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 case "/settingservice":
                     setCurrencyCommandReceived(chatId);
                     break;
+                case "/mail":
+                    mailingMenuCommandReceived(chatId);
+                    break;
+                case "/sleep":
+                    unsubscribeCommandReceived(chatId);
+                    break;
                 default:
                     handleMessage(update, receivedText);
                     break;
+            }
+        } else if (update.hasMessage() && update.getMessage().hasPhoto()) {
+            long chatId = update.getMessage().getChatId();
+            BotState state = cache.getUsersCurrentBotState(chatId);
+            switch (state) {
+                case MAILING_MENU -> processSendPhotoMail(update);
+                default -> unrecognizedCommandReceived(update.getMessage().getChatId());
             }
         } else {
             unrecognizedCommandReceived(update.getMessage().getChatId());
         }
     }
 
+    /**
+     * Получаем предварительные данные по рассылке - сохраняем их.
+     * Отдаём эхо + кнопки.
+     *
+     * @param update
+     */
+    private void processSendPhotoMail(Update update) {
+        log.info("photo received");
+        long chatId = update.getMessage().getChatId();
+        String photoData = update.getMessage().getPhoto().get(0).getFileId();
+        String caption = update.getMessage().getCaption();
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        InlineKeyboardButton confirmMailingButton = new InlineKeyboardButton(CONFIRM_MAILING_BUTTON);
+        InlineKeyboardButton cancelButton = new InlineKeyboardButton(CANCEL_MAILING_BUTTON);
+
+        confirmMailingButton.setCallbackData(CONFIRM_MAILING_BUTTON);
+        cancelButton.setCallbackData(CANCEL_MAILING_BUTTON);
+        row1.add(confirmMailingButton);
+        row2.add(cancelButton);
+        rows.add(row1);
+        rows.add(row2);
+        inlineKeyboardMarkup.setKeyboard(rows);
+
+        String text = String.format("""
+                Подтвердите сообщение для рассылки:
+                """);
+        executeMessage(utilService.prepareSendMessage(chatId, text));
+        executeMessage(utilService.prepareSendMessage(chatId, photoData, caption, inlineKeyboardMarkup));
+        subscribeService.setMailingText(caption);
+        subscribeService.setPhotoData(photoData);
+    }
+
+    private void unsubscribeCommandReceived(long chatId) {
+        String text = "Вы были отключены от рассылки.";
+        executeMessage(utilService.prepareSendMessage(chatId, text));
+        subscribeService.unSubscribeUser(chatId);
+        log.info("пользователь {} отписался от рассылки", chatId);
+    }
+
     private void handleCallbackData(String callbackData, Update update) {
         long chatId = update.getCallbackQuery().getMessage().getChatId();
         BotState currentState = cache.getUsersCurrentBotState(chatId);
         switch (callbackData) {
-            case TO_START_MESSAGE, RESET_MESSAGE, CANCEL_MESSAGE:
+            case TO_START_MESSAGE, RESET_MESSAGE, CANCEL_BUTTON:
                 startCommandReceived(chatId, update.getCallbackQuery().getMessage().getChat().getFirstName());
                 return;
             case TO_SET_CURRENCY_MENU:
@@ -145,6 +203,14 @@ public class TelegramBotService extends TelegramLongPollingBot {
             case MANUAL_BUTTON:
                 processManualCalculation(chatId);
                 return;
+            case CONFIRM_MAILING_BUTTON:
+                doMailing(chatId);
+                return;
+            case CANCEL_MAILING_BUTTON:
+                mailingMenuCommandReceived(chatId);
+                return;
+            default:
+                break;
         }
         switch (currentState) {
             case ASK_CURRENCY:
@@ -182,7 +248,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
      * @param chatId
      */
     private void setCurrencyCommandReceived(long chatId) {
-        if (adminId != chatId) {
+        if (configDataPool.getAdminId() != chatId) {
             executeMessage(utilService.prepareSendMessage(chatId, "Доступ к функционалу ограничен"));
             return;
         }
@@ -212,6 +278,27 @@ public class TelegramBotService extends TelegramLongPollingBot {
         cache.setUsersCurrentBotState(chatId, BotState.SET_CURRENCY_MENU);
     }
 
+    /**
+     * Рассылка подписчикам.
+     *
+     * @param chatId
+     */
+    private void mailingMenuCommandReceived(long chatId) {
+        if (configDataPool.getAdminId() != chatId) {
+            executeMessage(utilService.prepareSendMessage(chatId, "Доступ к функционалу ограничен"));
+            return;
+        }
+        String message = """
+                Меню рассылки.
+                Сообщение будет разослано всем подписчикам бота.            
+                                
+                Введите текст рассылки (в ответ вы получите предпросмотр рассылаемого сообщения):
+                    """;
+        executeMessage(utilService.prepareSendMessage(chatId, message));
+        cache.setUsersCurrentBotState(chatId, BotState.MAILING_MENU);
+        subscribeService.cleanData();
+    }
+
 
     private void handleMessage(Update update, String receivedText) {
         long chatId = update.getMessage().getChatId();
@@ -236,6 +323,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 case WAITING_FOR_LINK:
                     processCalculateByLink(chatId, receivedText);
                     break;
+                case MAILING_MENU:
+                    processStartMailing(update);
+                    break;
                 default:
                     break;
             }
@@ -243,6 +333,38 @@ public class TelegramBotService extends TelegramLongPollingBot {
             executeMessage(utilService.prepareSendMessage(chatId, "Некорректный формат данных, попробуйте ещё раз."));
             return;
         }
+    }
+
+    /**
+     * Получили сообщение для рассылки без ФОТО.
+     * Сохраняем текст для последующей отправки.
+     *
+     * @param update
+     */
+    private void processStartMailing(Update update) {
+        long chatId = update.getMessage().getChatId();
+        String receivedText = update.getMessage().getText();
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        InlineKeyboardButton confirmMailingButton = new InlineKeyboardButton(CONFIRM_MAILING_BUTTON);
+        InlineKeyboardButton cancelButton = new InlineKeyboardButton(CANCEL_MAILING_BUTTON);
+
+        confirmMailingButton.setCallbackData(CONFIRM_MAILING_BUTTON);
+        cancelButton.setCallbackData(CANCEL_MAILING_BUTTON);
+        row1.add(confirmMailingButton);
+        row2.add(cancelButton);
+        rows.add(row1);
+        rows.add(row2);
+        inlineKeyboardMarkup.setKeyboard(rows);
+
+        String text = String.format("""
+                Подтвердите сообщение для рассылки:
+                """);
+        subscribeService.setMailingText(update.getMessage().getText());
+        executeMessage(utilService.prepareSendMessage(chatId, text));
+        executeMessage(utilService.prepareSendMessage(chatId, receivedText, inlineKeyboardMarkup));
     }
 
     private void processSetCurrency(long chatId, String receivedText) {
@@ -479,6 +601,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         if (configDataPool.isSingleCurrencyMode()) { //singleCurrencyMode не спрашиваем валюту
             processSingleCurrencyStart(chatId, name);
             restService.refreshExchangeRates();
+            subscribeService.subscribeUser(chatId);
             return;
         }
         String message = String.format("""
@@ -500,6 +623,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         executeMessage(utilService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
         cache.setUsersCurrentBotState(chatId, BotState.ASK_CURRENCY);
         restService.refreshExchangeRates();
+        subscribeService.subscribeUser(chatId);
     }
 
     private void cbrCommandReceived(long chatId) {
@@ -631,6 +755,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         var data = cache.getUserCarData(chatId);
         switch (data.getCurrency()) {
             case KRW -> processAskEncarLink(update);
+            default -> log.info("ask link unavaliable for currency");
         }
     }
 
@@ -649,6 +774,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         var data = cache.getUserCarData(chatId);
         switch (data.getCurrency()) {
             case KRW -> processCalculateByEncarLink(chatId, link);
+            default -> log.info("Link mode unavaliable for currency");
         }
     }
 
@@ -663,7 +789,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         EncarDto encarDto;
         try {
             carId = utilService.parseLinkToCarId(link);
-            encarDto = redisCacheService.fetchAndUpdateEncarDtoByCarId(carId);
+            encarDto = encarCacheService.fetchAndUpdateEncarDtoByCarId(carId);
         } catch (GetCarDetailException | RecaptchaException e) {
             String errorMessage = """
                     Ошибка получения данных с сайта Encar.com
@@ -673,8 +799,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> rows = new ArrayList<>();
             List<InlineKeyboardButton> row = new ArrayList<>();
-            InlineKeyboardButton cancelButton = new InlineKeyboardButton(CANCEL_MESSAGE);
-            cancelButton.setCallbackData(CANCEL_MESSAGE);
+            InlineKeyboardButton cancelButton = new InlineKeyboardButton(CANCEL_BUTTON);
+            cancelButton.setCallbackData(CANCEL_BUTTON);
             row.add(cancelButton);
             rows.add(row);
             inlineKeyboardMarkup.setKeyboard(rows);
@@ -753,4 +879,51 @@ public class TelegramBotService extends TelegramLongPollingBot {
             throw new RuntimeException(e);
         }
     }
+
+    private void executeMessage(SendPhoto message) {
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    /**
+     * Делаем рассылку на основании данных в сервисе подписчиков. Если есть фото-данные, то
+     * отправляем данные с фото, иначе отправляем просто текст рассылки. После рассылки удаляем
+     * данные для рассылки.
+     *
+     * @param chatId
+     */
+    private void doMailing(long chatId) {
+        String startMessage = """
+                Рассылка запущена. 
+                Дождитесь уведомление об окончании рассылки прежде, чем начать новую рассылку.
+                    """;
+        executeMessage(utilService.prepareSendMessage(chatId, startMessage));
+        List<Long> subscriptionIds = subscribeService.getSubscribers();
+        subscriptionIds.forEach(id -> {
+            try {
+                if (Objects.nonNull(subscribeService.getPhotoData())) {
+                    executeMessage(utilService.prepareSendMessage(id, subscribeService.getPhotoData(), subscribeService.getMailingText()));
+                } else {
+                    executeMessage(utilService.prepareSendMessage(id, subscribeService.getMailingText()));
+                }
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                log.warn("Interrupted!", e);
+                // Restore interrupted state...
+                Thread.currentThread().interrupt();
+            }
+        });
+        String finishMessage = """
+                Рассылка успешно завершена.
+                Теперь можно вернуться в меню рассылок /mail 
+                    """;
+        executeMessage(utilService.prepareSendMessage(chatId, finishMessage));
+        subscribeService.cleanData();
+    }
+
+
 }

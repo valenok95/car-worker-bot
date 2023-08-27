@@ -19,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.model.CarPriceResultData;
@@ -44,6 +46,26 @@ public class UtilService {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         message.setText(text);
+        return message;
+    }
+
+    protected SendPhoto prepareSendMessage(long chatId, String file, String text) {
+        SendPhoto message = SendPhoto.builder()
+                .chatId(chatId)
+                .caption(text)
+                .photo(new InputFile(file))
+                .build();
+        return message;
+    }
+
+    protected SendPhoto prepareSendMessage(long chatId, String file, String text, InlineKeyboardMarkup
+            inlineKeyboardMarkup) {
+        SendPhoto message = SendPhoto.builder()
+                .chatId(chatId)
+                .caption(text)
+                .photo(new InputFile(file))
+                .replyMarkup(inlineKeyboardMarkup)
+                .build();
         return message;
     }
 
@@ -117,6 +139,7 @@ public class UtilService {
         matcher.find();
         return matcher.group(1);
     }
+
     /**
      * Вытащить siteKey со строки каптчи.
      */
@@ -136,7 +159,6 @@ public class UtilService {
         matcher.find();
         return matcher.group(1);
     }
-
 
 
     protected String getResultMessageByBotNameAndCurrency(String botName, String currency, CarPriceResultData resultData) {

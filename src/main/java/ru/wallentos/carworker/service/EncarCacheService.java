@@ -12,7 +12,7 @@ import ru.wallentos.carworker.model.EncarDto;
 
 @Service
 @Slf4j
-public class RedisCacheService {
+public class EncarCacheService {
     @Autowired
     private EncarCache encarCache;
     @Autowired

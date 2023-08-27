@@ -6,6 +6,7 @@ package ru.wallentos.carworker.model;
 
 public enum BotState {
     SET_CURRENCY_MENU,
+    MAILING_MENU,
     SET_CURRENCY,
     ASK_CURRENCY,
     ASK_PRICE,

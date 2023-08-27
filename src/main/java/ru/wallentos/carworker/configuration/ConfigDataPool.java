@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Configuration;
 @Data
 @Configuration
 public class ConfigDataPool {
+    @Value("${ru.wallentos.carworker.admin-id}")
+    public int adminId;
     @Value(value = "${ru.wallentos.carworker.currencies}")
     private List<String> currencies;
     public static final String EUR = "EUR";
@@ -19,6 +21,8 @@ public class ConfigDataPool {
     public static final String USD = "USD";
     public static final String KRW = "KRW";
     public static final String CNY = "CNY";
+    public static final String CONFIRM_MAILING_BUTTON = "Подтвердить";
+    public static final String CANCEL_MAILING_BUTTON = "Отменить";
     public static final String LINK_BUTTON = "Расчёт по ссылке";
     public static final String AUCTION_BUTTON = "Расчёт ставки на аукционе";
     public static final String MANUAL_BUTTON = "Расчёт вручную";
@@ -111,7 +115,7 @@ public class ConfigDataPool {
     public static final String NEW_CAR = "До 3 лет";
     public static final String NORMAL_CAR = "От 3 до 5 лет";
     public static final String OLD_CAR = "От 5 лет";
-    public static final String CANCEL_MESSAGE = "Отмена";
+    public static final String CANCEL_BUTTON = "Отмена";
     public static final String RESET_MESSAGE = "Рассчитать ещё один автомобиль";
     public static final String TO_START_MESSAGE = "Рассчитать автомобиль";
     public static final String TO_SET_CURRENCY_MENU = "Меню установки валюты";
