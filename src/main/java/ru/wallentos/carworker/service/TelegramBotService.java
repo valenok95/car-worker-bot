@@ -288,12 +288,14 @@ public class TelegramBotService extends TelegramLongPollingBot {
             executeMessage(utilService.prepareSendMessage(chatId, "Доступ к функционалу ограничен"));
             return;
         }
-        String message = """
+        long subCount = subscribeService.getSubscribers().size();
+        String message = String.format("""
                 Меню рассылки.
+                Количество подписчиков: %d.
                 Сообщение будет разослано всем подписчикам бота.            
                                 
                 Введите текст рассылки (в ответ вы получите предпросмотр рассылаемого сообщения):
-                    """;
+                    """, subCount);
         executeMessage(utilService.prepareSendMessage(chatId, message));
         cache.setUsersCurrentBotState(chatId, BotState.MAILING_MENU);
         subscribeService.cleanData();
