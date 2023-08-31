@@ -45,8 +45,8 @@ import ru.wallentos.carworker.configuration.ConfigDataPool;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
 import ru.wallentos.carworker.model.BotState;
-import ru.wallentos.carworker.model.CarPriceResultData;
 import ru.wallentos.carworker.model.CarDto;
+import ru.wallentos.carworker.model.CarPriceResultData;
 import ru.wallentos.carworker.model.UserCarInputData;
 
 @Service
@@ -763,7 +763,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     private void processAskEncarLink(Update update) {
         long chatId = update.getCallbackQuery().getMessage().getChatId();
-        executeMessage(utilService.prepareSendMessage(chatId, "Вставьте ссылку с сайта Encar.com"));
+        executeMessage(utilService.prepareSendMessage(chatId, "Пожалуйста, вставьте ссылку с сайта Encar.com"));
         cache.setUsersCurrentBotState(chatId, BotState.WAITING_FOR_LINK);
     }
 
