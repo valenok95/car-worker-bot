@@ -66,7 +66,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
     @Autowired
     private EncarCacheService encarCacheService;
     @Autowired
-    private CheCarService cheCarService;
+    private CheCarCacheService cheCarCacheService;
     @Autowired
     private ExecutionService executionService;
     @Autowired
@@ -766,6 +766,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     /**
      * Спрашиваем ссылку на корейский сайт.
+     *
      * @param update
      */
     private void processAskEncarLink(Update update) {
@@ -776,6 +777,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     /**
      * Спрашиваем ссылку на китайский сайт.
+     *
      * @param update
      */
     private void processAskCheCarLink(Update update) {
@@ -848,7 +850,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         CarDto carDto;
         try {
             carId = utilService.parseLinkToCarId(link);
-            carDto = cheCarService.fetchAndUpdateCheCarDtoByCarId(carId);
+            carDto = cheCarCacheService.fetchAndUpdateCheCarDtoByCarId(carId);
         } catch (GetCarDetailException | RecaptchaException e) {
             String errorMessage = """
                     Ошибка получения данных с сайта che168.com

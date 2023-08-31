@@ -10,9 +10,12 @@ import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
 import ru.wallentos.carworker.model.CarDto;
 
+/**
+ * Сервис для работы с данными che168.com .
+ */
 @Service
 @Slf4j
-public class CheCarService {
+public class CheCarCacheService {
     @Autowired
     private CheCarCache cheCarCache;
     @Autowired

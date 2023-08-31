@@ -10,6 +10,9 @@ import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
 import ru.wallentos.carworker.model.CarDto;
 
+/**
+ * Сервис по работе с КЭШом данных encar
+ */
 @Service
 @Slf4j
 public class EncarCacheService {

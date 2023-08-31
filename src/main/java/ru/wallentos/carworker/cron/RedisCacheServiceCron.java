@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import ru.wallentos.carworker.service.CheCarCacheService;
 import ru.wallentos.carworker.service.EncarCacheService;
 
 @Component
@@ -15,6 +16,8 @@ public class RedisCacheServiceCron {
 
     @Autowired
     EncarCacheService encarCacheService;
+    @Autowired
+    CheCarCacheService cheCarCacheService;
 
     /**
      * Задание на обновление КЭШа для мастер-бота.
@@ -24,6 +27,7 @@ public class RedisCacheServiceCron {
         if (isMasterBot) {
             log.info("Начинаем обновление КЭШа");
             encarCacheService.updateEncarCache();
+            cheCarCacheService.updateCheCarCache();
         }
     }
 }

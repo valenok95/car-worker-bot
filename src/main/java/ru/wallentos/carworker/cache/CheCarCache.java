@@ -31,6 +31,6 @@ public class CheCarCache implements RedisCache {
 
     @Override
     public List<String> getAllKeys() {
-        return Objects.requireNonNull(redisTemplate.keys(cheCarPrefix + "*")).stream().toList();
+        return Objects.requireNonNull(redisTemplate.keys(cheCarPrefix + "*")).stream().map(key -> key.replace(cheCarPrefix, "")).toList();
     }
 }
