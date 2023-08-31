@@ -31,6 +31,6 @@ public class EncarCache implements RedisCache {
 
     @Override
     public List<String> getAllKeys() {
-        return Objects.requireNonNull(redisTemplate.keys(encarPrefix + "*")).stream().toList();
+        return Objects.requireNonNull(redisTemplate.keys(encarPrefix + "*")).stream().map(key->key.replace(encarPrefix,"")).toList();
     }
 }
