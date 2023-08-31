@@ -46,7 +46,7 @@ import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
 import ru.wallentos.carworker.model.BotState;
 import ru.wallentos.carworker.model.CarPriceResultData;
-import ru.wallentos.carworker.model.EncarDto;
+import ru.wallentos.carworker.model.CarDto;
 import ru.wallentos.carworker.model.UserCarInputData;
 
 @Service
@@ -237,7 +237,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
      */
     private void processAuction(Update update) {
         var chatId = update.getCallbackQuery().getMessage().getChatId();
-        String text = "Введите бюджет в рублях";
+        String text = "Пожалуйста, введите бюджет в рублях";
         executeMessage(utilService.prepareSendMessage(chatId, text));
         cache.setUsersCurrentBotState(chatId, BotState.ASK_AUCTION_START_PRICE);
     }
@@ -268,7 +268,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 %s
                 USD = %,.4f  ₽
                     
-                Выберите валюту для ручной установки курса:
+                Пожалуйста, выберите валюту для ручной установки курса:
                     """, builder, ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
         usdButton.setCallbackData(USD);
         row.add(usdButton);
@@ -405,7 +405,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         data.setPriceInEuro(executionService.convertMoneyToEuro(priceInCurrency, data.getCurrency()));
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.ASK_ISSUE_DATE);
-        String text = "Выберите возраст автомобиля:";
+        String text = "Пожалуйста, выберите возраст автомобиля:";
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
@@ -437,7 +437,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         data.setPriceInEuro(executionService.convertMoneyToEuro(auctionStartPrice, data.getCurrency()));
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.ASK_AUCTION_ISSUE_DATE);
-        String text = "Выберите возраст автомобиля:";
+        String text = "Пожалуйста, выберите возраст автомобиля:";
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
@@ -467,7 +467,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.ASK_VOLUME);
         String text = """
-                Введите объем двигателя в кубических сантиметрах.
+                Пожалуйста, введите объем двигателя в кубических сантиметрах.
                                 
                 Пример: 1995""";
 
@@ -486,7 +486,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.ASK_AUCTION_VOLUME);
         String text = """
-                Введите объем двигателя в кубических сантиметрах.
+                Пожалуйста, введите объем двигателя в кубических сантиметрах.
                                 
                 Пример: 1995""";
 
@@ -609,7 +609,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         String message = String.format("""
                 Здравствуйте, %s!
                         
-                Для расчета автомобиля из южной Кореи выберите KRW, для автомобиля из Китая CNY.
+                Для расчета автомобиля из южной Кореи, пожалуйста, выберите KRW, для автомобиля из Китая CNY.
                 """, name);
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -707,7 +707,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         String text = String.format("""
                 Тип валюты: %s 
                                                 
-                Теперь введите стоимость автомобиля в валюте.
+                Пожалуйста, введите стоимость автомобиля в валюте.
                 """, currency);
         executeMessage(utilService.prepareSendMessage(chatId, text));
         cache.setUsersCurrentBotState(chatId, BotState.ASK_PRICE);
@@ -718,7 +718,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
      */
     private void processChooseModeForCalculation(long chatId, boolean isLinkModeEnabled, boolean isAuctionModeEnabled) {
         String message = """
-                Выберите тип расчёта 🔻
+                Вы можете выбрать тип расчёта 🔻
                 """;
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -788,10 +788,10 @@ public class TelegramBotService extends TelegramLongPollingBot {
      */
     private void processCalculateByEncarLink(long chatId, String link) {
         String carId;
-        EncarDto encarDto;
+        CarDto carDto;
         try {
             carId = utilService.parseLinkToCarId(link);
-            encarDto = encarCacheService.fetchAndUpdateEncarDtoByCarId(carId);
+            carDto = encarCacheService.fetchAndUpdateEncarDtoByCarId(carId);
         } catch (GetCarDetailException | RecaptchaException e) {
             String errorMessage = """
                     Ошибка получения данных с сайта Encar.com
@@ -810,12 +810,12 @@ public class TelegramBotService extends TelegramLongPollingBot {
             return;
         }
         UserCarInputData data = cache.getUserCarData(chatId);
-        int priceInCurrency = encarDto.getRawCarPrice() * 10_000;
+        int priceInCurrency = carDto.getRawCarPrice() * 10_000;
         data.setPrice(priceInCurrency);
         data.setPriceInEuro(executionService.convertMoneyToEuro(priceInCurrency, data.getCurrency()));
-        data.setVolume(encarDto.getRawCarPower());
-        data.setAge(executionService.calculateCarAgeByRawDate(encarDto.getRawCarYear(), encarDto.getRawCarMonth()));
-        data.setCarId(encarDto.getCarId());
+        data.setVolume(carDto.getRawCarPower());
+        data.setAge(executionService.calculateCarAgeByRawDate(carDto.getRawCarYear(), carDto.getRawCarMonth()));
+        data.setCarId(carDto.getCarId());
         processExecuteResult(data, chatId);
     }
 

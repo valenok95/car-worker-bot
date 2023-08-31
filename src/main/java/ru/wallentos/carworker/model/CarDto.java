@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 @Data
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class EncarDto {
+public class CarDto {
     private int carId;
     private int rawCarPrice;
     private int rawCarYear;

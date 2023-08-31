@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import ru.wallentos.carworker.cache.EncarCache;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
-import ru.wallentos.carworker.model.EncarDto;
+import ru.wallentos.carworker.model.CarDto;
 
 @Service
 @Slf4j
@@ -24,8 +24,8 @@ public class EncarCacheService {
      * @param carId
      * @return
      */
-    public EncarDto fetchAndUpdateEncarDtoByCarId(String carId) throws GetCarDetailException, RecaptchaException { // сделать приватным
-        EncarDto result = encarCache.getById(carId);
+    public CarDto fetchAndUpdateEncarDtoByCarId(String carId) throws GetCarDetailException, RecaptchaException { // сделать приватным
+        CarDto result = encarCache.getById(carId);
         if (Objects.nonNull(result)) {
             log.info("Получили в КЭШе авто id {}", carId);
             return result;
@@ -49,11 +49,11 @@ public class EncarCacheService {
      * Запускаем обновление КЭШа.
      */
     private void updateEncarCacheByCarId(String carId) { // 
-        EncarDto encarDto;
+        CarDto carDto;
         try {
-            encarDto = restService.getEncarDataByJsoup(carId);
-            encarCache.save(carId, encarDto);
-            log.info("Обновлены данные для тачки:{}", encarDto);
+            carDto = restService.getEncarDataByJsoup(carId);
+            encarCache.save(carId, carDto);
+            log.info("Обновлены данные для тачки:{}", carDto);
         } catch (GetCarDetailException e) {
             log.error("can not update car ");
             encarCache.deleteById(carId);

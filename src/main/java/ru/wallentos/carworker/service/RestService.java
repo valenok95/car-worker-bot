@@ -16,7 +16,7 @@ import org.springframework.web.client.RestTemplate;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
 import ru.wallentos.carworker.model.EncarConverter;
-import ru.wallentos.carworker.model.EncarDto;
+import ru.wallentos.carworker.model.CarDto;
 import ru.wallentos.carworker.model.EncarEntity;
 
 @Service
@@ -29,6 +29,8 @@ public class RestService {
     private String naverMethod;
     @Value("${ru.wallentos.carworker.exchange-api.host-encar}")
     private String encarMethod;
+    @Value("${ru.wallentos.carworker.exchange-api.host-che}")
+    private String cheMethod;
     private RestTemplate restTemplate;
     private UtilService utilService;
     private ObjectMapper mapper;
@@ -67,12 +69,44 @@ public class RestService {
         }
     }
 
-    public EncarDto getEncarDataByJsoup(String carId) throws GetCarDetailException, RecaptchaException {
+    public CarDto getEncarDataByJsoup(String carId) throws GetCarDetailException, RecaptchaException {
         Document document = null;
         try {
             var connection = Jsoup.connect(encarMethod + carId).userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
             connection.execute();
             connection.execute();
+            document = Jsoup.parse(connection.execute().body());
+            String valueJson =
+                    document.select("script:containsData(PRELOADED_STATE)").get(0).childNodes().get(0).toString().replace("__PRELOADED_STATE__ = ", "");
+            var json = mapper.readTree(valueJson);
+            if (document.toString().contains("recaptcha")) {
+                String errorMessage = "Требуется решение каптчи.";
+                log.warn(errorMessage);
+                throw new RecaptchaException(errorMessage);
+            }
+            var encarEntity = new EncarEntity(
+                    carId,
+                    json.get("cars").get("base").get("advertisement").get("price").asText(),
+                    json.get("cars").get("base").get("category").get("formYear").asText(),
+                    json.get("cars").get("base").get("category").get("yearMonth").asText().substring(4, 6),
+                    json.get("cars").get("base").get("spec").get("displacement").asText());
+            return encarConverter.convertToDto(encarEntity);
+        } catch (RecaptchaException e) {
+            recaptchaService.solveReCaptcha(encarMethod + carId, document);
+            throw e;
+        } catch (IOException | NullPointerException e) {
+            String errorMessage = String.format("Error while getting info by id %s",
+                    carId);
+            throw new GetCarDetailException(errorMessage);
+        }
+    }
+
+    public CarDto getCheDataByJsoup(String carId) throws GetCarDetailException, RecaptchaException {
+        Document document = null;
+        try {
+            var connection = Jsoup.connect(cheMethod + carId + "html").userAgent("Mozilla/5.0 " +
+                    "(X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
+            //connection.execute();
             document = Jsoup.parse(connection.execute().body());
             String valueJson =
                     document.select("script:containsData(PRELOADED_STATE)").get(0).childNodes().get(0).toString().replace("__PRELOADED_STATE__ = ", "");

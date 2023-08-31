@@ -11,7 +11,7 @@ public class EncarConverter {
         this.modelMapper = new ModelMapper();
     }
 
-    public EncarDto convertToDto(EncarEntity entity) {
-        return modelMapper.map(entity, EncarDto.class);
+    public CarDto convertToDto(EncarEntity entity) {
+        return modelMapper.map(entity, CarDto.class);
     }
 }

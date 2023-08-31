@@ -38,6 +38,10 @@ public class WebController {
     public ResponseEntity<?> getCarByIdJsoup(@RequestParam String carId) throws GetCarDetailException, RecaptchaException {
         return ResponseEntity.accepted().body(restService.getEncarDataByJsoup(carId));
     }
+    @GetMapping("/getCheByIdJsoup")
+    public ResponseEntity<?> getCheCarByIdJsoup(@RequestParam String carId) throws GetCarDetailException, RecaptchaException {
+        return ResponseEntity.accepted().body(restService.getCheDataByJsoup(carId));
+    }
 
     @GetMapping("/getEncarByIdRedis")
     public ResponseEntity<?> getCarByIdRedis(@RequestParam String carId) {
