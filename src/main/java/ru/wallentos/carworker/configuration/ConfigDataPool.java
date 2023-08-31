@@ -36,6 +36,8 @@ public class ConfigDataPool {
     public int EXTRA_PAY_AMOUNT_CHINA_RUB;
     @Value("${ru.wallentos.carworker.enable-krw-link-mode:false}")
     public boolean enableKrwLinkMode;
+    @Value("${ru.wallentos.carworker.enable-cny-link-mode:false}")
+    public boolean enableCnyLinkMode;
     @Value("${ru.wallentos.carworker.enable-krw-auction-mode:false}")
     public boolean enableKrwAuctionMode;
     @Value("${ru.wallentos.carworker.disable-double-convertation:false}")

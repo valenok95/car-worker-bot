@@ -405,6 +405,8 @@ public class ExecutionService {
         switch (currency) {
             case KRW:
                 return configDataPool.isEnableKrwLinkMode();
+            case CNY:
+                return configDataPool.isEnableCnyLinkMode();
             default:
                 return false;
         }

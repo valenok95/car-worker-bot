@@ -108,12 +108,13 @@ public class UtilService {
                 return parseFemEncarLinkToCarId(link);
             } else if (link.contains("encar.com")) {
                 return parseEncarLinkToCarId(link);
+            } else if (link.contains("che168.com")) {
+                return parseCheCarLinkToCarId(link);
             } else {
                 throw new RuntimeException("неопознанная ссылка " + link);
             }
         } catch (Exception e) {
-            String errorMessage = String.format("Ошибка при обработке ссылки, carId должен " +
-                    "состоять состоит из 8 цифр");
+            String errorMessage = "Ошибка при обработке ссылки";
             log.error(errorMessage);
             throw new GetCarDetailException(errorMessage);
         }
@@ -141,6 +142,16 @@ public class UtilService {
     }
 
     /**
+     * Вытащить id из ссылки che168.com.
+     */
+    private String parseCheCarLinkToCarId(String link) {
+        Pattern pattern = Pattern.compile("\\/(\\d+)\\.html");
+        Matcher matcher = pattern.matcher(link);
+        matcher.find();
+        return matcher.group(1);
+    }
+
+    /**
      * Вытащить siteKey со строки каптчи.
      */
     public String parseCaptchaKey(String string) {
@@ -155,6 +166,16 @@ public class UtilService {
      */
     public String parseCaptchaAction(String string) {
         Pattern pattern = Pattern.compile("action: \\'(.+?(?=\\'))");
+        Matcher matcher = pattern.matcher(string);
+        matcher.find();
+        return matcher.group(1);
+    }
+
+    /**
+     * Вытащить объём двигателя из строки che168.
+     */
+    public String parseCheCarPower(String string) {
+        Pattern pattern = Pattern.compile("排量\\(mL\\)\\\", \"id\": \\d+, \"value\\\": \\\"(\\d+)");
         Matcher matcher = pattern.matcher(string);
         matcher.find();
         return matcher.group(1);
@@ -243,8 +264,20 @@ public class UtilService {
                 getEncarLinkStringByCarId(resultData.getCarId()));
     }
 
-
+    /**
+     * Получаем ссылку на автомобиль
+     *
+     * @param carId
+     * @return
+     */
     private String getEncarLinkStringByCarId(int carId) {
+        return carId != 0 ? String.format("""
+                                
+                <a href="https://fem.encar.com/cars/detail/%d">🔗Ссылка на автомобиль</a>                
+                """, carId) : "";
+    }
+
+    private String getCheCarLinkStringByCarId(int carId) {
         return carId != 0 ? String.format("""
                                 
                 <a href="https://fem.encar.com/cars/detail/%d">🔗Ссылка на автомобиль</a>                

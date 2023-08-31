@@ -12,13 +12,14 @@ ru:
         krw: 2500000
         rub: 70000
       extra-pay-china:
-        cny: 2500000
-        rub: 70000
+        cny: 25000
+        rub: 250000
       exchange-api:
         host-cbr: https://www.cbr-xml-daily.ru/daily_json.js
         host-naver: https://finance.naver.com/marketindex/exchangeDetail.nhn?marketindexCd=FX_USDKRW
         host-encar: https://fem.encar.com/cars/detail/
-        host-che: https://www.che168.com/dealer//
+        host-che-start: https://www.che168.com/CarConfig/CarConfig.html
+        host-che-detail: https://cacheapigo.che168.com/CarProduct/GetParam.ashx?
       update-cache-job:
         master-bot: false
         cron: 0 0/30 * * * *
