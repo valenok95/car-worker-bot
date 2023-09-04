@@ -20,6 +20,7 @@ public class UserCarInputData {
     int volume;
     String age;
     String stock;
+    Province province;
 
     @Override
     public String toString() {

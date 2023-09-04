@@ -869,12 +869,14 @@ public class TelegramBotService extends TelegramLongPollingBot {
             return;
         }
         UserCarInputData data = cache.getUserCarData(chatId);
+        
         int priceInCurrency = carDto.getRawCarPrice();
         data.setPrice(priceInCurrency);
         data.setPriceInEuro(executionService.convertMoneyToEuro(priceInCurrency, data.getCurrency()));
         data.setVolume(carDto.getRawCarPower());
         data.setAge(executionService.calculateCarAgeByRawDate(carDto.getRawCarYear(), carDto.getRawCarMonth()));
         data.setCarId(carDto.getCarId());
+        data.setProvince(ConfigDataPool.provincePriceMap.get(carDto.getRawCarProvinceName()));
         processExecuteResult(data, chatId);
     }
 

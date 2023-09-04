@@ -16,6 +16,8 @@ public class CarPriceResultData {
     double extraPayAmount;
     double extraPayAmountInCurrency;
     double extraPayAmountInRubles;
+    double provincePriceInRubles;
+    String provinceName;
     int carId;
     /**
      * Рынок ввоза.
@@ -26,9 +28,8 @@ public class CarPriceResultData {
     String sanctionMessage = "Санкционный авто, ";
 
     public double getResultPrice() {
-        return firstPriceInRubles + feeRate + duty + recyclingFee + extraPayAmount;
+        return firstPriceInRubles + feeRate + duty + recyclingFee + extraPayAmount + provincePriceInRubles;
     }
-
 
 
     @Override

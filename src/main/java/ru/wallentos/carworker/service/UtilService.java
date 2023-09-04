@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
@@ -184,9 +185,15 @@ public class UtilService {
 
     protected String getResultMessageByBotNameAndCurrency(String botName, String currency, CarPriceResultData resultData) {
 
-        if (botName.equals("KorexCalcBot")) { // определять сообщение для каждого botName + 
+        if (botName.equals("KorexCalcBot") && Objects.equals(currency, KRW)) { // определять 
+            // сообщение для 
+            // каждого 
+            // botName + 
             // default
-            return getKorexMessageByResultData(resultData);
+            return getKorexKrwMessageByResultData(resultData);
+        }
+        if ((botName.equals("KorexCalcBot") ||botName.equals("carworkerbot"))  && Objects.equals(currency, CNY)) {
+            return getKorexCnyMessageByResultData(resultData);
         }
         if (botName.equals("EastWayCalcBot")) { // определять 
             // сообщение для каждого botName + default
@@ -206,7 +213,7 @@ public class UtilService {
                 """, resultKrwPrice);
     }
 
-    private String getKorexMessageByResultData(CarPriceResultData resultData) {
+    private String getKorexKrwMessageByResultData(CarPriceResultData resultData) {
         return String.format(Locale.FRANCE, """
                         Стоимость автомобиля под ключ во Владивостоке:
                         <u><b>%,.0f ₽</b></u>
@@ -233,6 +240,36 @@ public class UtilService {
                 resultData.getExtraPayAmountInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 getEncarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    private String getKorexCnyMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                        %s             
+                        Брокерские расходы, СВХ, СБКТС:
+                        %,.0f ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽ 
+                        %s               
+                        Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину️
+                                                
+                        Актуальный курс оплаты наличными и курсы ЦБ вы можете найти в меню.
+                                                
+                        По вопросам проведения платежа и заказа авто вы можете обратиться к нашему менеджеру @KorexAdmin.
+                                                
+                        <a href="https://t.me/korexautotradeofficial">🔗Официальный телеграмм канал</a>
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
+                        resultData.getProvincePriceInRubles()),
+                resultData.getExtraPayAmountInRubles(),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getCheCarLinkStringByCarId(resultData.getCarId()));
     }
 
     private String getEastWayKrwMessageByResultData(CarPriceResultData resultData) {
@@ -277,10 +314,18 @@ public class UtilService {
                 """, carId) : "";
     }
 
+    private String getProvinceStringByProvinceNameAndPrice(String provinceName,
+                                                           double provincePriceInRub) {
+        return Objects.nonNull(provinceName) ? String.format("""
+                                
+                Стоимость доставки автомобиля до склада в Китае из %s: %,.0f ₽                
+                """, provinceName, provincePriceInRub) : "";
+    }
+
     private String getCheCarLinkStringByCarId(int carId) {
         return carId != 0 ? String.format("""
                                 
-                <a href="https://fem.encar.com/cars/detail/%d">🔗Ссылка на автомобиль</a>                
+                <a href="https://www.che168.com/dealer/416034/%d.html">🔗Ссылка на автомобиль</a>                
                 """, carId) : "";
     }
 }
