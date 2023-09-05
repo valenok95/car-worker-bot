@@ -382,20 +382,21 @@ public class ExecutionService {
     private String calculateCarAgeByLocalDate(LocalDate localDate) {
         Period period = Period.between(localDate, LocalDate.now());
         int carYearsOld = period.getYears();
-        if (carYearsOld < 3) {
-            return NEW_CAR;
-        } else if (carYearsOld <= 5) {
+        int carMonthOld = period.getMonths();
+        if (carYearsOld >= 5) {
+            return OLD_CAR;
+        } else if (carYearsOld > 2 || (carYearsOld == 2 && carMonthOld == 11)) {
             return NORMAL_CAR;
         } else {
-            return OLD_CAR;
+            return NEW_CAR;
         }
     }
 
     /**
      * Вычисляем категорию по месяцу и году.
      * 1- до трех лет
-     * 2- от трех до пяти лет
-     * 3- свыше пяти лет
+     * 2- от трех до пяти лет (не включительно)
+     * 3- начиная с 5 лет
      *
      * @return возрастная категория
      */
