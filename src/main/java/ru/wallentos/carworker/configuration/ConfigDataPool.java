@@ -15,6 +15,8 @@ import ru.wallentos.carworker.model.Province;
 public class ConfigDataPool {
     @Value("${ru.wallentos.carworker.admin-id}")
     public int adminId;
+    @Value("${ru.wallentos.carworker.client-request-group-id}")
+    public long clientRequestGroupId;
     @Value(value = "${ru.wallentos.carworker.currencies}")
     private List<String> currencies;
     public static final String EUR = "EUR";
@@ -123,6 +125,7 @@ public class ConfigDataPool {
     public static final String TO_START_MESSAGE = "Рассчитать автомобиль";
     public static final String TO_SET_CURRENCY_MENU = "Меню установки валюты";
     public static final String MANAGER_MESSAGE = "Связаться с менеджером";
+    public static final String CLIENT_REQUEST_BUTTON = "Оставить заявку";
 
     /**
      * Карта рассчёта таможенной стоимости.

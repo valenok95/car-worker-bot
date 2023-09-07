@@ -3,6 +3,7 @@ package ru.wallentos.carworker.service;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.AUCTION_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CANCEL_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CANCEL_MAILING_BUTTON;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.CLIENT_REQUEST_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CONFIRM_MAILING_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.KRW;
@@ -211,6 +212,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
             case CANCEL_MAILING_BUTTON:
                 mailingMenuCommandReceived(chatId);
                 return;
+            case CLIENT_REQUEST_BUTTON:
+                clientRequestStartCommand(chatId);
+                return;
             default:
                 break;
         }
@@ -230,6 +234,65 @@ public class TelegramBotService extends TelegramLongPollingBot {
             default:
                 break;
         }
+    }
+
+    /**
+     * Оставить заявку для группы админов.
+     *
+     * @param chatId
+     */
+    private void clientRequestStartCommand(long chatId) {
+        String text = """ 
+                Вы находитесь в меню составления заявки.
+                                
+                Пожалуйста, введите текст заявки в ответном сообщении.""";
+        executeMessage(utilService.prepareSendMessage(chatId, text));
+        cache.setUsersCurrentBotState(chatId, BotState.ASK_CLIENT_REQUEST_MESSAGE);
+    }
+
+    /**
+     * Отправить клиентскую завяку группе менеджеров.
+     *
+     * @param update
+     */
+    private void clientRequestProcessCommand(Update update) {
+        long chatId = update.getMessage().getChatId();
+        String clientUserName = update.getMessage().getChat().getUserName();
+        String clientMessage = update.getMessage().getText();
+        String textToClient = "Ваша заявка принята, в ближайшее время с вами свяжется наш " +
+                "менеджер!";
+        String textToGroup = String.format("""
+                Получена заявка от пользователя @%s
+                                
+                %s                
+                """, clientUserName, clientMessage);
+
+        // отправляем запрос в группу менеджеров.
+        executeMessage(utilService.prepareSendMessage(configDataPool.getClientRequestGroupId(), textToGroup));
+        
+        cache.deleteUserCarDataByUserId(chatId);
+
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        List<InlineKeyboardButton> row3 = new ArrayList<>();
+        InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
+        InlineKeyboardButton manager = new InlineKeyboardButton(MANAGER_MESSAGE);
+        InlineKeyboardButton cliendRequest = new InlineKeyboardButton(CLIENT_REQUEST_BUTTON);
+        reset.setCallbackData(RESET_MESSAGE);
+        manager.setUrl(managerLink);
+        cliendRequest.setCallbackData(CLIENT_REQUEST_BUTTON);
+        row1.add(manager);
+        row2.add(reset);
+        row3.add(cliendRequest);
+        rows.add(row1);
+        rows.add(row2);
+        rows.add(row3);
+        inlineKeyboardMarkup.setKeyboard(rows);
+
+        // отправляем ответ клиенту.
+        executeMessage(utilService.prepareSendMessage(chatId, textToClient, inlineKeyboardMarkup));
     }
 
     /**
@@ -329,6 +392,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     break;
                 case MAILING_MENU:
                     processStartMailing(update);
+                    break;
+                case ASK_CLIENT_REQUEST_MESSAGE:
+                    clientRequestProcessCommand(update);
                     break;
                 default:
                     break;
@@ -555,14 +621,19 @@ public class TelegramBotService extends TelegramLongPollingBot {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
+        List<InlineKeyboardButton> row3 = new ArrayList<>();
         InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
         InlineKeyboardButton manager = new InlineKeyboardButton(MANAGER_MESSAGE);
+        InlineKeyboardButton cliendRequest = new InlineKeyboardButton(CLIENT_REQUEST_BUTTON);
         reset.setCallbackData(RESET_MESSAGE);
         manager.setUrl(managerLink);
+        cliendRequest.setCallbackData(CLIENT_REQUEST_BUTTON);
         row1.add(manager);
         row2.add(reset);
+        row3.add(cliendRequest);
         rows.add(row1);
         rows.add(row2);
+        rows.add(row3);
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(utilService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
     }
