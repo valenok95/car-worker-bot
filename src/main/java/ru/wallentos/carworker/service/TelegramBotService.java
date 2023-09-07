@@ -621,19 +621,21 @@ public class TelegramBotService extends TelegramLongPollingBot {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
-        List<InlineKeyboardButton> row3 = new ArrayList<>();
         InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
         InlineKeyboardButton manager = new InlineKeyboardButton(MANAGER_MESSAGE);
-        InlineKeyboardButton cliendRequest = new InlineKeyboardButton(CLIENT_REQUEST_BUTTON);
         reset.setCallbackData(RESET_MESSAGE);
         manager.setUrl(managerLink);
-        cliendRequest.setCallbackData(CLIENT_REQUEST_BUTTON);
         row1.add(manager);
         row2.add(reset);
-        row3.add(cliendRequest);
         rows.add(row1);
         rows.add(row2);
-        rows.add(row3);
+        if (configDataPool.isEnableClientRequest()) {
+            InlineKeyboardButton cliendRequest = new InlineKeyboardButton(CLIENT_REQUEST_BUTTON);
+            List<InlineKeyboardButton> row3 = new ArrayList<>();
+            cliendRequest.setCallbackData(CLIENT_REQUEST_BUTTON);
+            row3.add(cliendRequest);
+            rows.add(row3);
+        }
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(utilService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
     }

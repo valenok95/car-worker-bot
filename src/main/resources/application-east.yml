@@ -12,6 +12,7 @@ ru:
       disable-double-convertation: true
       manager-link: https://t.me/EastWayAdmin
       client-request-group-id: -1001812961296
+      enable-client-request: true
       user-prefix: "user_east_"
       extra-pay-corea:
         krw: 3500000
