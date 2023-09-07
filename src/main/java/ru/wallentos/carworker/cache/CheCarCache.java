@@ -8,29 +8,29 @@ import org.springframework.stereotype.Repository;
 import ru.wallentos.carworker.model.CarDto;
 
 @Repository
-public class EncarCache implements RedisCache {
+public class CheCarCache implements RedisCache {
 
-    private final String encarPrefix = "encar_";
+    private final String cheCarPrefix = "che-car_";
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
     @Override
     public void save(String id, Object value) {
-        redisTemplate.opsForValue().set(encarPrefix + id, value);
+        redisTemplate.opsForValue().set(cheCarPrefix + id, value);
     }
 
     @Override
     public CarDto getById(String id) {
-        return (CarDto) redisTemplate.opsForValue().get(encarPrefix + id);
+        return (CarDto) redisTemplate.opsForValue().get(cheCarPrefix + id);
     }
 
     @Override
     public void deleteById(String id) {
-        redisTemplate.delete(encarPrefix + id);
+        redisTemplate.delete(cheCarPrefix + id);
     }
 
     @Override
     public List<String> getAllKeys() {
-        return Objects.requireNonNull(redisTemplate.keys(encarPrefix + "*")).stream().map(key->key.replace(encarPrefix,"")).toList();
+        return Objects.requireNonNull(redisTemplate.keys(cheCarPrefix + "*")).stream().map(key -> key.replace(cheCarPrefix, "")).toList();
     }
 }

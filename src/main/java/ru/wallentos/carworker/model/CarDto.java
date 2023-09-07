@@ -13,4 +13,5 @@ public class CarDto {
     private int rawCarYear;
     private int rawCarMonth;
     private int rawCarPower;
+    private String rawCarProvinceName;
 }

@@ -17,6 +17,7 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR_RECYCL
 import static ru.wallentos.carworker.configuration.ConfigDataPool.RUB;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.USD;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.feeRateMap;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.manualConversionRatesMapInRubles;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.newCarCustomsMap;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.normalCarCustomsMap;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.oldCarCustomsMap;
@@ -25,10 +26,12 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.time.YearMonth;
 import java.util.Map;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
 import ru.wallentos.carworker.model.CarPriceResultData;
+import ru.wallentos.carworker.model.Province;
 import ru.wallentos.carworker.model.UserCarInputData;
 
 @Service
@@ -90,11 +93,27 @@ public class ExecutionService {
         double extraPayAmountCurrencyPart = executeValuteExtraPayAmountInRublesByUserCarData(userCarInputData.getCurrency(), userCarInputData.isSanctionCar());
         resultData.setExtraPayAmountInRubles(extraPayAmountRublePart);
         resultData.setExtraPayAmountInCurrency(extraPayAmountCurrencyPart);
+        // Стоимость логистики из провинции Китая
+        if (Objects.nonNull(userCarInputData.getProvince())) {
+            resultData.setProvincePriceInRubles(executeProvincePriceInRubles(userCarInputData.getCurrency(), userCarInputData.getProvince()));
+            resultData.setProvinceName(userCarInputData.getProvince().getProvinceFullName());
+        }
 
         resultData.setExtraPayAmount(extraPayAmountRublePart + extraPayAmountCurrencyPart);
         resultData.setStock(executeStock(userCarInputData.getCurrency()));
         resultData.setLocation(executeLocation(userCarInputData.getCurrency()));
         return resultData;
+    }
+
+    /**
+     * Расчитываем логистику для доставки по провинциям Китая.
+     *
+     * @param currency
+     * @param province
+     * @return
+     */
+    private double executeProvincePriceInRubles(String currency, Province province) {
+        return manualConversionRatesMapInRubles.get(currency) * province.getProvincePriceInCurrency();
     }
 
 
@@ -363,20 +382,21 @@ public class ExecutionService {
     private String calculateCarAgeByLocalDate(LocalDate localDate) {
         Period period = Period.between(localDate, LocalDate.now());
         int carYearsOld = period.getYears();
-        if (carYearsOld < 3) {
-            return NEW_CAR;
-        } else if (carYearsOld <= 5) {
+        int carMonthOld = period.getMonths();
+        if (carYearsOld >= 5) {
+            return OLD_CAR;
+        } else if (carYearsOld > 2 || (carYearsOld == 2 && carMonthOld == 11)) {
             return NORMAL_CAR;
         } else {
-            return OLD_CAR;
+            return NEW_CAR;
         }
     }
 
     /**
      * Вычисляем категорию по месяцу и году.
      * 1- до трех лет
-     * 2- от трех до пяти лет
-     * 3- свыше пяти лет
+     * 2- от трех до пяти лет (не включительно)
+     * 3- начиная с 5 лет
      *
      * @return возрастная категория
      */
@@ -405,6 +425,8 @@ public class ExecutionService {
         switch (currency) {
             case KRW:
                 return configDataPool.isEnableKrwLinkMode();
+            case CNY:
+                return configDataPool.isEnableCnyLinkMode();
             default:
                 return false;
         }

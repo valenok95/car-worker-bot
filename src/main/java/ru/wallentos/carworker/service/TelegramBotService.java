@@ -66,6 +66,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
     @Autowired
     private EncarCacheService encarCacheService;
     @Autowired
+    private CheCarCacheService cheCarCacheService;
+    @Autowired
     private ExecutionService executionService;
     @Autowired
     private SubscribeService subscribeService;
@@ -757,13 +759,30 @@ public class TelegramBotService extends TelegramLongPollingBot {
         var data = cache.getUserCarData(chatId);
         switch (data.getCurrency()) {
             case KRW -> processAskEncarLink(update);
+            case CNY -> processAskCheCarLink(update);
             default -> log.info("ask link unavaliable for currency");
         }
     }
 
+    /**
+     * Спрашиваем ссылку на корейский сайт.
+     *
+     * @param update
+     */
     private void processAskEncarLink(Update update) {
         long chatId = update.getCallbackQuery().getMessage().getChatId();
         executeMessage(utilService.prepareSendMessage(chatId, "Пожалуйста, вставьте ссылку с сайта Encar.com"));
+        cache.setUsersCurrentBotState(chatId, BotState.WAITING_FOR_LINK);
+    }
+
+    /**
+     * Спрашиваем ссылку на китайский сайт.
+     *
+     * @param update
+     */
+    private void processAskCheCarLink(Update update) {
+        long chatId = update.getCallbackQuery().getMessage().getChatId();
+        executeMessage(utilService.prepareSendMessage(chatId, "Пожалуйста, вставьте ссылку с сайта che168.com"));
         cache.setUsersCurrentBotState(chatId, BotState.WAITING_FOR_LINK);
     }
 
@@ -776,6 +795,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         var data = cache.getUserCarData(chatId);
         switch (data.getCurrency()) {
             case KRW -> processCalculateByEncarLink(chatId, link);
+            case CNY -> processCalculateByCheCarLink(chatId, link);
             default -> log.info("Link mode unavaliable for currency");
         }
     }
@@ -816,6 +836,47 @@ public class TelegramBotService extends TelegramLongPollingBot {
         data.setVolume(carDto.getRawCarPower());
         data.setAge(executionService.calculateCarAgeByRawDate(carDto.getRawCarYear(), carDto.getRawCarMonth()));
         data.setCarId(carDto.getCarId());
+        processExecuteResult(data, chatId);
+    }
+
+    /**
+     * Расчитываем стоимость по ссылке che168.com
+     *
+     * @param chatId
+     * @param link
+     */
+    private void processCalculateByCheCarLink(long chatId, String link) {
+        String carId;
+        CarDto carDto;
+        try {
+            carId = utilService.parseLinkToCarId(link);
+            carDto = cheCarCacheService.fetchAndUpdateCheCarDtoByCarId(carId);
+        } catch (GetCarDetailException | RecaptchaException e) {
+            String errorMessage = """
+                    Ошибка получения данных с сайта che168.com
+                                        
+                    Попробуйте позже...
+                    """;
+            InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            InlineKeyboardButton cancelButton = new InlineKeyboardButton(CANCEL_BUTTON);
+            cancelButton.setCallbackData(CANCEL_BUTTON);
+            row.add(cancelButton);
+            rows.add(row);
+            inlineKeyboardMarkup.setKeyboard(rows);
+            executeMessage(utilService.prepareSendMessage(chatId, errorMessage, inlineKeyboardMarkup));
+            return;
+        }
+        UserCarInputData data = cache.getUserCarData(chatId);
+        
+        int priceInCurrency = carDto.getRawCarPrice();
+        data.setPrice(priceInCurrency);
+        data.setPriceInEuro(executionService.convertMoneyToEuro(priceInCurrency, data.getCurrency()));
+        data.setVolume(carDto.getRawCarPower());
+        data.setAge(executionService.calculateCarAgeByRawDate(carDto.getRawCarYear(), carDto.getRawCarMonth()));
+        data.setCarId(carDto.getCarId());
+        data.setProvince(ConfigDataPool.provincePriceMap.get(carDto.getRawCarProvinceName()));
         processExecuteResult(data, chatId);
     }
 

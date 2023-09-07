@@ -15,9 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
-import ru.wallentos.carworker.model.EncarConverter;
+import ru.wallentos.carworker.model.CarConverter;
 import ru.wallentos.carworker.model.CarDto;
-import ru.wallentos.carworker.model.EncarEntity;
+import ru.wallentos.carworker.model.CarEntity;
 
 @Service
 @Data
@@ -29,12 +29,14 @@ public class RestService {
     private String naverMethod;
     @Value("${ru.wallentos.carworker.exchange-api.host-encar}")
     private String encarMethod;
-    @Value("${ru.wallentos.carworker.exchange-api.host-che}")
-    private String cheMethod;
+    @Value("${ru.wallentos.carworker.exchange-api.host-che-start}")
+    private String cheStartMethod;
+    @Value("${ru.wallentos.carworker.exchange-api.host-che-detail}")
+    private String cheDetailMethod;
     private RestTemplate restTemplate;
     private UtilService utilService;
     private ObjectMapper mapper;
-    private EncarConverter encarConverter;
+    private CarConverter carConverter;
     private RedisTemplate redisTemplate;
     private Map<String, Double> conversionRatesMap;
     private double cbrUsdKrwMinus20;
@@ -42,11 +44,11 @@ public class RestService {
 
     @Autowired
     public RestService(RestTemplate restTemplate, UtilService utilService,
-                       EncarConverter encarConverter, RedisTemplate redisTemplate,
+                       CarConverter carConverter, RedisTemplate redisTemplate,
                        RecaptchaService recaptchaService) {
         this.restTemplate = restTemplate;
         this.utilService = utilService;
-        this.encarConverter = encarConverter;
+        this.carConverter = carConverter;
         this.redisTemplate = redisTemplate;
         this.recaptchaService = recaptchaService;
         mapper = new ObjectMapper();
@@ -84,13 +86,13 @@ public class RestService {
                 log.warn(errorMessage);
                 throw new RecaptchaException(errorMessage);
             }
-            var encarEntity = new EncarEntity(
+            var encarEntity = new CarEntity(
                     carId,
                     json.get("cars").get("base").get("advertisement").get("price").asText(),
                     json.get("cars").get("base").get("category").get("formYear").asText(),
                     json.get("cars").get("base").get("category").get("yearMonth").asText().substring(4, 6),
-                    json.get("cars").get("base").get("spec").get("displacement").asText());
-            return encarConverter.convertToDto(encarEntity);
+                    json.get("cars").get("base").get("spec").get("displacement").asText(), null);
+            return carConverter.convertToDto(encarEntity);
         } catch (RecaptchaException e) {
             recaptchaService.solveReCaptcha(encarMethod + carId, document);
             throw e;
@@ -102,30 +104,41 @@ public class RestService {
     }
 
     public CarDto getCheDataByJsoup(String carId) throws GetCarDetailException, RecaptchaException {
-        Document document = null;
+        Document startDocument = null;
         try {
-            var connection = Jsoup.connect(cheMethod + carId + "html").userAgent("Mozilla/5.0 " +
-                    "(X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
-            //connection.execute();
-            document = Jsoup.parse(connection.execute().body());
-            String valueJson =
-                    document.select("script:containsData(PRELOADED_STATE)").get(0).childNodes().get(0).toString().replace("__PRELOADED_STATE__ = ", "");
-            var json = mapper.readTree(valueJson);
-            if (document.toString().contains("recaptcha")) {
-                String errorMessage = "Требуется решение каптчи.";
-                log.warn(errorMessage);
-                throw new RecaptchaException(errorMessage);
-            }
-            var encarEntity = new EncarEntity(
+            var startConnection = Jsoup.connect(cheStartMethod).data("infoid", carId).userAgent(
+                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
+            startDocument = Jsoup.parse(startConnection.execute().body());
+            String specId = startDocument.getElementById("CarSpecid").val(); // Поиск деталей по specId
+            String rawCarPriceString = startDocument.getElementById("car_price").val(); //
+            int rawCarPrice = (int) (Double.parseDouble(rawCarPriceString) * 100 * 100);
+            // Поиск деталей
+            String rawCarYear =
+                    startDocument.getElementsByClass("auxiliary").get(0).childNodes().get(0).toString().replace("\n", "").substring(0, 4); // Поиск деталей
+            String rawCarMonth =
+                    startDocument.getElementsByClass("auxiliary").get(0).childNodes().get(0).toString().replace("\n", "").substring(5, 7); // Поиск деталей
+            String rawCarProvinceName =
+                    startDocument.getElementsByClass("auxiliary").get(0).childNodes().get(6).toString();
+
+            var detailConnection =
+                    Jsoup.connect(cheDetailMethod)
+                            .data("specid", specId)
+                            .ignoreContentType(true)
+                            .userAgent(
+                                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
+            String detailString = Jsoup.parse(detailConnection.execute().body()).text().replace(
+                    "\n", "");
+            String rawCarPower = utilService.parseCheCarPower(detailString);
+
+// 排量(mL)
+            var cheCarEntity = new CarEntity(
                     carId,
-                    json.get("cars").get("base").get("advertisement").get("price").asText(),
-                    json.get("cars").get("base").get("category").get("formYear").asText(),
-                    json.get("cars").get("base").get("category").get("yearMonth").asText().substring(4, 6),
-                    json.get("cars").get("base").get("spec").get("displacement").asText());
-            return encarConverter.convertToDto(encarEntity);
-        } catch (RecaptchaException e) {
-            recaptchaService.solveReCaptcha(encarMethod + carId, document);
-            throw e;
+                    String.valueOf(rawCarPrice),
+                    rawCarYear, rawCarMonth, rawCarPower, rawCarProvinceName
+            );
+            return carConverter.convertToDto(cheCarEntity);
+
+
         } catch (IOException | NullPointerException e) {
             String errorMessage = String.format("Error while getting info by id %s",
                     carId);

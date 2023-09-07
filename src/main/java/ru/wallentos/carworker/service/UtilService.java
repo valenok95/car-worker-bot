@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
@@ -108,12 +109,13 @@ public class UtilService {
                 return parseFemEncarLinkToCarId(link);
             } else if (link.contains("encar.com")) {
                 return parseEncarLinkToCarId(link);
+            } else if (link.contains("che168.com")) {
+                return parseCheCarLinkToCarId(link);
             } else {
                 throw new RuntimeException("неопознанная ссылка " + link);
             }
         } catch (Exception e) {
-            String errorMessage = String.format("Ошибка при обработке ссылки, carId должен " +
-                    "состоять состоит из 8 цифр");
+            String errorMessage = "Ошибка при обработке ссылки";
             log.error(errorMessage);
             throw new GetCarDetailException(errorMessage);
         }
@@ -141,6 +143,16 @@ public class UtilService {
     }
 
     /**
+     * Вытащить id из ссылки che168.com.
+     */
+    private String parseCheCarLinkToCarId(String link) {
+        Pattern pattern = Pattern.compile("\\/(\\d+)\\.html");
+        Matcher matcher = pattern.matcher(link);
+        matcher.find();
+        return matcher.group(1);
+    }
+
+    /**
      * Вытащить siteKey со строки каптчи.
      */
     public String parseCaptchaKey(String string) {
@@ -160,23 +172,37 @@ public class UtilService {
         return matcher.group(1);
     }
 
+    /**
+     * Вытащить объём двигателя из строки che168.
+     */
+    public String parseCheCarPower(String string) {
+        Pattern pattern = Pattern.compile("排量\\(mL\\)\\\", \"id\": \\d+, \"value\\\": \\\"(\\d+)");
+        Matcher matcher = pattern.matcher(string);
+        matcher.find();
+        return matcher.group(1);
+    }
+
 
     protected String getResultMessageByBotNameAndCurrency(String botName, String currency, CarPriceResultData resultData) {
-
-        if (botName.equals("KorexCalcBot")) { // определять сообщение для каждого botName + 
-            // default
-            return getKorexMessageByResultData(resultData);
-        }
-        if (botName.equals("EastWayCalcBot")) { // определять 
+        if (botName.equals("KorexCalcBot")) {
+            if (Objects.equals(currency, CNY)) {
+                return getKorexCnyMessageByResultData(resultData);
+            } else if (Objects.equals(currency, KRW)) {
+                return getKorexKrwMessageByResultData(resultData);
+            }
+        } else if (botName.equals("EastWayCalcBot") || botName.equals("carworkerbot")) { // определять 
             // сообщение для каждого botName + default
-            return getEastWayKrwMessageByResultData(resultData);
-        } else {
-            return String.format("""
-                    %s
-                            
-                    Что бы заказать авто - вы можете обратиться к менеджеру🔻
-                            """, resultData);
+            if (Objects.equals(currency, CNY)) {
+                return getEastWayCnyMessageByResultData(resultData);
+            } else if (Objects.equals(currency, KRW)) {
+                return getEastWayKrwMessageByResultData(resultData);
+            }
         }
+        return String.format("""
+                %s
+                        
+                Что бы заказать авто - вы можете обратиться к менеджеру🔻
+                        """, resultData);
     }
 
     protected String getAuctionKrwResultMessage(double resultKrwPrice) {
@@ -185,7 +211,7 @@ public class UtilService {
                 """, resultKrwPrice);
     }
 
-    private String getKorexMessageByResultData(CarPriceResultData resultData) {
+    private String getKorexKrwMessageByResultData(CarPriceResultData resultData) {
         return String.format(Locale.FRANCE, """
                         Стоимость автомобиля под ключ во Владивостоке:
                         <u><b>%,.0f ₽</b></u>
@@ -212,6 +238,67 @@ public class UtilService {
                 resultData.getExtraPayAmountInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 getEncarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    private String getKorexCnyMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                        %s             
+                        Брокерские расходы, СВХ, СБКТС:
+                        %,.0f ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽ 
+                        %s               
+                        Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину️
+                                                
+                        Актуальный курс оплаты наличными и курсы ЦБ вы можете найти в меню.
+                                                
+                        По вопросам проведения платежа и заказа авто вы можете обратиться к нашему менеджеру @KorexAdmin.
+                                                
+                        <a href="https://t.me/korexautotradeofficial">🔗Официальный телеграмм канал</a>
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
+                        resultData.getProvincePriceInRubles()),
+                resultData.getExtraPayAmountInRubles(),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getCheCarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    private String getEastWayCnyMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                        %s             
+                        Брокерские расходы, СВХ, СБКТС:
+                        100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽               
+                                                
+                        Комиссия компании: 50 000 ₽
+                        %s 
+                        Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину️
+                                                
+                        Актуальный курс оплаты наличными и курсы ЦБ вы можете найти в меню.
+                                                
+                        По вопросам проведения платежа и заказа авто вы можете обратиться к нашему менеджеру @EastWayAdmin.
+                                                
+                        <a href="https://t.me/EastWayOfficial">🔗Официальный телеграмм канал</a>
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
+                        resultData.getProvincePriceInRubles()),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getCheCarLinkStringByCarId(resultData.getCarId()));
     }
 
     private String getEastWayKrwMessageByResultData(CarPriceResultData resultData) {
@@ -243,11 +330,31 @@ public class UtilService {
                 getEncarLinkStringByCarId(resultData.getCarId()));
     }
 
-
+    /**
+     * Получаем ссылку на автомобиль
+     *
+     * @param carId
+     * @return
+     */
     private String getEncarLinkStringByCarId(int carId) {
         return carId != 0 ? String.format("""
                                 
                 <a href="https://fem.encar.com/cars/detail/%d">🔗Ссылка на автомобиль</a>                
+                """, carId) : "";
+    }
+
+    private String getProvinceStringByProvinceNameAndPrice(String provinceName,
+                                                           double provincePriceInRub) {
+        return Objects.nonNull(provinceName) ? String.format("""
+                                
+                Стоимость доставки автомобиля из %s до Суйфыньхэ: %,.0f ₽                
+                """, provinceName, provincePriceInRub) : "";
+    }
+
+    private String getCheCarLinkStringByCarId(int carId) {
+        return carId != 0 ? String.format("""
+                                
+                <a href="https://www.che168.com/dealer/416034/%d.html">🔗Ссылка на автомобиль</a>                
                 """, carId) : "";
     }
 }

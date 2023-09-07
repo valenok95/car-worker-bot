@@ -1,9 +1,9 @@
 ru:
   wallentos:
     carworker:
-      korex-mode: false
-      currencies: KRW
+      currencies: KRW, CNY
       enable-krw-link-mode: true
+      enable-cny-link-mode: true
       enable-krw-auction-mode: true
       manager-link: https://t.me/wallentoss
       user-prefix: "user_test_"

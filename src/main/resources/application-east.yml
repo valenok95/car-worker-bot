@@ -4,8 +4,9 @@ bot:
 ru:
   wallentos:
     carworker:
-      currencies: KRW
+      currencies: KRW, CNY
       enable-krw-link-mode: ${ENABLE_KRW_LINK_MODE}
+      enable-cny-link-mode: ${ENABLE_CNY_LINK_MODE}
       enable-krw-auction-mode: true
       auction-coefficient: ${AUCTION_COEFFICIENT}
       disable-double-convertation: true
@@ -14,3 +15,6 @@ ru:
       extra-pay-corea:
         krw: 3500000
         rub: 130000
+      extra-pay-china:
+        cny: 18000
+        rub: 170000

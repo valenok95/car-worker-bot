@@ -4,14 +4,14 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
 @Component
-public class EncarConverter {
+public class CarConverter {
     private final ModelMapper modelMapper;
 
-    public EncarConverter() {
+    public CarConverter() {
         this.modelMapper = new ModelMapper();
     }
 
-    public CarDto convertToDto(EncarEntity entity) {
+    public CarDto convertToDto(CarEntity entity) {
         return modelMapper.map(entity, CarDto.class);
     }
 }
