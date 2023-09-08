@@ -9,6 +9,7 @@ import com.google.api.services.sheets.v4.model.ValueRange;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
@@ -134,8 +135,8 @@ public class GoogleService {
     public void appendClientRequestToGoogleSheet(String clientRequestText, String clientUserName) {
         int newIndex = getCurrentIndexInClientRequestList(configDataPool.getClientRequestSpreedSheetId()) + 1;
         List<List<Object>> inputValues = Arrays.asList(Arrays.asList(
-                newIndex, LocalDate.now().toString(),
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")),
+                newIndex, LocalDate.now(ZoneId.of("UTC+3")).toString(),
+                LocalDateTime.now(ZoneId.of("UTC+3")).format(DateTimeFormatter.ofPattern("HH:mm:ss")),
                 clientRequestText, "https://t.me/" + clientUserName));
         try {
             appendValues(configDataPool.getClientRequestSpreedSheetId(), "Общая таблица!A2:E",
