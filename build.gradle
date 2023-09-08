@@ -24,6 +24,9 @@ dependencies {
     implementation group: 'org.modelmapper', name: 'modelmapper', version: '3.1.1'
     implementation('org.springframework.boot:spring-boot-starter-data-redis')
     implementation group: 'com.github.2captcha', name: '2captcha-java', version: '1.1.0'
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.11.0'
+    implementation 'com.google.apis:google-api-services-drive:v3-rev20220815-2.0.0'
+    implementation 'com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0'
     
 }
 tasks.named('test') {

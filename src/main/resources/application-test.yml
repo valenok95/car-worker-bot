@@ -7,6 +7,7 @@ ru:
       enable-krw-auction-mode: true
       manager-link: https://t.me/wallentoss
       user-prefix: "user_test_"
+      client-request-spreedsheet-id: ${CLIENT_REQUEST_SPREEDSHEET_ID}
       update-cache-job:
         master-bot: ${IS_MASTER_BOT}
         cron: ${CRON}

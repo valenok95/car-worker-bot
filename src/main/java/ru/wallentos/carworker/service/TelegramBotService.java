@@ -16,7 +16,6 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.RESET_MESSAGE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.RUB;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.TO_SET_CURRENCY_MENU;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.TO_START_MESSAGE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.USD;
 
 import java.util.ArrayList;
@@ -72,6 +71,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
     private ExecutionService executionService;
     @Autowired
     private SubscribeService subscribeService;
+    @Autowired
+    private GoogleService googleService;
     @Autowired
     private UserDataCache cache;
 
@@ -191,7 +192,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         long chatId = update.getCallbackQuery().getMessage().getChatId();
         BotState currentState = cache.getUsersCurrentBotState(chatId);
         switch (callbackData) {
-            case TO_START_MESSAGE, RESET_MESSAGE, CANCEL_BUTTON:
+            case RESET_MESSAGE, CANCEL_BUTTON:
                 startCommandReceived(chatId, update.getCallbackQuery().getMessage().getChat().getFirstName());
                 return;
             case TO_SET_CURRENCY_MENU:
@@ -269,7 +270,10 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         // отправляем запрос в группу менеджеров.
         executeMessage(utilService.prepareSendMessage(configDataPool.getClientRequestGroupId(), textToGroup));
-        
+        // отправляем заявку в гугл таблицу
+        googleService.appendClientRequestToGoogleSheet(clientMessage, clientUserName);
+
+
         cache.deleteUserCarDataByUserId(chatId);
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
@@ -445,10 +449,10 @@ public class TelegramBotService extends TelegramLongPollingBot {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
-        InlineKeyboardButton reset = new InlineKeyboardButton(TO_START_MESSAGE);
+        InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
         InlineKeyboardButton toSetCurrencyMenu = new InlineKeyboardButton(TO_SET_CURRENCY_MENU);
         toSetCurrencyMenu.setCallbackData(TO_SET_CURRENCY_MENU);
-        reset.setCallbackData(TO_START_MESSAGE);
+        reset.setCallbackData(RESET_MESSAGE);
         row1.add(toSetCurrencyMenu);
         row2.add(reset);
         rows.add(row1);
@@ -721,8 +725,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row1 = new ArrayList<>();
-        InlineKeyboardButton reset = new InlineKeyboardButton(TO_START_MESSAGE);
-        reset.setCallbackData(TO_START_MESSAGE);
+        InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
+        reset.setCallbackData(RESET_MESSAGE);
         row1.add(reset);
         rows.add(row1);
         inlineKeyboardMarkup.setKeyboard(rows);
@@ -745,8 +749,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
-        InlineKeyboardButton reset = new InlineKeyboardButton(TO_START_MESSAGE);
-        reset.setCallbackData(TO_START_MESSAGE);
+        InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
+        reset.setCallbackData(RESET_MESSAGE);
         row.add(reset);
         rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
@@ -942,7 +946,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
             return;
         }
         UserCarInputData data = cache.getUserCarData(chatId);
-        
+
         int priceInCurrency = carDto.getRawCarPrice();
         data.setPrice(priceInCurrency);
         data.setPriceInEuro(executionService.convertMoneyToEuro(priceInCurrency, data.getCurrency()));
@@ -1039,12 +1043,38 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     """;
         executeMessage(utilService.prepareSendMessage(chatId, startMessage));
         List<Long> subscriptionIds = subscribeService.getSubscribers();
+
+        // добавили кнопки в сообщение рассылки
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
+        InlineKeyboardButton manager = new InlineKeyboardButton(MANAGER_MESSAGE);
+        reset.setCallbackData(RESET_MESSAGE);
+        manager.setUrl(managerLink);
+        row1.add(manager);
+        row2.add(reset);
+        rows.add(row1);
+        rows.add(row2);
+        if (configDataPool.isEnableClientRequest()) {
+            InlineKeyboardButton cliendRequest = new InlineKeyboardButton(CLIENT_REQUEST_BUTTON);
+            List<InlineKeyboardButton> row3 = new ArrayList<>();
+            cliendRequest.setCallbackData(CLIENT_REQUEST_BUTTON);
+            row3.add(cliendRequest);
+            rows.add(row3);
+        }
+        inlineKeyboardMarkup.setKeyboard(rows);
+
         subscriptionIds.forEach(id -> {
             try {
                 if (Objects.nonNull(subscribeService.getPhotoData())) {
-                    executeMessage(utilService.prepareSendMessage(id, subscribeService.getPhotoData(), subscribeService.getMailingText()));
+                    executeMessage(utilService.prepareSendMessage(id,
+                            subscribeService.getPhotoData(), subscribeService.getMailingText(),
+                            inlineKeyboardMarkup));
                 } else {
-                    executeMessage(utilService.prepareSendMessage(id, subscribeService.getMailingText()));
+                    executeMessage(utilService.prepareSendMessage(id, subscribeService.getMailingText(),
+                            inlineKeyboardMarkup));
                 }
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -1057,9 +1087,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 Рассылка успешно завершена.
                 Теперь можно вернуться в меню рассылок /mail 
                     """;
+
         executeMessage(utilService.prepareSendMessage(chatId, finishMessage));
         subscribeService.cleanData();
     }
-
-
 }

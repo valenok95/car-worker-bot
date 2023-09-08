@@ -9,5 +9,6 @@ WORKDIR /app
 
 
 COPY --from=build /home/gradle/src/build/libs/*.jar /app/bot.jar
+COPY --from=build /home/gradle/src/build/resources/main/credentials.json /app/credentials.json
 
 ENTRYPOINT ["java","-jar","bot.jar"]

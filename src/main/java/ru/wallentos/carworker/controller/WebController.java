@@ -9,6 +9,7 @@ import ru.wallentos.carworker.cache.EncarCache;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
 import ru.wallentos.carworker.service.EncarCacheService;
+import ru.wallentos.carworker.service.GoogleService;
 import ru.wallentos.carworker.service.RecaptchaService;
 import ru.wallentos.carworker.service.RestService;
 import ru.wallentos.carworker.service.SubscribeService;
@@ -22,15 +23,17 @@ public class WebController {
     private final UtilService utilService;
     private final RecaptchaService recaptchaService;
     private final SubscribeService subscribeService;
+    private final GoogleService googleService;
 
     @Autowired
-    public WebController(RestService restService, EncarCache encarCache, EncarCacheService encarCacheService, UtilService utilService, RecaptchaService recaptchaService, SubscribeService subscribeService) {
+    public WebController(RestService restService, EncarCache encarCache, EncarCacheService encarCacheService, UtilService utilService, RecaptchaService recaptchaService, SubscribeService subscribeService, GoogleService googleService) {
         this.restService = restService;
         this.encarCache = encarCache;
         this.encarCacheService = encarCacheService;
         this.utilService = utilService;
         this.recaptchaService = recaptchaService;
         this.subscribeService = subscribeService;
+        this.googleService = googleService;
     }
 
 
@@ -38,6 +41,7 @@ public class WebController {
     public ResponseEntity<?> getCarByIdJsoup(@RequestParam String carId) throws GetCarDetailException, RecaptchaException {
         return ResponseEntity.accepted().body(restService.getEncarDataByJsoup(carId));
     }
+
     @GetMapping("/getCheByIdJsoup")
     public ResponseEntity<?> getCheCarByIdJsoup(@RequestParam String carId) throws GetCarDetailException, RecaptchaException {
         return ResponseEntity.accepted().body(restService.getCheDataByJsoup(carId));
@@ -75,6 +79,12 @@ public class WebController {
     @GetMapping("/solveCaptcha")
     public ResponseEntity<?> parseFemLink() {
         recaptchaService.solveReCaptchaDemo();
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/appendGoogle")
+    public ResponseEntity<?> testGoogle() {
+        googleService.appendClientRequestToGoogleSheet("clientText", "userName");
         return ResponseEntity.ok().build();
     }
 }

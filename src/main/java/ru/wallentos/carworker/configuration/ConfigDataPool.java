@@ -13,6 +13,8 @@ import ru.wallentos.carworker.model.Province;
 @Data
 @Configuration
 public class ConfigDataPool {
+    @Value("${ru.wallentos.carworker.client-request-spreedsheet-id:test}")
+    public String clientRequestSpreedSheetId;
     @Value("${ru.wallentos.carworker.admin-id}")
     public int adminId;
     @Value("${ru.wallentos.carworker.client-request-group-id}")
@@ -117,8 +119,7 @@ public class ConfigDataPool {
     public static final String NORMAL_CAR = "От 3 до 5 лет";
     public static final String OLD_CAR = "От 5 лет";
     public static final String CANCEL_BUTTON = "Отмена";
-    public static final String RESET_MESSAGE = "Рассчитать ещё один автомобиль";
-    public static final String TO_START_MESSAGE = "Рассчитать автомобиль";
+    public static final String RESET_MESSAGE = "Рассчитать стоимость автомобиля";
     public static final String TO_SET_CURRENCY_MENU = "Меню установки валюты";
     public static final String MANAGER_MESSAGE = "Связаться с менеджером";
     public static final String CLIENT_REQUEST_BUTTON = "Оставить заявку";
