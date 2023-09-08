@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.wallentos.carworker.cache.EncarCache;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
+import ru.wallentos.carworker.service.CheCarCacheService;
 import ru.wallentos.carworker.service.EncarCacheService;
 import ru.wallentos.carworker.service.GoogleService;
 import ru.wallentos.carworker.service.RecaptchaService;
@@ -20,16 +21,18 @@ public class WebController {
     private final RestService restService;
     private final EncarCache encarCache;
     private final EncarCacheService encarCacheService;
+    private final CheCarCacheService cheCarCacheService;
     private final UtilService utilService;
     private final RecaptchaService recaptchaService;
     private final SubscribeService subscribeService;
     private final GoogleService googleService;
 
     @Autowired
-    public WebController(RestService restService, EncarCache encarCache, EncarCacheService encarCacheService, UtilService utilService, RecaptchaService recaptchaService, SubscribeService subscribeService, GoogleService googleService) {
+    public WebController(RestService restService, EncarCache encarCache, EncarCacheService encarCacheService, CheCarCacheService cheCarCacheService, UtilService utilService, RecaptchaService recaptchaService, SubscribeService subscribeService, GoogleService googleService) {
         this.restService = restService;
         this.encarCache = encarCache;
         this.encarCacheService = encarCacheService;
+        this.cheCarCacheService = cheCarCacheService;
         this.utilService = utilService;
         this.recaptchaService = recaptchaService;
         this.subscribeService = subscribeService;
@@ -59,7 +62,7 @@ public class WebController {
 
     @GetMapping("/updateCache")
     public ResponseEntity<?> updateCache() {
-        encarCacheService.updateEncarCache();
+        cheCarCacheService.updateCheCarCache();
         return ResponseEntity.ok().build();
     }
 
