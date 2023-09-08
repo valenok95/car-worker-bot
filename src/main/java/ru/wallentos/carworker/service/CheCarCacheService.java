@@ -55,7 +55,7 @@ public class CheCarCacheService {
     private void updateCheCarCacheByCarId(String carId) { // 
         CarDto carDto;
         try {
-            carDto = restService.getEncarDataByJsoup(carId);
+            carDto = restService.getCheDataByJsoup(carId);
             cheCarCache.save(carId, carDto);
             log.info("Обновлены данные для тачки:{}", carDto);
         } catch (GetCarDetailException e) {
