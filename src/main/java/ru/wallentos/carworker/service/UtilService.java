@@ -190,12 +190,18 @@ public class UtilService {
             } else if (Objects.equals(currency, KRW)) {
                 return getKorexKrwMessageByResultData(resultData);
             }
-        } else if (botName.equals("EastWayCalcBot") || botName.equals("carworkerbot")) { // определять 
-            // сообщение для каждого botName + default
+        } else if (botName.equals("EastWayCalcBot") || botName.equals("carworkerbot")) { // 
+            // определять сообщение для каждого botName + default
             if (Objects.equals(currency, CNY)) {
                 return getEastWayCnyMessageByResultData(resultData);
             } else if (Objects.equals(currency, KRW)) {
                 return getEastWayKrwMessageByResultData(resultData);
+            }
+        } else if (botName.equals("AutoDillerBot")) {
+            if (Objects.equals(currency, CNY)) {
+                return getRostovCnyMessageByResultData(resultData);
+            } else if (Objects.equals(currency, KRW)) {
+                return getRostovKrwMessageByResultData(resultData);
             }
         }
         return String.format("""
@@ -327,6 +333,73 @@ public class UtilService {
                 resultData.getResultPrice(),
                 resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getEncarLinkStringByCarId(resultData.getCarId()));
+    }
+
+
+    private String getRostovCnyMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Новочеркасске:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Уссурийска:
+                        %,.0f ₽
+                        %s             
+                        Брокерские расходы, СВХ, СБКТС:
+                        100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽     
+                                                
+                        Доставка до Новочеркасска: %,.0f ₽             
+                                                
+                        Комиссия компании: 50 000 ₽
+                        %s 
+                        Итоговая стоимость включает в себя все расходы до г. Новочеркасск, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину️
+                                                
+                        Актуальный курс оплаты наличными и курсы ЦБ вы можете найти в меню.
+                                                
+                        По вопросам проведения платежа и заказа авто вы можете обратиться к нашему менеджеру @Roman_autodiler.
+                                                
+                        <a href="https://t.me/autodiler61">🔗Официальный телеграмм канал</a>
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
+                        resultData.getProvincePriceInRubles()),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                resultData.getExtraPayAmountInRubles(),
+                getCheCarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    private String getRostovKrwMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Новочеркасске:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                                                
+                        Брокерские расходы, СВХ, СБКТС:
+                        100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽ 
+                                                
+                        Доставка до Новочеркасска: %,.0f ₽     
+                                                
+                        Комиссия компании: 50 000 ₽
+                        %s               
+                        Итоговая стоимость включает в себя все расходы до г. Новочеркасск, а именно: оформление экспорта в Корее, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину️
+                                                
+                        Актуальный курс оплаты наличными и курсы ЦБ вы можете найти в меню.
+                                                
+                        По вопросам проведения платежа и заказа авто вы можете обратиться к нашему менеджеру @Roman_autodiler.
+                                                
+                        <a href="https://t.me/autodiler61">🔗Официальный телеграмм канал</a>
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                resultData.getExtraPayAmountInRubles(),
                 getEncarLinkStringByCarId(resultData.getCarId()));
     }
 
