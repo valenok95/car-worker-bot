@@ -52,7 +52,7 @@ public class CheCarCacheService {
     /**
      * Запускаем обновление КЭШа.
      */
-    private void updateCheCarCacheByCarId(String carId) { // 
+    private void updateCheCarCacheByCarId(String carId) {
         CarDto carDto;
         try {
             carDto = restService.getCheDataByJsoup(carId);
