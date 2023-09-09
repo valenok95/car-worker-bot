@@ -1,0 +1,22 @@
+bot:
+  name: AutoDillerBot
+
+ru:
+  wallentos:
+    carworker:
+      currencies: KRW, CNY
+      enable-krw-link-mode: ${ENABLE_KRW_LINK_MODE}
+      enable-cny-link-mode: ${ENABLE_CNY_LINK_MODE}
+      enable-krw-auction-mode: true
+      auction-coefficient: ${AUCTION_COEFFICIENT}
+      disable-double-convertation: true
+      manager-link: https://t.me/Roman_autodiler
+      client-request-group-id: -1001812961296
+      enable-client-request: true
+      user-prefix: "user_rostov_"
+      extra-pay-corea:
+        krw: 4000000
+        rub: 200000
+      extra-pay-china:
+        cny: 26000
+        rub: 200000
