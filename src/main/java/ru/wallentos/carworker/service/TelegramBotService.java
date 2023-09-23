@@ -33,6 +33,7 @@ import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
@@ -113,7 +114,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
             log.info("message received: " + receivedText);
             switch (receivedText) {
                 case "/start":
-                    startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
+                    startCommandReceived(chatId, update.getMessage());
                     break;
                 case "/cbr":
                     cbrCommandReceived(chatId);
@@ -193,7 +194,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         BotState currentState = cache.getUsersCurrentBotState(chatId);
         switch (callbackData) {
             case RESET_MESSAGE, CANCEL_BUTTON:
-                startCommandReceived(chatId, update.getCallbackQuery().getMessage().getChat().getFirstName());
+                startCommandReceived(chatId, update.getCallbackQuery().getMessage());
                 return;
             case TO_SET_CURRENCY_MENU:
                 setCurrencyCommandReceived(chatId);
@@ -678,14 +679,24 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
 
-    private void startCommandReceived(long chatId, String name) {
+    private void startCommandReceived(long chatId, Message message) {
+        if (configDataPool.isManagerBot && !configDataPool.getWhiteManagerList().contains(message.getChat().getUserName())) {
+            String text = String.format("""
+                    Отсутствуют правa доступа к функционалу.
+                    Для использования бота пройдите по ссылке: %s       
+                    """, configDataPool.getParentLink());
+            executeMessage(utilService.prepareSendMessage(chatId, text));
+            return;
+        }
+
+        String name = message.getChat().getFirstName();
         if (configDataPool.isSingleCurrencyMode()) { //singleCurrencyMode не спрашиваем валюту
             processSingleCurrencyStart(chatId, name);
             restService.refreshExchangeRates();
             subscribeService.subscribeUser(chatId);
             return;
         }
-        String message = String.format("""
+        String text = String.format("""
                 Здравствуйте, %s!
                         
                 Для расчета автомобиля из южной Кореи, пожалуйста, выберите KRW, для автомобиля из Китая CNY.
@@ -701,7 +712,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         row.add(krwButton);
         rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
-        executeMessage(utilService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
+        executeMessage(utilService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
         cache.setUsersCurrentBotState(chatId, BotState.ASK_CURRENCY);
         restService.refreshExchangeRates();
         subscribeService.subscribeUser(chatId);

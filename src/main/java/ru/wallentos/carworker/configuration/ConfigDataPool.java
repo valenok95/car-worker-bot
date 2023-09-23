@@ -21,8 +21,14 @@ public class ConfigDataPool {
     public long clientRequestGroupId;
     @Value("${ru.wallentos.carworker.enable-client-request:false}")
     public boolean enableClientRequest;
+    @Value("${ru.wallentos.carworker.manager-bot:false}")
+    public boolean isManagerBot;
     @Value(value = "${ru.wallentos.carworker.currencies}")
     private List<String> currencies;
+    @Value(value = "${ru.wallentos.carworker.white-manager-list:}")
+    private List<String> whiteManagerList;
+    @Value(value = "${ru.wallentos.carworker.parent-link:link}")
+    private String parentLink;
     public static final String EUR = "EUR";
     public static final String RUB = "RUB";
     public static final String USD = "USD";
