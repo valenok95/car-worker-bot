@@ -624,15 +624,19 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
+
+        if (!configDataPool.isManagerBot) {
+            List<InlineKeyboardButton> row1 = new ArrayList<>();
+            InlineKeyboardButton manager = new InlineKeyboardButton(MANAGER_MESSAGE);
+            manager.setUrl(managerLink);
+            row1.add(manager);
+            rows.add(row1);
+        }
+
         InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
-        InlineKeyboardButton manager = new InlineKeyboardButton(MANAGER_MESSAGE);
         reset.setCallbackData(RESET_MESSAGE);
-        manager.setUrl(managerLink);
-        row1.add(manager);
         row2.add(reset);
-        rows.add(row1);
         rows.add(row2);
         if (configDataPool.isEnableClientRequest()) {
             InlineKeyboardButton cliendRequest = new InlineKeyboardButton(CLIENT_REQUEST_BUTTON);
@@ -664,15 +668,19 @@ public class TelegramBotService extends TelegramLongPollingBot {
         String text = utilService.getAuctionKrwResultMessage(resultAuctionPriceInKrw);
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
         InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
-        InlineKeyboardButton manager = new InlineKeyboardButton(MANAGER_MESSAGE);
         reset.setCallbackData(RESET_MESSAGE);
-        manager.setUrl(managerLink);
-        row1.add(manager);
+
+        if (!configDataPool.isManagerBot) {
+            List<InlineKeyboardButton> row1 = new ArrayList<>();
+            InlineKeyboardButton manager = new InlineKeyboardButton(MANAGER_MESSAGE);
+            manager.setUrl(managerLink);
+            row1.add(manager);
+            rows.add(row1);
+        }
+
         row2.add(reset);
-        rows.add(row1);
         rows.add(row2);
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(utilService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
