@@ -6,7 +6,7 @@ ru:
   wallentos:
     carworker:
       manager-link: T.me/mikhail_ung
-      admin-id: 126866786
+      admin-list: Mikhail_Ung, wallentos
       client-request-group-id: -1001801658754
       exchange-coefficient: ${COEFFICIENT}
       extra-pay-corea:

@@ -15,8 +15,8 @@ import ru.wallentos.carworker.model.Province;
 public class ConfigDataPool {
     @Value("${ru.wallentos.carworker.client-request-spreedsheet-id:test}")
     public String clientRequestSpreedSheetId;
-    @Value("${ru.wallentos.carworker.admin-id}")
-    public int adminId;
+    @Value("${ru.wallentos.carworker.admin-list}")
+    public List<String> adminList;
     @Value("${ru.wallentos.carworker.client-request-group-id}")
     public long clientRequestGroupId;
     @Value("${ru.wallentos.carworker.enable-client-request:false}")

@@ -1,5 +1,5 @@
 bot:
-  name: AutoDillerBot
+  name: DemoCarBot
 
 ru:
   wallentos:
@@ -7,19 +7,18 @@ ru:
       currencies: KRW, CNY
       enable-krw-link-mode: ${ENABLE_KRW_LINK_MODE}
       enable-cny-link-mode: ${ENABLE_CNY_LINK_MODE}
-      client-request-spreedsheet-id: ${CLIENT_REQUEST_SPREEDSHEET_ID}
       enable-krw-auction-mode: true
       auction-coefficient: ${AUCTION_COEFFICIENT}
       disable-double-convertation: true
-      manager-link: https://t.me/Roman_autodiler
-      client-request-group-id: -1001950549646
+      manager-link: https://t.me/Korexkorea
+      user-prefix: "user_korex_demo_"
+      client-request-group-id: -1001720826075
       enable-client-request: true
-      user-prefix: "user_rostov_"
-      admin-list: Roman_autodiler
+      client-request-spreedsheet-id: ${CLIENT_REQUEST_SPREEDSHEET_ID}
       extra-pay-corea:
-        krw: 4000000
-        rub: 200000
+        krw: 2040000
+        rub: 100000
       extra-pay-china:
-        cny: 26000
-        rub: 200000
+        cny: 15000
+        rub: 100000
   

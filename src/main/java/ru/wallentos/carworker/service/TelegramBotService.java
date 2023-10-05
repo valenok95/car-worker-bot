@@ -123,10 +123,10 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     currencyRatesCommandReceived(chatId);
                     break;
                 case "/settingservice":
-                    setCurrencyCommandReceived(chatId);
+                    setCurrencyCommandReceived(chatId, update.getMessage());
                     break;
                 case "/mail":
-                    mailingMenuCommandReceived(chatId);
+                    mailingMenuCommandReceived(chatId, update.getMessage());
                     break;
                 case "/sleep":
                     unsubscribeCommandReceived(chatId);
@@ -197,7 +197,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 startCommandReceived(chatId, update.getCallbackQuery().getMessage());
                 return;
             case TO_SET_CURRENCY_MENU:
-                setCurrencyCommandReceived(chatId);
+                setCurrencyCommandReceived(chatId, update.getCallbackQuery().getMessage());
                 return;
             case LINK_BUTTON:
                 processAskLink(update);
@@ -212,7 +212,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 doMailing(chatId);
                 return;
             case CANCEL_MAILING_BUTTON:
-                mailingMenuCommandReceived(chatId);
+                mailingMenuCommandReceived(chatId, update.getMessage());
                 return;
             case CLIENT_REQUEST_BUTTON:
                 clientRequestStartCommand(chatId);
@@ -317,8 +317,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
      *
      * @param chatId
      */
-    private void setCurrencyCommandReceived(long chatId) {
-        if (configDataPool.getAdminId() != chatId) {
+    private void setCurrencyCommandReceived(long chatId, Message updateMessage) {
+
+        if (configDataPool.getAdminList().contains(updateMessage.getChat().getUserName())) {
             executeMessage(utilService.prepareSendMessage(chatId, "Доступ к функционалу ограничен"));
             return;
         }
@@ -353,8 +354,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
      *
      * @param chatId
      */
-    private void mailingMenuCommandReceived(long chatId) {
-        if (configDataPool.getAdminId() != chatId) {
+    private void mailingMenuCommandReceived(long chatId, Message updateMessage) {
+        if (configDataPool.getAdminList().contains(updateMessage.getChat().getUserName())) {
             executeMessage(utilService.prepareSendMessage(chatId, "Доступ к функционалу ограничен"));
             return;
         }

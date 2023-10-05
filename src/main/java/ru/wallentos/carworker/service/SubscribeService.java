@@ -20,9 +20,7 @@ public class SubscribeService {
     private ConfigDataPool configDataPool;
 
     public void subscribeUser(long userId) {
-        if (userId != configDataPool.getAdminId()) {
-            subscriptionCache.save(String.valueOf(userId), null);
-        }
+        subscriptionCache.save(String.valueOf(userId), null);
     }
 
     public void unSubscribeUser(long userId) {
