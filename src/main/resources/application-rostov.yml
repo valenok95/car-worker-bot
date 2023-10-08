@@ -15,7 +15,7 @@ ru:
       client-request-group-id: -1001950549646
       enable-client-request: true
       user-prefix: "user_rostov_"
-      admin-list: Roman_autodiler
+      admin-list: ${ADMIN_LIST}
       extra-pay-corea:
         krw: 4000000
         rub: 200000

@@ -351,7 +351,7 @@ public class UtilService {
 
     private String getRostovCnyMessageByResultData(CarPriceResultData resultData) {
         return String.format(Locale.FRANCE, """
-                        Стоимость автомобиля под ключ во Новочеркасске:
+                        Стоимость автомобиля под ключ в Новочеркасске:
                         <u><b>%,.0f ₽</b></u>
                                                 
                         Стоимость автомобиля с учетом доставки до Уссурийска:
@@ -385,7 +385,7 @@ public class UtilService {
 
     private String getRostovKrwMessageByResultData(CarPriceResultData resultData) {
         return String.format(Locale.FRANCE, """
-                        Стоимость автомобиля под ключ во Новочеркасске:
+                        Стоимость автомобиля под ключ в Новочеркасске:
                         <u><b>%,.0f ₽</b></u>
                                                 
                         Стоимость автомобиля с учетом доставки до Владивостока:

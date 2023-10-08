@@ -318,8 +318,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
      * @param chatId
      */
     private void setCurrencyCommandReceived(long chatId, Message updateMessage) {
+        String userName = updateMessage.getChat().getUserName().toLowerCase();
 
-        if (configDataPool.getAdminList().contains(updateMessage.getChat().getUserName())) {
+        if (configDataPool.getAdminList().contains(userName)) {
             executeMessage(utilService.prepareSendMessage(chatId, "Доступ к функционалу ограничен"));
             return;
         }
@@ -689,7 +690,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
 
     private void startCommandReceived(long chatId, Message message) {
-        if (configDataPool.isManagerBot && !configDataPool.getWhiteManagerList().contains(message.getChat().getUserName())) {
+        if (configDataPool.isManagerBot && !configDataPool.getWhiteManagerList().contains(message.getChat().getUserName().toLowerCase())) {
             String text = String.format("""
                     Отсутствуют правa доступа к функционалу.
                     Для использования бота пройдите по ссылке: %s       
