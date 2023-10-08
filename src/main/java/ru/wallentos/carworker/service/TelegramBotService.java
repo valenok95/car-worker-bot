@@ -320,7 +320,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
     private void setCurrencyCommandReceived(long chatId, Message updateMessage) {
         String userName = updateMessage.getChat().getUserName().toLowerCase();
 
-        if (configDataPool.getAdminList().contains(userName)) {
+        if (!configDataPool.getAdminList().contains(userName)) {
             executeMessage(utilService.prepareSendMessage(chatId, "Доступ к функционалу ограничен"));
             return;
         }
@@ -356,7 +356,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
      * @param chatId
      */
     private void mailingMenuCommandReceived(long chatId, Message updateMessage) {
-        if (configDataPool.getAdminList().contains(updateMessage.getChat().getUserName())) {
+        String userName = updateMessage.getChat().getUserName().toLowerCase();
+
+        if (!configDataPool.getAdminList().contains(userName)) {
             executeMessage(utilService.prepareSendMessage(chatId, "Доступ к функционалу ограничен"));
             return;
         }
