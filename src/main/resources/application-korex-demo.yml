@@ -12,7 +12,7 @@ ru:
       disable-double-convertation: true
       admin-list: ${ADMIN_LIST}
       manager-link: https://t.me/Korexkorea
-      user-prefix: "user_korex_demo_"
+      user-prefix: "user_demo_"
       client-request-group-id: -1001720826075
       enable-client-request: true
       client-request-spreedsheet-id: ${CLIENT_REQUEST_SPREEDSHEET_ID}
