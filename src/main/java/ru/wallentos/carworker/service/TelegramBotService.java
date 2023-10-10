@@ -331,9 +331,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         UserCarInputData data = cache.getUserCarData(chatId);
 
         // Удаляем сообщения
-        if (Objects.nonNull(data.getLastMessageToDelete())) {
-            deleteMessage(data.getLastMessageToDelete());
-        }
+        deleteMessage(data.getLastMessageToDelete());
         deleteMessage(update.getCallbackQuery().getMessage());
 
         // запомнить сообщение для удаления
@@ -771,12 +769,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         // Удаляем сообщения
         UserCarInputData data = cache.getUserCarData(chatId);
-        if (Objects.nonNull(data.getLastMessageToDelete())) {
-            deleteMessage(data.getLastMessageToDelete());
-        }
-        if (Objects.nonNull(data.getPreLastMessageToDelete())) {
-            deleteMessage(data.getPreLastMessageToDelete());
-        }
+        deleteMessage(data.getLastMessageToDelete());
+        deleteMessage(data.getPreLastMessageToDelete());
 
         String name = message.getChat().getFirstName();
         if (configDataPool.isSingleCurrencyMode()) { //singleCurrencyMode не спрашиваем валюту
@@ -892,9 +886,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         UserCarInputData data = cache.getUserCarData(chatId);
 
-        if (Objects.nonNull(data.getLastMessageToDelete())) {
-            deleteMessage(data.getLastMessageToDelete());
-        }
+        deleteMessage(data.getLastMessageToDelete());
         deleteMessage(message);
 
         String currency = data.getCurrency();
@@ -1096,7 +1088,14 @@ public class TelegramBotService extends TelegramLongPollingBot {
             row.add(cancelButton);
             rows.add(row);
             inlineKeyboardMarkup.setKeyboard(rows);
-            executeMessage(utilService.prepareSendMessage(chatId, errorMessage, inlineKeyboardMarkup));
+            Message sendOutMessage = executeMessage(utilService.prepareSendMessage(chatId, errorMessage, inlineKeyboardMarkup));
+            
+            // запомнить сообщение для удаления
+            UserCarInputData data = cache.getUserCarData(chatId);
+            deleteMessage(data.getLastMessageToDelete());
+            data.setLastMessageToDelete(sendOutMessage);
+            data.setPreLastMessageToDelete(message);
+            cache.saveUserCarData(chatId, data);
             return;
         }
         UserCarInputData data = cache.getUserCarData(chatId);
@@ -1253,11 +1252,15 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void deleteMessage(Message message) {
+        if (Objects.isNull(message)) {
+            log.warn("Отсутствует сообщение для удаления");
+            return;
+        }
         try {
             execute(utilService.prepareDeleteMessageByChatIdAndMessageId(message.getMessageId(),
                     message.getChatId()));
         } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
+            log.warn("Отсутствует сообщение для удаления");
         }
     }
 }
