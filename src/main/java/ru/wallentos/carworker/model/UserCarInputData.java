@@ -5,6 +5,7 @@ import java.util.Locale;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import org.telegram.telegrambots.meta.api.objects.Message;
 
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -21,6 +22,8 @@ public class UserCarInputData {
     String age;
     String stock;
     Province province;
+    Message lastMessageToDelete;
+    Message preLastMessageToDelete;
 
     @Override
     public String toString() {

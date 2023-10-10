@@ -8,6 +8,8 @@ ru:
       manager-link: https://t.me/wallentoss
       user-prefix: "user_test_"
       client-request-spreedsheet-id: ${CLIENT_REQUEST_SPREEDSHEET_ID}
+      client-request-group-id: -1001801658754
+      enable-client-request: true
       update-cache-job:
         master-bot: ${IS_MASTER_BOT}
         cron: ${CRON}

@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
@@ -68,6 +69,17 @@ public class UtilService {
                 .replyMarkup(inlineKeyboardMarkup)
                 .build();
         return message;
+    }
+
+    /**
+     * Удалить сообщение по messageId и chatId
+     */
+    protected DeleteMessage prepareDeleteMessageByChatIdAndMessageId(int messageId, long chatId) {
+        DeleteMessage deleteMessage = new DeleteMessage();
+        deleteMessage.setChatId(chatId);
+        deleteMessage.setMessageId(messageId);
+        return deleteMessage;
+
     }
 
     /**
@@ -474,7 +486,7 @@ public class UtilService {
                         Таможенная пошлина и утилизационный сбор: %,.0f ₽
                         %s
                         Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину
-                        
+                                                
                         <u><b>По вопросу сотрудничества</b></u>
                         Telegram / WhatsApp
                         +82 10-9926-0978 Сергей Шек
