@@ -21,6 +21,8 @@ public class ConfigDataPool {
     public long clientRequestGroupId;
     @Value("${ru.wallentos.carworker.enable-client-request:false}")
     public boolean enableClientRequest;
+    @Value("${ru.wallentos.carworker.korex-province-matrix:false}")
+    public boolean isKorexProvinceMatrix;
     @Value("${ru.wallentos.carworker.manager-bot:false}")
     public boolean isManagerBot;
     @Value(value = "${ru.wallentos.carworker.currencies}")
@@ -339,6 +341,145 @@ public class ConfigDataPool {
             put("三亚", new Province("Sanya 三亚", 13347));
             put("万宁", new Province("Wanning 万宁", 12993));
             put("五指山", new Province("Wuzhishan 五指山", 13128));
+        }
+    };
+
+
+    /**
+     * Карта китайских провинций и соответствующих им ценников, для расчёта по ссылке.
+     * Имя провинции - наценка в ЮАНях.
+     */
+    public static final Map<String, Province> provincePriceMapForKorex = new LinkedHashMap<>() {
+        {
+            put("鞍山", new Province("Anshan 鞍山", 3006));
+            put("保定", new Province("Baoding 保定", 5121));
+            put("北海", new Province("Beihai 北海", 12066));
+            put("北京", new Province("Beijing 北京", 4725));
+            put("蚌埠", new Province("Bengbu 蚌埠", 7032));
+            put("沧州", new Province("Cangzhou 沧州", 4965));
+            put("长春", new Province("Changchun 长春", 1836));
+            put("长沙", new Province("Changsha 长沙", 9048));
+            put("常熟", new Province("Changshu 常熟", 7650));
+            put("长治", new Province("Changzhi 长治", 6420));
+            put("常州", new Province("Changzhou 常州", 7383));
+            put("巢湖", new Province("Chaohu 巢湖", 7509));
+            put("成都", new Province("Chengdu 成都", 10053));
+            put("赤峰", new Province("Chifeng 赤峰", 3687));
+            put("重庆", new Province("Chongqing 重庆", 9924));
+            put("大连", new Province("Dalian 大连", 3612));
+            put("丹东", new Province("Dandong 丹东", 2775));
+            put("儋州", new Province("Danzhou 儋州", 12819));
+            put("大庆", new Province("Daqing 大庆", 1941));
+            put("大同", new Province("Datong 大同", 5616));
+            put("登封", new Province("Dengfeng 登封", 6951));
+            put("德清", new Province("Deqing 德清", 7875));
+            put("东莞", new Province("Dongguan 东莞", 11082));
+            put("东营", new Province("Dongying 东营", 5322));
+            put("都江堰", new Province("Dujianguan 都江堰", 10038));
+            put("敦煌", new Province("Dunhuang 敦煌", 11166));
+            put("峨眉山", new Province("Emeishan 峨眉山", 10644));
+            put("佛山", new Province("Foshan 佛山", 11040));
+            put("阜阳", new Province("Fuyang 阜阳", 6981));
+            put("福州", new Province("Fuzhou 福州", 9963));
+            put("赣州", new Province("Ganzhou 赣州", 9894));
+            put("广州", new Province("Guanzhou 广州", 10965));
+            put("桂林", new Province("Guilin 桂林", 10461));
+            put("贵阳", new Province("Guiyang 贵阳", 10893));
+            put("海口", new Province("Haikou 海口", 12543));
+            put("海宁", new Province("Haining 海宁", 7968));
+            put("哈密地", new Province("Hami 哈密地", 11097));
+            put("杭州", new Province("Hangzhou 杭州", 7995));
+            put("哈尔滨", new Province("Harbin 哈尔滨", 1461));
+            put("合肥", new Province("Hefei 合肥", 7419));
+            put("贺州", new Province("Hezhou 贺州", 10731));
+            put("黄山", new Province("Huangshan 黄山", 8247));
+            put("惠州", new Province("Huizhoy 惠州", 10740));
+            put("湖州", new Province("Huzhou 湖州", 7761));
+            put("吉安", new Province("Ji\"an 吉安", 9345));
+            put("江门", new Province("Jiangmen 江门", 11274));
+            put("嘉兴", new Province("Jiaxing 嘉兴", 7860));
+            put("济南", new Province("Jinan 济南", 5616));
+            put("景德镇", new Province("Jingdezhen 景德镇", 8412));
+            put("靖江", new Province("Jingjiang 靖江", 7407));
+            put("九寨沟", new Province("Jiuzhaigou 九寨沟", 9867));
+            put("九江", new Province("Juijiang 九江", 8265));
+            put("开封", new Province("Kaifeng 开封", 6573));
+            put("昆明", new Province("Kunming 昆明", 12285));
+            put("昆山", new Province("Kunshan 昆山", 7725));
+            put("廊坊", new Province("Langfang 廊坊", 4704));
+            put("兰州", new Province("Lanzhou 兰州", 9030));
+            put("乐山", new Province("Leshan 乐山", 10560));
+            put("丽江", new Province("Lijiang 丽江", 12525));
+            put("凌海", new Province("Linhai 凌海", 3306));
+            put("临沂", new Province("Linyi 临沂", 6135));
+            put("溧阳", new Province("Liyang 溧阳", 7551));
+            put("柳州", new Province("Luizhou 柳州", 10902));
+            put("洛阳", new Province("Luoyang 洛阳", 7038));
+            put("滿洲", new Province("Manchuria 滿洲", 4383));
+            put("绵阳", new Province("Mianyang 绵阳", 9972));
+            put("牡丹江", new Province("Mudanjiang 牡丹江", 507));
+            put("南昌", new Province("Nangchang 南昌", 8694));
+            put("南京", new Province("Nanjing 南京", 7317));
+            put("南宁", new Province("Nanning 南宁", 11568));
+            put("南通", new Province("Nantong 南通", 7497));
+            put("南阳", new Province("Nanyang 南阳", 7392));
+            put("宁波", new Province("Ningbo 宁波", 8355));
+            put("宁德", new Province("Ningde 宁德", 9624));
+            put("青岛", new Province("Qingdao 青岛", 6087));
+            put("清远", new Province("Qinguan 清远", 10806));
+            put("秦皇岛", new Province("Qinhuangdao 秦皇岛", 3936));
+            put("泉州", new Province("Quanzhou 泉州", 10383));
+            put("日照", new Province("Rizhao 日照", 6162));
+            put("三亚", new Province("Sanya 三亚", 13398));
+            put("上海市", new Province("Shanghai 上海市", 7854));
+            put("香格里拉", new Province("Shangri-la 香格里拉", 13008));
+            put("汕头", new Province("Shantou 汕头", 10764));
+            put("韶关", new Province("Shaoguan 韶关", 10332));
+            put("韶山", new Province("Shaoshan 韶山", 9168));
+            put("沈阳", new Province("Shenyang 沈阳", 2730));
+            put("深圳", new Province("Shenzhen 深圳", 11088));
+            put("石家庄", new Province("Shijiazhuang 石家庄", 5514));
+            put("石狮", new Province("Shishi 石狮", 10434));
+            put("苏州", new Province("Suzhou 苏州", 7644));
+            put("泰安", new Province("Taian 泰安", 5757));
+            put("太原", new Province("Taiyuan 太原", 6147));
+            put("台州", new Province("Taizhou 台州", 8766));
+            put("唐山", new Province("Tangshan 唐山", 4302));
+            put("天津", new Province("Tianjin 天津", 4686));
+            put("万宁", new Province("Wanning 万宁", 13053));
+            put("潍坊", new Province("Weifang 潍坊", 4704));
+            put("威海", new Province("Weihai 威海", 6534));
+            put("温州", new Province("Wenzhou 温州", 8898));
+            put("乌海", new Province("Wuhai 乌海", 7635));
+            put("武汉", new Province("Wuhan 武汉", 7989));
+            put("芜湖", new Province("Wuhu 芜湖", 7698));
+            put("无锡", new Province("Wuxi 无锡", 7599));
+            put("乌镇", new Province("Wuzhen 乌镇", 6801));
+            put("五指山", new Province("Wuzhishan 五指山", 13179));
+            put("厦门市", new Province("Xiamen 厦门市", 10449));
+            put("西安,", new Province("Xian 西安,", 7860));
+            put("西昌", new Province("Xichang 西昌", 11307));
+            put("西宁", new Province("Xining 西宁", 9624));
+            put("新乡", new Province("Xinxiang 新乡", 6486));
+            put("徐州", new Province("Xuzhou 徐州", 6483));
+            put("雅安", new Province("Yaan 雅安", 10398));
+            put("盐城", new Province("Yancheng 盐城", 7005));
+            put("阳朔县", new Province("Yangshuo 阳朔县", 10683));
+            put("扬州市", new Province("Yangzhou 扬州市", 7206));
+            put("烟台", new Province("Yantai 烟台", 4110));
+            put("宜昌", new Province("Yichang 宜昌", 8496));
+            put("银川", new Province("Yinchuan 银川", 7971));
+            put("义乌", new Province("Yiwu 义乌", 8430));
+            put("岳阳", new Province("Yueyang 岳阳", 8628));
+            put("张家界", new Province("Zhangjiajie 张家界", 9159));
+            put("漳州", new Province("Zhangzhou 漳州", 10443));
+            put("湛江", new Province("Zhanjiang 湛江", 11973));
+            put("郑州", new Province("Zhengzhou 郑州", 6720));
+            put("中山", new Province("Zhongshan 中山", 11250));
+            put("舟山", new Province("Zhoushan 舟山", 8502));
+            put("珠海", new Province("Zhuhai 珠海", 11352));
+            put("淄博", new Province("Zibo 淄博", 5454));
+            put("许昌", new Province("Xuchang 许昌", 6906));
         }
     };
 

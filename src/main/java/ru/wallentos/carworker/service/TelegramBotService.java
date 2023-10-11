@@ -247,7 +247,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         String text = """ 
                 Вы находитесь в меню составления заявки.
                                 
-                Пожалуйста, введите текст заявки в ответном сообщении.""";
+                Пожалуйста, отправьте ваш запрос в ответном сообщении!""";
         Message sendOutMessage = executeMessage(utilService.prepareSendMessage(chatId, text));
 
         // запомнить сообщение для удаления
@@ -1089,7 +1089,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
             rows.add(row);
             inlineKeyboardMarkup.setKeyboard(rows);
             Message sendOutMessage = executeMessage(utilService.prepareSendMessage(chatId, errorMessage, inlineKeyboardMarkup));
-            
+
             // запомнить сообщение для удаления
             UserCarInputData data = cache.getUserCarData(chatId);
             deleteMessage(data.getLastMessageToDelete());
@@ -1106,7 +1106,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         data.setVolume(carDto.getRawCarPower());
         data.setAge(executionService.calculateCarAgeByRawDate(carDto.getRawCarYear(), carDto.getRawCarMonth()));
         data.setCarId(carDto.getCarId());
-        data.setProvince(ConfigDataPool.provincePriceMap.get(carDto.getRawCarProvinceName()));
+        if (configDataPool.isKorexProvinceMatrix) {
+            data.setProvince(ConfigDataPool.provincePriceMapForKorex.get(carDto.getRawCarProvinceName()));
+        } else {
+            data.setProvince(ConfigDataPool.provincePriceMap.get(carDto.getRawCarProvinceName()));
+        }
 
         // Удаляем сообщения
         deleteMessage(data.getLastMessageToDelete());

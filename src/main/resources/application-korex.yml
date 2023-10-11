@@ -4,14 +4,22 @@ bot:
 ru:
   wallentos:
     carworker:
-      currencies: KRW
+      currencies: KRW, CNY
       enable-krw-link-mode: ${ENABLE_KRW_LINK_MODE}
+      enable-cny-link-mode: ${ENABLE_CNY_LINK_MODE}
       enable-krw-auction-mode: true
+      korex-province-matrix: true
+      client-request-spreedsheet-id: 160dFiu2oswiYji4QUI-mlUVuFoTzH-sqX1OlQvaFuIc
+      client-request-group-id: -1001854156002
+      enable-client-request: ${ENABLE_CLIENT_REQUEST}
       auction-coefficient: ${AUCTION_COEFFICIENT}
-      manager-link: https://t.me/korexadmin
+      manager-link: T.me/Korex_Consultant
       user-prefix: "user_korex_"
       extra-pay-corea:
-        krw: 2500000
-        rub: 100000
+        krw: ${EXTRA_PAY_KOREA_KRW}
+        rub: ${EXTRA_PAY_KOREA_RUB}
+      extra-pay-china:
+        cny: ${EXTRA_PAY_CHINA_CNY}
+        rub: ${EXTRA_PAY_CHINA_RUB}
       update-cache-job:
         master-bot: true
