@@ -86,6 +86,13 @@ public class RestService {
                 log.warn(errorMessage);
                 throw new RecaptchaException(errorMessage);
             }
+            var status = json.get("cars").get("base").get("advertisement").get("status").asText();
+            if ("SOLD".equals(status)) {
+                String errorMessage = String.format("The car %s has been sold", carId);
+                throw new GetCarDetailException(errorMessage);
+            } else if (!"ADVERTISE".equals(status)) {
+                log.warn("unhandled car status {} by carId {}", status, carId);
+            }
             var encarEntity = new CarEntity(
                     carId,
                     json.get("cars").get("base").get("advertisement").get("price").asText(),
