@@ -63,7 +63,7 @@ public class EncarCacheService {
             encarCache.save(carId, carDto);
             log.info("Обновлены данные для тачки:{}", carDto);
         } catch (GetCarDetailException e) {
-            log.error("can not update car ");
+            log.error("can not update car, {}", e.getMessage());
             encarCache.deleteById(carId);
         } catch (RecaptchaException e) {
             throw new RuntimeException(e);

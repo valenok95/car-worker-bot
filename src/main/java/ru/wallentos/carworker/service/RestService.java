@@ -87,7 +87,7 @@ public class RestService {
                 throw new RecaptchaException(errorMessage);
             }
             var status = json.get("cars").get("base").get("advertisement").get("status").asText();
-            if ("SOLD".equals(status)) {
+            if ("SOLD".equals(status) || "WAIT".equals(status)) {
                 String errorMessage = String.format("The car %s has been sold", carId);
                 throw new GetCarDetailException(errorMessage);
             } else if (!"ADVERTISE".equals(status)) {
