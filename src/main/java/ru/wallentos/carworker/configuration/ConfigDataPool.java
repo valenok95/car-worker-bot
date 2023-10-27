@@ -302,7 +302,7 @@ public class ConfigDataPool {
             put("张家界", new Province("Zhangjiajie 张家界", 9300));
             put("赣州", new Province("Ganzhou 赣州", 9867));
             put("吉安", new Province("Ji\"an 吉安", 9285));
-            put("景德镇,", new Province("Jingdezhen 景德镇,", 8436));
+            put("景德镇", new Province("Jingdezhen 景德镇", 8436));
             put("九江", new Province("Juijiang 九江", 8292));
             put("南昌", new Province("Nangchang 南昌", 8646));
             put("东莞", new Province("Dongguan 东莞", 11112));
@@ -457,7 +457,7 @@ public class ConfigDataPool {
             put("乌镇", new Province("Wuzhen 乌镇", 6801));
             put("五指山", new Province("Wuzhishan 五指山", 13179));
             put("厦门市", new Province("Xiamen 厦门市", 10449));
-            put("西安,", new Province("Xian 西安,", 7860));
+            put("西安", new Province("Xian 西安", 7860));
             put("西昌", new Province("Xichang 西昌", 11307));
             put("西宁", new Province("Xining 西宁", 9624));
             put("新乡", new Province("Xinxiang 新乡", 6486));
