@@ -20,8 +20,7 @@ ru:
         host-naver: https://finance.naver.com/marketindex/exchangeDetail.nhn?marketindexCd=FX_USDKRW
         encar-detail-url: https://fem.encar.com/cars/detail/
         encar-vehicle-url: https://api.encar.com/v1/readside/vehicle/
-        encar-insurance-url: https://api.encar.com/v1/readside/record/vehicle/%s/open?vehicleNo=
-        encar-inspect-url: https://fem.encar.com/cars/report/inspect/
+        encar-insurance-url: https://api.encar.com/v1/readside/record/vehicle/%d/open
         host-che-start: https://www.che168.com/CarConfig/CarConfig.html
         host-che-detail: https://cacheapigo.che168.com/CarProduct/GetParam.ashx?
       update-cache-job:
