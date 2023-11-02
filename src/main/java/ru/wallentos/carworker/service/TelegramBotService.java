@@ -3,6 +3,8 @@ package ru.wallentos.carworker.service;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.AUCTION_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CANCEL_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CANCEL_MAILING_BUTTON;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.CAR_REPORT_BUTTON_CALLBACK;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.CAR_REPORT_BUTTON_TEXT;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CLIENT_REQUEST_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CONFIRM_MAILING_BUTTON;
@@ -217,6 +219,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
             case CLIENT_REQUEST_BUTTON:
                 clientRequestStartCommand(chatId);
                 return;
+            case CAR_REPORT_BUTTON_CALLBACK:
+                processReport(chatId, update);
+                return;
             default:
                 break;
         }
@@ -236,6 +241,20 @@ public class TelegramBotService extends TelegramLongPollingBot {
             default:
                 break;
         }
+    }
+
+    /**
+     * Подготовка отчёта по автомобилю
+     *
+     * @param chatId идентификатор пользователя
+     * @param update сущность из поступившего сообщения
+     */
+    private void processReport(long chatId, Update update) {
+        String carId =
+                update.getCallbackQuery().getMessage().getEntities().get(2).getUrl().substring(34);
+        CarDto car = getEncarCacheService().getEncarDtoFromCache(carId);
+        executeMessage(utilService.prepareSendMessage(chatId,
+                utilService.getEncarReportMessage(car)));
     }
 
     /**
@@ -678,6 +697,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         executeMessage(utilService.prepareSendMessage(chatId, dataPreparedtext));
         CarPriceResultData resultData = executionService.executeCarPriceResultData(data);
         cache.deleteUserCarDataByUserId(chatId);
+        int carId = data.getCarId();
         log.info("""
                 Данные рассчёта:
                 First price in rubles {},
@@ -693,6 +713,14 @@ public class TelegramBotService extends TelegramLongPollingBot {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
+
+        if (carId != 0 && configDataPool.isEnableEncarReportMode()) {
+            List<InlineKeyboardButton> row0 = new ArrayList<>();
+            InlineKeyboardButton carReport = new InlineKeyboardButton(CAR_REPORT_BUTTON_TEXT);
+            carReport.setCallbackData(CAR_REPORT_BUTTON_CALLBACK);
+            row0.add(carReport);
+            rows.add(row0);
+        }
 
         if (!configDataPool.isManagerBot) {
             List<InlineKeyboardButton> row1 = new ArrayList<>();

@@ -25,6 +25,7 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
+import ru.wallentos.carworker.model.CarDto;
 import ru.wallentos.carworker.model.CarPriceResultData;
 
 @Service
@@ -47,6 +48,7 @@ public class UtilService {
     protected SendMessage prepareSendMessage(long chatId, String text) {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
+        message.setParseMode(ParseMode.HTML);
         message.setText(text);
         return message;
     }
@@ -300,6 +302,20 @@ public class UtilService {
                 getCheCarLinkStringByCarId(resultData.getCarId()));
     }
 
+    public String getEncarReportMessage(CarDto carDto) {
+        return String.format(Locale.FRANCE, """
+                        Выплаты по представленному автомобилю:
+                        %,d ₩
+                                                
+                        Выплаты другим участникам ДТП:
+                        %,d ₩
+                                              
+                        %s
+                        """,
+                carDto.getMyAccidentCost(), carDto.getOtherAccidentCost(),
+                getEncarInspectLinkStringByCarId(carDto.getCarId()));
+    }
+
     private String getEastWayCnyMessageByResultData(CarPriceResultData resultData) {
         return String.format(Locale.FRANCE, """
                         Стоимость автомобиля под ключ во Владивостоке:
@@ -536,6 +552,19 @@ public class UtilService {
         return carId != 0 ? String.format("""
                                 
                 <a href="https://fem.encar.com/cars/detail/%d">🔗Ссылка на автомобиль</a>                
+                """, carId) : "";
+    }
+
+    /**
+     * Получаем ссылку на автомобиль
+     *
+     * @param carId
+     * @return
+     */
+    private String getEncarInspectLinkStringByCarId(int carId) {
+        return carId != 0 ? String.format("""
+                                
+                <a href="https://fem.encar.com/cars/report/inspect/%d">🔗Ссылка на отчёт по повреждениям</a>                
                 """, carId) : "";
     }
 

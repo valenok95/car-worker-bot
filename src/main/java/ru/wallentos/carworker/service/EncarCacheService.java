@@ -45,6 +45,16 @@ public class EncarCacheService {
     }
 
     /**
+     * Получаем из cache тачку.
+     *
+     * @param carId
+     * @return
+     */
+    public CarDto getEncarDtoFromCache(String carId) {
+        return encarCache.getById(carId);
+    }
+
+    /**
      * Запускаем обновление КЭШа.
      */
     public void updateEncarCache() {

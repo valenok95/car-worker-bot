@@ -12,6 +12,7 @@ ru:
       client-request-spreedsheet-id: 160dFiu2oswiYji4QUI-mlUVuFoTzH-sqX1OlQvaFuIc
       client-request-group-id: -1001854156002
       enable-client-request: ${ENABLE_CLIENT_REQUEST}
+      enable-encar-report-mode: true
       auction-coefficient: ${AUCTION_COEFFICIENT}
       manager-link: T.me/Korex_Consultant
       user-prefix: "user_korex_"

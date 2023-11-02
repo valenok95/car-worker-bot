@@ -51,6 +51,8 @@ public class ConfigDataPool {
     public int EXTRA_PAY_AMOUNT_CHINA_RUB;
     @Value("${ru.wallentos.carworker.enable-krw-link-mode:false}")
     public boolean enableKrwLinkMode;
+    @Value("${ru.wallentos.carworker.enable-encar-report-mode:false}")
+    public boolean enableEncarReportMode;
     @Value("${ru.wallentos.carworker.enable-cny-link-mode:false}")
     public boolean enableCnyLinkMode;
     @Value("${ru.wallentos.carworker.enable-krw-auction-mode:false}")
@@ -130,6 +132,8 @@ public class ConfigDataPool {
     public static final String RESET_MESSAGE = "Рассчитать стоимость автомобиля";
     public static final String TO_SET_CURRENCY_MENU = "Меню установки валюты";
     public static final String MANAGER_MESSAGE = "Связаться с менеджером";
+    public static final String CAR_REPORT_BUTTON_TEXT = "Технический отчёт об автомобиле";
+    public static final String CAR_REPORT_BUTTON_CALLBACK = "report_callback";
     public static final String CLIENT_REQUEST_BUTTON = "Оставить заявку";
 
     /**
