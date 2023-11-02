@@ -30,6 +30,8 @@ public class RestService {
     private String naverMethod;
     @Value("${ru.wallentos.carworker.exchange-api.encar-detail-url}")
     private String encarDetailUrl;
+    @Value("${ru.wallentos.carworker.exchange-api.encar-vehicle-url}")
+    private String encarVehicleUrl;
     @Value("${ru.wallentos.carworker.exchange-api.encar-insurance-url}")
     private String encarInsuranceUrl;
     @Value("${ru.wallentos.carworker.exchange-api.host-che-start}")
@@ -99,7 +101,14 @@ public class RestService {
      * @throws IOException
      */
     private JsonNode getEncarInsuranceJsonDataByJsoup(String carId) throws IOException {
-        var connection = Jsoup.connect(String.format(encarInsuranceUrl, carId))
+        var getVehicleNumConnection =
+                Jsoup.connect(encarVehicleUrl + carId).ignoreContentType(true).execute().body();
+        var jsonVehicleNumData = mapper.readTree(getVehicleNumConnection);
+        int vehicleId = jsonVehicleNumData.get("vehicleId").asInt();
+        String vehicleNo = jsonVehicleNumData.get("vehicleNo").asText();
+
+        var connection = Jsoup.connect(String.format(encarInsuranceUrl, vehicleId))
+                .data("vehicleNo", vehicleNo)
                 .header("content-type", "application/json;charset=UTF-8").userAgent("Mozilla/5" +
                         ".0 (X11; Linux x86_64) " +
                         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36").ignoreContentType(true);
@@ -109,7 +118,18 @@ public class RestService {
     public CarDto getEncarDataByJsoup(String carId) throws GetCarDetailException, RecaptchaException {
         try {
             JsonNode jsonDetail = getEncarDetailJsonDataByJsoup(carId);
-            JsonNode jsonInsurance = getEncarInsuranceJsonDataByJsoup(carId);
+            int myAccidentCost = 0;
+            int otherAccidentCost = 0;
+            try {
+                JsonNode jsonInsurance = getEncarInsuranceJsonDataByJsoup(carId);
+                myAccidentCost = jsonInsurance.get("myAccidentCost").asInt();
+                otherAccidentCost = jsonInsurance.get("otherAccidentCost").asInt();
+
+            } catch (IOException e) {
+                log.warn("cannot get insurance information by carId {}", carId);
+            }
+
+
             var status = jsonDetail.get("cars").get("base").get("advertisement").get("status").asText();
             if ("SOLD".equals(status) || "WAIT".equals(status)) {
                 String errorMessage = String.format("The car %s has been sold", carId);
@@ -123,7 +143,7 @@ public class RestService {
                     jsonDetail.get("cars").get("base").get("category").get("formYear").asText(),
                     jsonDetail.get("cars").get("base").get("category").get("yearMonth").asText().substring(4, 6),
                     jsonDetail.get("cars").get("base").get("spec").get("displacement").asText(),
-                    null, jsonInsurance.get("myAccidentCost").asInt(), jsonInsurance.get("otherAccidentCost").asInt());
+                    null, myAccidentCost, otherAccidentCost);
             return carConverter.convertToDto(encarEntity);
         } catch (IOException | NullPointerException e) {
             String errorMessage = String.format("Error while getting info by id %s",
