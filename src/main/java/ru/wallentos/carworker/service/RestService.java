@@ -1,5 +1,6 @@
 package ru.wallentos.carworker.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Map;
@@ -27,8 +28,10 @@ public class RestService {
     private String cbrMethod;
     @Value("${ru.wallentos.carworker.exchange-api.host-naver}")
     private String naverMethod;
-    @Value("${ru.wallentos.carworker.exchange-api.host-encar}")
-    private String encarMethod;
+    @Value("${ru.wallentos.carworker.exchange-api.encar-detail-url}")
+    private String encarDetailUrl;
+    @Value("${ru.wallentos.carworker.exchange-api.encar-insurance-url}")
+    private String encarInsuranceUrl;
     @Value("${ru.wallentos.carworker.exchange-api.host-che-start}")
     private String cheStartMethod;
     @Value("${ru.wallentos.carworker.exchange-api.host-che-detail}")
@@ -71,22 +74,43 @@ public class RestService {
         }
     }
 
+    /**
+     * Получить информацию по автомобилю encar
+     *
+     * @param carId идентификатор авто
+     * @return данные со страницы ответа в json
+     * @throws IOException
+     */
+    private JsonNode getEncarDetailJsonDataByJsoup(String carId) throws IOException {
+        var connection = Jsoup.connect(encarDetailUrl + carId).userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
+        connection.execute();
+        connection.execute();
+        Document document = Jsoup.parse(connection.execute().body());
+        String valueJson =
+                document.select("script:containsData(PRELOADED_STATE)").get(0).childNodes().get(0).toString().replace("__PRELOADED_STATE__ = ", "");
+        return mapper.readTree(valueJson);
+    }
+
+    /**
+     * Получить страховую информацию по автомобилю encar
+     *
+     * @param carId идентификатор авто
+     * @return данные со страницы ответа в json
+     * @throws IOException
+     */
+    private JsonNode getEncarInsuranceJsonDataByJsoup(String carId) throws IOException {
+        var connection = Jsoup.connect(String.format(encarInsuranceUrl, carId))
+                .header("content-type", "application/json;charset=UTF-8").userAgent("Mozilla/5" +
+                        ".0 (X11; Linux x86_64) " +
+                        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36").ignoreContentType(true);
+        return mapper.readTree(connection.execute().body());
+    }
+
     public CarDto getEncarDataByJsoup(String carId) throws GetCarDetailException, RecaptchaException {
-        Document document = null;
         try {
-            var connection = Jsoup.connect(encarMethod + carId).userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
-            connection.execute();
-            connection.execute();
-            document = Jsoup.parse(connection.execute().body());
-            String valueJson =
-                    document.select("script:containsData(PRELOADED_STATE)").get(0).childNodes().get(0).toString().replace("__PRELOADED_STATE__ = ", "");
-            var json = mapper.readTree(valueJson);
-            if (document.toString().contains("recaptcha")) {
-                String errorMessage = "Требуется решение каптчи.";
-                log.warn(errorMessage);
-                throw new RecaptchaException(errorMessage);
-            }
-            var status = json.get("cars").get("base").get("advertisement").get("status").asText();
+            JsonNode jsonDetail = getEncarDetailJsonDataByJsoup(carId);
+            JsonNode jsonInsurance = getEncarInsuranceJsonDataByJsoup(carId);
+            var status = jsonDetail.get("cars").get("base").get("advertisement").get("status").asText();
             if ("SOLD".equals(status) || "WAIT".equals(status)) {
                 String errorMessage = String.format("The car %s has been sold", carId);
                 throw new GetCarDetailException(errorMessage);
@@ -95,14 +119,12 @@ public class RestService {
             }
             var encarEntity = new CarEntity(
                     carId,
-                    json.get("cars").get("base").get("advertisement").get("price").asText(),
-                    json.get("cars").get("base").get("category").get("formYear").asText(),
-                    json.get("cars").get("base").get("category").get("yearMonth").asText().substring(4, 6),
-                    json.get("cars").get("base").get("spec").get("displacement").asText(), null);
+                    jsonDetail.get("cars").get("base").get("advertisement").get("price").asText(),
+                    jsonDetail.get("cars").get("base").get("category").get("formYear").asText(),
+                    jsonDetail.get("cars").get("base").get("category").get("yearMonth").asText().substring(4, 6),
+                    jsonDetail.get("cars").get("base").get("spec").get("displacement").asText(),
+                    null, jsonInsurance.get("myAccidentCost").asInt(), jsonInsurance.get("otherAccidentCost").asInt());
             return carConverter.convertToDto(encarEntity);
-        } catch (RecaptchaException e) {
-            recaptchaService.solveReCaptcha(encarMethod + carId, document);
-            throw e;
         } catch (IOException | NullPointerException e) {
             String errorMessage = String.format("Error while getting info by id %s",
                     carId);
@@ -141,7 +163,7 @@ public class RestService {
             var cheCarEntity = new CarEntity(
                     carId,
                     String.valueOf(rawCarPrice),
-                    rawCarYear, rawCarMonth, rawCarPower, rawCarProvinceName
+                    rawCarYear, rawCarMonth, rawCarPower, rawCarProvinceName, 0, 0
             );
             return carConverter.convertToDto(cheCarEntity);
 

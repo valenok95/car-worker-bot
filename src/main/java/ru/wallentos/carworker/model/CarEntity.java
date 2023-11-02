@@ -16,4 +16,6 @@ public class CarEntity {
     private String rawCarMonth;
     private String rawCarPower;
     private String rawCarProvinceName;
+    private int myAccidentCost;
+    private int otherAccidentCost;
 }
