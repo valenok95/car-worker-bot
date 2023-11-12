@@ -714,7 +714,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
 
-        if (carId != 0 && configDataPool.isEnableEncarReportMode()) {
+        if (carId != 0 && configDataPool.isEnableEncarReportMode() && data.isHasInsuranceInfo()) {
             List<InlineKeyboardButton> row0 = new ArrayList<>();
             InlineKeyboardButton carReport = new InlineKeyboardButton(CAR_REPORT_BUTTON_TEXT);
             carReport.setCallbackData(CAR_REPORT_BUTTON_CALLBACK);
@@ -1082,6 +1082,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         data.setVolume(carDto.getRawCarPower());
         data.setAge(executionService.calculateCarAgeByRawDate(carDto.getRawCarYear(), carDto.getRawCarMonth()));
         data.setCarId(carDto.getCarId());
+        if (carDto.isHasInsuranceInfo()) {
+            data.setOtherAccidentCost(carDto.getOtherAccidentCost());
+            data.setMyAccidentCost(carDto.getMyAccidentCost());
+            data.setHasInsuranceInfo(carDto.isHasInsuranceInfo());
+        }
 
         // Удаляем сообщения
         deleteMessage(data.getLastMessageToDelete());

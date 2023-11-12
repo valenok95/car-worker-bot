@@ -16,4 +16,5 @@ public class CarDto {
     private String rawCarProvinceName;
     private int myAccidentCost;
     private int otherAccidentCost;
+    private boolean hasInsuranceInfo;
 }

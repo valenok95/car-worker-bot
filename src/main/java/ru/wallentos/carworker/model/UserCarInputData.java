@@ -24,6 +24,9 @@ public class UserCarInputData {
     Province province;
     Message lastMessageToDelete;
     Message preLastMessageToDelete;
+    int myAccidentCost;
+    int otherAccidentCost;
+    boolean hasInsuranceInfo;
 
     @Override
     public String toString() {

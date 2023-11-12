@@ -304,10 +304,10 @@ public class UtilService {
 
     public String getEncarReportMessage(CarDto carDto) {
         return String.format(Locale.FRANCE, """
-                        Выплаты по представленному автомобилю:
+                        Страховые выплаты по представленному автомобилю:
                         %,d ₩
                                                 
-                        Выплаты другим участникам ДТП:
+                        Cтраховые выплаты другим участникам ДТП:
                         %,d ₩
                                               
                         %s
@@ -564,7 +564,7 @@ public class UtilService {
     private String getEncarInspectLinkStringByCarId(int carId) {
         return carId != 0 ? String.format("""
                                 
-                <a href="https://fem.encar.com/cars/report/inspect/%d">🔗Ссылка на отчёт по повреждениям</a>                
+                <a href="https://fem.encar.com/cars/report/inspect/%d">🔗Ссылка на схему повреждений кузовных элементов🔗</a>                
                 """, carId) : "";
     }
 

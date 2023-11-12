@@ -120,10 +120,12 @@ public class RestService {
             JsonNode jsonDetail = getEncarDetailJsonDataByJsoup(carId);
             int myAccidentCost = 0;
             int otherAccidentCost = 0;
+            boolean hasInsuranceInfo = false;
             try {
                 JsonNode jsonInsurance = getEncarInsuranceJsonDataByJsoup(carId);
                 myAccidentCost = jsonInsurance.get("myAccidentCost").asInt();
                 otherAccidentCost = jsonInsurance.get("otherAccidentCost").asInt();
+                hasInsuranceInfo = true;
 
             } catch (IOException e) {
                 log.warn("cannot get insurance information by carId {}", carId);
@@ -143,7 +145,7 @@ public class RestService {
                     jsonDetail.get("cars").get("base").get("category").get("formYear").asText(),
                     jsonDetail.get("cars").get("base").get("category").get("yearMonth").asText().substring(4, 6),
                     jsonDetail.get("cars").get("base").get("spec").get("displacement").asText(),
-                    null, myAccidentCost, otherAccidentCost);
+                    null, myAccidentCost, otherAccidentCost, hasInsuranceInfo);
             return carConverter.convertToDto(encarEntity);
         } catch (IOException | NullPointerException e) {
             String errorMessage = String.format("Error while getting info by id %s",
@@ -183,7 +185,7 @@ public class RestService {
             var cheCarEntity = new CarEntity(
                     carId,
                     String.valueOf(rawCarPrice),
-                    rawCarYear, rawCarMonth, rawCarPower, rawCarProvinceName, 0, 0
+                    rawCarYear, rawCarMonth, rawCarPower, rawCarProvinceName, 0, 0, false
             );
             return carConverter.convertToDto(cheCarEntity);
 
