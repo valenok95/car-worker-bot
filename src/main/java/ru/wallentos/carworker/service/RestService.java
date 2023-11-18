@@ -142,7 +142,7 @@ public class RestService {
             var encarEntity = new CarEntity(
                     carId,
                     jsonDetail.get("cars").get("base").get("advertisement").get("price").asText(),
-                    jsonDetail.get("cars").get("base").get("category").get("formYear").asText(),
+                    jsonDetail.get("cars").get("base").get("category").get("yearMonth").asText().substring(0, 4),
                     jsonDetail.get("cars").get("base").get("category").get("yearMonth").asText().substring(4, 6),
                     jsonDetail.get("cars").get("base").get("spec").get("displacement").asText(),
                     null, myAccidentCost, otherAccidentCost, hasInsuranceInfo);
