@@ -17,6 +17,8 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.MANUAL_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.READY_BUTTON;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.RESET_CALLBACK;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.RESET_MESSAGE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.RUB;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.TO_SET_CURRENCY_MENU;
@@ -198,7 +200,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         long chatId = update.getCallbackQuery().getMessage().getChatId();
         BotState currentState = cache.getUsersCurrentBotState(chatId);
         switch (callbackData) {
-            case RESET_MESSAGE, CANCEL_BUTTON:
+            case RESET_CALLBACK, CANCEL_BUTTON:
                 startCommandReceived(update.getCallbackQuery().getMessage());
                 return;
             case TO_SET_CURRENCY_MENU:
@@ -350,7 +352,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
         InlineKeyboardButton manager = new InlineKeyboardButton(MANAGER_MESSAGE);
         InlineKeyboardButton cliendRequest = new InlineKeyboardButton(CLIENT_REQUEST_BUTTON);
-        reset.setCallbackData(RESET_MESSAGE);
+        reset.setCallbackData(RESET_CALLBACK);
         manager.setUrl(managerLink);
         cliendRequest.setCallbackData(CLIENT_REQUEST_BUTTON);
         row1.add(manager);
@@ -392,7 +394,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
      * @param data
      */
     private void processAskContact(long chatId, UserCarInputData data) {
-        String text = "Пожалуйста, укажите контакт для связи: ";
+        String text = "Мне не удалось обнаружить ваш Telegram ID, пожалуйста, отправьте ваш номер" +
+                " телефона ответным сообщением, что бы наши менеджеры смогли с вами связаться.";
         Message sendOutMessage = executeMessage(utilService.prepareSendMessage(chatId, text));
         data.setLastMessageToDelete(sendOutMessage);
         cache.setUsersCurrentBotState(chatId, BotState.ASK_CLIENT_CONTACT);
@@ -571,7 +574,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
         InlineKeyboardButton toSetCurrencyMenu = new InlineKeyboardButton(TO_SET_CURRENCY_MENU);
         toSetCurrencyMenu.setCallbackData(TO_SET_CURRENCY_MENU);
-        reset.setCallbackData(RESET_MESSAGE);
+        reset.setCallbackData(RESET_CALLBACK);
         row1.add(toSetCurrencyMenu);
         row2.add(reset);
         rows.add(row1);
@@ -779,11 +782,13 @@ public class TelegramBotService extends TelegramLongPollingBot {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row3 = new ArrayList<>();
 
-        List<InlineKeyboardButton> row0 = new ArrayList<>();
-        InlineKeyboardButton carResultDetail = new InlineKeyboardButton(CAR_RESULT_DETAIL_BUTTON_TEXT);
-        carResultDetail.setCallbackData(CAR_RESULT_DETAIL_BUTTON_CALLBACK);
-        row0.add(carResultDetail);
-        rows.add(row0);
+        if (configDataPool.enableResultDetalization) {
+            List<InlineKeyboardButton> row0 = new ArrayList<>();
+            InlineKeyboardButton carResultDetail = new InlineKeyboardButton(CAR_RESULT_DETAIL_BUTTON_TEXT);
+            carResultDetail.setCallbackData(CAR_RESULT_DETAIL_BUTTON_CALLBACK);
+            row0.add(carResultDetail);
+            rows.add(row0);
+        }
 
         if (carId != 0 && configDataPool.isEnableEncarReportMode() && data.isHasInsuranceInfo()) {
             List<InlineKeyboardButton> row1 = new ArrayList<>();
@@ -802,7 +807,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         }
 
         InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
-        reset.setCallbackData(RESET_MESSAGE);
+        reset.setCallbackData(RESET_CALLBACK);
         row3.add(reset);
         rows.add(row3);
         if (configDataPool.isEnableClientRequest()) {
@@ -840,7 +845,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
         InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
-        reset.setCallbackData(RESET_MESSAGE);
+        reset.setCallbackData(RESET_CALLBACK);
 
         if (!configDataPool.isManagerBot) {
             List<InlineKeyboardButton> row1 = new ArrayList<>();
@@ -859,6 +864,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     private void startCommandReceived(Message message) {
         long chatId = message.getChatId();
+        String name = message.getChat().getFirstName();
 
         if (configDataPool.isManagerBot && !configDataPool.getWhiteManagerList().contains(message.getChat().getUserName().toLowerCase())) {
             String text = String.format("""
@@ -870,9 +876,18 @@ public class TelegramBotService extends TelegramLongPollingBot {
         }
         if (configDataPool.isCheckChannelSubscribers && !isChannelSubscriber(chatId)) {
             String text = String.format("""
-                    Для доступа к функционалу необходимо подписаться на канал: %s       
-                    """, configDataPool.getChannelSubscribersLink());
-            executeMessage(utilService.prepareSendMessage(chatId, text));
+                    Здравствуйте %s! Для доступа к калькулятору, пожалуйста подпишитесь на <a href="%s">🔗Официальный телеграмм канал</a>     
+                    """, name, configDataPool.getChannelSubscribersLink());
+
+            InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            InlineKeyboardButton readyButton = new InlineKeyboardButton(READY_BUTTON);
+            readyButton.setCallbackData(RESET_CALLBACK);
+            row.add(readyButton);
+            rows.add(row);
+            inlineKeyboardMarkup.setKeyboard(rows);
+            executeMessage(utilService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
             return;
         }
 
@@ -881,7 +896,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         deleteMessage(data.getLastMessageToDelete());
         deleteMessage(data.getPreLastMessageToDelete());
 
-        String name = message.getChat().getFirstName();
         if (configDataPool.isSingleCurrencyMode()) { //singleCurrencyMode не спрашиваем валюту
             processSingleCurrencyStart(message, name);
             restService.refreshExchangeRates();
@@ -929,7 +943,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
-        reset.setCallbackData(RESET_MESSAGE);
+        reset.setCallbackData(RESET_CALLBACK);
         row1.add(reset);
         rows.add(row1);
         inlineKeyboardMarkup.setKeyboard(rows);
@@ -953,7 +967,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
         InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
-        reset.setCallbackData(RESET_MESSAGE);
+        reset.setCallbackData(RESET_CALLBACK);
         row.add(reset);
         rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
@@ -1339,7 +1353,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         List<InlineKeyboardButton> row2 = new ArrayList<>();
         InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
         InlineKeyboardButton manager = new InlineKeyboardButton(MANAGER_MESSAGE);
-        reset.setCallbackData(RESET_MESSAGE);
+        reset.setCallbackData(RESET_CALLBACK);
         manager.setUrl(managerLink);
         row1.add(manager);
         row2.add(reset);

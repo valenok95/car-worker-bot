@@ -23,6 +23,8 @@ public class ConfigDataPool {
     public boolean enableClientRequest;
     @Value("${ru.wallentos.carworker.korex-province-matrix:false}")
     public boolean isKorexProvinceMatrix;
+    @Value("${ru.wallentos.carworker.enable-result-detalization:false}")
+    public boolean enableResultDetalization;
     @Value("${ru.wallentos.carworker.check-channel-subscribers:false}")
     public boolean isCheckChannelSubscribers;
     @Value("${ru.wallentos.carworker.channel-subscribers-id:-1002123611967}")
@@ -45,6 +47,7 @@ public class ConfigDataPool {
     public static final String CONFIRM_MAILING_BUTTON = "Подтвердить";
     public static final String CANCEL_MAILING_BUTTON = "Отменить";
     public static final String LINK_BUTTON = "Расчёт по ссылке";
+    public static final String READY_BUTTON = "Готово";
     public static final String AUCTION_BUTTON = "Расчёт ставки на аукционе";
     public static final String MANUAL_BUTTON = "Расчёт вручную";
     @Value("${ru.wallentos.carworker.exchange-coefficient}")
@@ -136,6 +139,7 @@ public class ConfigDataPool {
     public static final String OLD_CAR = "От 5 лет";
     public static final String CANCEL_BUTTON = "Отмена";
     public static final String RESET_MESSAGE = "Рассчитать стоимость автомобиля";
+    public static final String RESET_CALLBACK = "reset_callback";
     public static final String TO_SET_CURRENCY_MENU = "Меню установки валюты";
     public static final String MANAGER_MESSAGE = "Связаться с менеджером";
     public static final String CAR_RESULT_DETAIL_BUTTON_TEXT = "Подробный расчёт";

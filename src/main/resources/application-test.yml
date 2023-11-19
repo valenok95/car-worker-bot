@@ -11,6 +11,7 @@ ru:
       client-request-group-id: -1001801658754
       enable-client-request: true
       enable-encar-report-mode: true
+      enable-result-detalization: true
       check-channel-subscribers: true
       channel-subscribers-id: -1002123611967
       channel-subscribers-link: https://t.me/MikhailValTest
