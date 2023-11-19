@@ -196,8 +196,15 @@ public class UtilService {
         return matcher.group(1);
     }
 
-
-    protected String getResultMessageByBotNameAndCurrency(String botName, String currency, CarPriceResultData resultData) {
+    /**
+     * Главное сообщение по результатам расчёта.
+     *
+     * @param botName
+     * @param currency
+     * @param resultData
+     * @return
+     */
+    protected String getResultHeaderMessageByBotNameAndCurrency(String botName, String currency, CarPriceResultData resultData) {
         if (botName.equals("KorexCalcBot")) {
             if (Objects.equals(currency, CNY)) {
                 return getKorexCnyMessageByResultData(resultData);
@@ -237,11 +244,6 @@ public class UtilService {
                         """, resultData);
     }
 
-    protected String getAuctionKrwResultMessage(double resultKrwPrice) {
-        return String.format(Locale.FRANCE, """
-                Ваша ставка на аукционе %,.0f KRW
-                """, resultKrwPrice);
-    }
 
     private String getKorexKrwMessageByResultData(CarPriceResultData resultData) {
         return String.format(Locale.FRANCE, """
@@ -300,20 +302,6 @@ public class UtilService {
                 resultData.getExtraPayAmountInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 getCheCarLinkStringByCarId(resultData.getCarId()));
-    }
-
-    public String getEncarReportMessage(CarDto carDto) {
-        return String.format(Locale.FRANCE, """
-                        Страховые выплаты по представленному автомобилю:
-                        %,d ₩
-                                                
-                        Cтраховые выплаты другим участникам ДТП:
-                        %,d ₩
-                                              
-                        %s
-                        """,
-                carDto.getMyAccidentCost(), carDto.getOtherAccidentCost(),
-                getEncarInspectLinkStringByCarId(carDto.getCarId()));
     }
 
     private String getEastWayCnyMessageByResultData(CarPriceResultData resultData) {
@@ -540,6 +528,361 @@ public class UtilService {
                 resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 getEncarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    /**
+     * Сообщение с деталями расчёта.
+     *
+     * @param botName
+     * @param currency
+     * @param resultData
+     * @return
+     */
+    protected String getResultDetailMessageByBotNameAndCurrency(String botName, String currency,
+                                                                CarPriceResultData resultData) {
+        if (botName.equals("KorexCalcBot")) {
+            if (Objects.equals(currency, CNY)) {
+                return getKorexCnyDetailMessageByResultData(resultData);
+            } else if (Objects.equals(currency, KRW)) {
+                return getKorexKrwDetailMessageByResultData(resultData);
+            }
+        } else if (botName.equals("EastWayCalcBot") || botName.equals("carworkerbot")) { // 
+            // определять сообщение для каждого botName + default
+            if (Objects.equals(currency, CNY)) {
+                return getEastWayCnyDetailMessageByResultData(resultData);
+            } else if (Objects.equals(currency, KRW)) {
+                return getEastWayKrwDetailMessageByResultData(resultData);
+            }
+        } else if (botName.equals("AutoDillerBot")) {
+            if (Objects.equals(currency, CNY)) {
+                return getRostovCnyDetailMessageByResultData(resultData);
+            } else if (Objects.equals(currency, KRW)) {
+                return getRostovKrwDetailMessageByResultData(resultData);
+            }
+        } else if (botName.equals("KorexManagerBot")) {
+            if (Objects.equals(currency, CNY)) {
+                return getKorexManagerCnyDetailMessageByResultData(resultData);
+            } else if (Objects.equals(currency, KRW)) {
+                return getKorexManagerKrwDetailMessageByResultData(resultData);
+            }
+        } else if (botName.equals("DemoCarBot")) {
+            if (Objects.equals(currency, CNY)) {
+                return getKorexDemoCnyDetailMessageByResultData(resultData);
+            } else if (Objects.equals(currency, KRW)) {
+                return getKorexDemoKrwDetailMessageByResultData(resultData);
+            }
+        }
+        return String.format("""
+                %s
+                        
+                Что бы заказать авто - вы можете обратиться к менеджеру🔻
+                        """, resultData);
+    }
+
+
+    private String getKorexKrwDetailMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                                                
+                        Брокерские расходы, СВХ, СБКТС:
+                        %,.0f ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽ 
+                        %s               
+                        Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Корее, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину️
+                                                
+                        Актуальный курс оплаты наличными и курсы ЦБ вы можете найти в меню.
+                                                
+                        По вопросам проведения платежа и заказа авто вы можете обратиться к нашему менеджеру @KOREXKOREA.
+                                                
+                        <a href="https://t.me/korexautotradeofficial">🔗Официальный телеграмм канал</a>
+                        <a href="https://t.me/korexautotradeofficial/705">🔗Видео инструкция по сайту Encar</a>
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                resultData.getExtraPayAmountInRubles(),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getEncarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    private String getKorexCnyDetailMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                        %s
+                        Брокерские расходы, СВХ, СБКТС:
+                        %,.0f ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽
+                        %s
+                        Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину️
+                                                
+                        Актуальный курс оплаты наличными и курсы ЦБ вы можете найти в меню.
+                                                
+                        По вопросам проведения платежа и заказа авто вы можете обратиться к нашему менеджеру @KOREXKOREA.
+                                                
+                        <a href="https://t.me/korexautotradeofficial">🔗Официальный телеграмм канал</a>
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
+                        resultData.getProvincePriceInRubles()),
+                resultData.getExtraPayAmountInRubles(),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getCheCarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    private String getEastWayCnyDetailMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                        %s             
+                        Брокерские расходы, СВХ, СБКТС:
+                        100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽               
+                                                
+                        Комиссия компании: 50 000 ₽
+                        %s 
+                        Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину️
+                                                
+                        Актуальный курс оплаты наличными и курсы ЦБ вы можете найти в меню.
+                                                
+                        По вопросам проведения платежа и заказа авто вы можете обратиться к нашему менеджеру @EastWayAdmin.
+                                                
+                        <a href="https://t.me/EastWayOfficial">🔗Официальный телеграмм канал</a>
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
+                        resultData.getProvincePriceInRubles()),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getCheCarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    private String getEastWayKrwDetailMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Detail Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                                                
+                        Брокерские расходы, СВХ, СБКТС:
+                        100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽ 
+                                                
+                        Комиссия компании: 50 000 ₽
+                        %s               
+                        Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Корее, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину️
+                                                
+                        Актуальный курс оплаты наличными и курсы ЦБ вы можете найти в меню.
+                                                
+                        По вопросам проведения платежа и заказа авто вы можете обратиться к нашему менеджеру @EastWayAdmin.
+                                                
+                        <a href="https://t.me/EastWayOfficial">🔗Официальный телеграмм канал</a>
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getEncarLinkStringByCarId(resultData.getCarId()));
+    }
+
+
+    private String getRostovCnyDetailMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ в Новочеркасске:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Уссурийска:
+                        %,.0f ₽
+                        %s             
+                        Брокерские расходы, СВХ, СБКТС:
+                        100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽     
+                                                
+                        Доставка до Новочеркасска: %,.0f ₽             
+                                                
+                        Комиссия компании: 50 000 ₽
+                        %s 
+                        Итоговая стоимость включает в себя все расходы до г. Новочеркасск, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину️
+                                                
+                        Актуальный курс оплаты наличными и курсы ЦБ вы можете найти в меню.
+                                                
+                        По вопросам проведения платежа и заказа авто вы можете обратиться к нашему менеджеру @Roman_autodiler.
+                                                
+                        <a href="https://t.me/autodiler61">🔗Официальный телеграмм канал</a>
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
+                        resultData.getProvincePriceInRubles()),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                resultData.getExtraPayAmountInRubles(),
+                getCheCarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    private String getRostovKrwDetailMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ в Новочеркасске:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                                                
+                        Брокерские расходы, СВХ, СБКТС:
+                        100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽ 
+                                                
+                        Доставка до Новочеркасска: %,.0f ₽     
+                                                
+                        Комиссия компании: 50 000 ₽
+                        %s               
+                        Итоговая стоимость включает в себя все расходы до г. Новочеркасск, а именно: оформление экспорта в Корее, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину️
+                                                
+                        Актуальный курс оплаты наличными и курсы ЦБ вы можете найти в меню.
+                                                
+                        По вопросам проведения платежа и заказа авто вы можете обратиться к нашему менеджеру @Roman_autodiler.
+                                                
+                        <a href="https://t.me/autodiler61">🔗Официальный телеграмм канал</a>
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                resultData.getExtraPayAmountInRubles(),
+                getEncarLinkStringByCarId(resultData.getCarId()));
+    }
+
+
+    private String getKorexManagerCnyDetailMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                        %s
+                        Брокерские расходы, СВХ, СБКТС:
+                        100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽
+                        %s
+                        Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
+                        resultData.getProvincePriceInRubles()),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getCheCarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    private String getKorexManagerKrwDetailMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                                                
+                        Брокерские расходы, СВХ, СБКТС:
+                        100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽
+                        %s
+                        Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Корее, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getEncarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    private String getKorexDemoCnyDetailMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                        %s
+                        Брокерские расходы, СВХ, СБКТС:
+                        100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽
+                        %s
+                        Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину
+                                                
+                        <u><b>По вопросу сотрудничества</b></u>
+                        Telegram / WhatsApp
+                        +82 10-9926-0978 Сергей Шек
+                        @Korexkorea
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
+                        resultData.getProvincePriceInRubles()),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getCheCarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    private String getKorexDemoKrwDetailMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                                                
+                        Брокерские расходы, СВХ, СБКТС:
+                        100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽
+                        %s
+                        Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Корее, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину
+                                                
+                        <u><b>По вопросу сотрудничества</b></u>
+                        Telegram / WhatsApp
+                        +82 10-9926-0978 Сергей Шек
+                        @Korexkorea
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountInCurrency(),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getEncarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    public String getEncarReportMessage(CarDto carDto) {
+        return String.format(Locale.FRANCE, """
+                        Страховые выплаты по представленному автомобилю:
+                        %,d ₩
+                                                
+                        Cтраховые выплаты другим участникам ДТП:
+                        %,d ₩
+                                              
+                        %s
+                        """,
+                carDto.getMyAccidentCost(), carDto.getOtherAccidentCost(),
+                getEncarInspectLinkStringByCarId(carDto.getCarId()));
+    }
+
+    protected String getAuctionKrwResultMessage(double resultKrwPrice) {
+        return String.format(Locale.FRANCE, """
+                Ваша ставка на аукционе %,.0f KRW
+                """, resultKrwPrice);
     }
 
     /**

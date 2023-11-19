@@ -77,6 +77,7 @@ public class ExecutionService {
      */
     public CarPriceResultData executeCarPriceResultData(UserCarInputData userCarInputData) {
         CarPriceResultData resultData = new CarPriceResultData();
+        resultData.setCurrency(userCarInputData.getCurrency());
         resultData.setCarId(userCarInputData.getCarId());
         resultData.setCarCategory(getCarCategory(userCarInputData.getAge()));
         resultData.setAge(userCarInputData.getAge());

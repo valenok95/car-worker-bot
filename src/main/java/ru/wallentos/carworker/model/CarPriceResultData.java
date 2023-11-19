@@ -26,6 +26,7 @@ public class CarPriceResultData {
     String age;
     String location;
     String sanctionMessage = "Санкционный авто, ";
+    String currency;
 
     public double getResultPrice() {
         return firstPriceInRubles + feeRate + duty + recyclingFee + extraPayAmount + provincePriceInRubles;

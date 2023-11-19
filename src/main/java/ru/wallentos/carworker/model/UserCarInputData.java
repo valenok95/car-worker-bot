@@ -27,6 +27,8 @@ public class UserCarInputData {
     int myAccidentCost;
     int otherAccidentCost;
     boolean hasInsuranceInfo;
+    String userContact;
+    String clientMessage;
 
     @Override
     public String toString() {

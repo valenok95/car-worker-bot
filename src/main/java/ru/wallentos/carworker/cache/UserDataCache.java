@@ -5,6 +5,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.wallentos.carworker.model.BotState;
+import ru.wallentos.carworker.model.CarPriceResultData;
 import ru.wallentos.carworker.model.UserCarInputData;
 
 
@@ -13,6 +14,7 @@ import ru.wallentos.carworker.model.UserCarInputData;
 public class UserDataCache implements DataCache {
     private static Map<Long, BotState> usersBotStates = new HashMap<>();
     private static Map<Long, UserCarInputData> usersProfileData = new HashMap<>();
+    private static Map<Long, CarPriceResultData> usersCarPriceData = new HashMap<>();
 
     @Override
     public void setUsersCurrentBotState(long userId, BotState botState) {
@@ -25,6 +27,25 @@ public class UserDataCache implements DataCache {
         usersBotStates.remove(userId);
         usersProfileData.remove(userId);
         log.info("удалены данные по пользователю с id " + userId);
+    }
+
+    @Override
+    public void saveResultCarData(long userId, CarPriceResultData carPriceResultData) {
+        usersCarPriceData.put(userId, carPriceResultData);
+    }
+
+    @Override
+    public void deleteResultCarDataByUserId(long userId) {
+        usersCarPriceData.remove(userId);
+    }
+
+    @Override
+    public CarPriceResultData getResultCarData(long userId) {
+        CarPriceResultData carPriceResultData = usersCarPriceData.get(userId);
+        if (carPriceResultData == null) {
+            carPriceResultData = new CarPriceResultData();
+        }
+        return carPriceResultData;
     }
 
     @Override
@@ -50,7 +71,8 @@ public class UserDataCache implements DataCache {
     public void saveUserCarData(long userId, UserCarInputData userCarInputData) {
         usersProfileData.put(userId, userCarInputData);
     }
-    public static void resetUserData(long userId){
+
+    public static void resetUserData(long userId) {
         usersBotStates.remove(userId);
         usersProfileData.remove(userId);
     }
