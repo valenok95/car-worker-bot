@@ -13,9 +13,8 @@ public class CarPriceResultData {
     double duty;
     double firstPriceInRubles;
     int recyclingFee;
-    double extraPayAmount;
-    double extraPayAmountInCurrency;
-    double extraPayAmountInRubles;
+    double extraPayAmountValutePart;
+    double extraPayAmountRublePart;
     double provincePriceInRubles;
     String provinceName;
     int carId;
@@ -29,7 +28,7 @@ public class CarPriceResultData {
     String currency;
 
     public double getResultPrice() {
-        return firstPriceInRubles + feeRate + duty + recyclingFee + extraPayAmount + provincePriceInRubles;
+        return firstPriceInRubles + feeRate + duty + recyclingFee + extraPayAmountValutePart + provincePriceInRubles;
     }
 
 
@@ -45,7 +44,7 @@ public class CarPriceResultData {
                         %,.0fруб.
                                            
                         Итоговая стоимость указана за автомобиль %s и включает все расходы, в том числе процедуру таможенной очистки.""",
-                getResultPrice(), firstPriceInRubles + extraPayAmount,
+                getResultPrice(), firstPriceInRubles + extraPayAmountValutePart,
                 feeRate + duty + recyclingFee, location);
     }
 

@@ -92,15 +92,15 @@ public class ExecutionService {
 //валютная надбавка  и рублёвая надбавка (Брокерские расходы, СВХ, СБКТС)
         double extraPayAmountRublePart = executeRubExtraPayAmountInRublesByUserCarData(userCarInputData.getCurrency());
         double extraPayAmountCurrencyPart = executeValuteExtraPayAmountInRublesByUserCarData(userCarInputData.getCurrency(), userCarInputData.isSanctionCar());
-        resultData.setExtraPayAmountInRubles(extraPayAmountRublePart);
-        resultData.setExtraPayAmountInCurrency(extraPayAmountCurrencyPart);
+        resultData.setExtraPayAmountRublePart(extraPayAmountRublePart);
+        resultData.setExtraPayAmountValutePart(extraPayAmountCurrencyPart);
         // Стоимость логистики из провинции Китая
         if (Objects.nonNull(userCarInputData.getProvince())) {
             resultData.setProvincePriceInRubles(executeProvincePriceInRubles(userCarInputData.getCurrency(), userCarInputData.getProvince()));
             resultData.setProvinceName(userCarInputData.getProvince().getProvinceFullName());
         }
 
-        resultData.setExtraPayAmount(extraPayAmountRublePart + extraPayAmountCurrencyPart);
+        resultData.setExtraPayAmountValutePart(extraPayAmountRublePart + extraPayAmountCurrencyPart);
         resultData.setStock(executeStock(userCarInputData.getCurrency()));
         resultData.setLocation(executeLocation(userCarInputData.getCurrency()));
         return resultData;

@@ -13,6 +13,10 @@ ru:
       client-request-group-id: -1001854156002
       enable-client-request: ${ENABLE_CLIENT_REQUEST}
       enable-encar-report-mode: true
+      enable-result-detalization: true
+      check-channel-subscribers: true
+      channel-subscribers-id: -1001423584530
+      channel-subscribers-link: https://t.me/korex_official
       auction-coefficient: ${AUCTION_COEFFICIENT}
       manager-link: T.me/Korex_Consultant
       user-prefix: "user_korex_"
