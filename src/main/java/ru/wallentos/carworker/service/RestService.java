@@ -1,9 +1,11 @@
 package ru.wallentos.carworker.service;
 
+import static ru.wallentos.carworker.configuration.ConfigDataPool.conversionRatesMap;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.manualConversionRatesMapInRubles;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.util.Map;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -14,6 +16,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import ru.wallentos.carworker.configuration.ConfigDataPool;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
 import ru.wallentos.carworker.model.CarConverter;
@@ -43,26 +46,34 @@ public class RestService {
     private ObjectMapper mapper;
     private CarConverter carConverter;
     private RedisTemplate redisTemplate;
-    private Map<String, Double> conversionRatesMap;
+    private ConfigDataPool configDataPool;
     private double cbrUsdKrwMinus20;
     private RecaptchaService recaptchaService;
 
     @Autowired
     public RestService(RestTemplate restTemplate, UtilService utilService,
                        CarConverter carConverter, RedisTemplate redisTemplate,
-                       RecaptchaService recaptchaService) {
+                       RecaptchaService recaptchaService, ConfigDataPool configDataPool) {
         this.restTemplate = restTemplate;
         this.utilService = utilService;
         this.carConverter = carConverter;
         this.redisTemplate = redisTemplate;
         this.recaptchaService = recaptchaService;
+        this.configDataPool = configDataPool;
         mapper = new ObjectMapper();
     }
 
     public void refreshExchangeRates() {
         ResponseEntity<String> response
                 = restTemplate.getForEntity(cbrMethod, String.class);
-        conversionRatesMap = utilService.backRatesToConversionRatesMap(response.getBody());
+        conversionRatesMap =
+                utilService.backRatesToConversionRatesMap(response.getBody());
+        if (configDataPool.isCbrRateToCalculate()) {
+            conversionRatesMap.forEach((key, value) -> {
+                ConfigDataPool.manualConversionRatesMapInRubles.put(key, conversionRatesMap.get("RUB") * configDataPool.coefficient / value);
+            });
+            log.info("курс расчёта обновлён {}", manualConversionRatesMapInRubles);
+        }
         log.info("курс обновлён {}", conversionRatesMap);
         cbrUsdKrwMinus20 = Double.parseDouble(getNaverRate()) - 20;
     }

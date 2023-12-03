@@ -7,9 +7,10 @@ ru:
       manager-link: https://t.me/xbest88
       user-prefix: "user_hot_"
       currencies: KRW, CNY
+      admin-list: ${ADMIN_LIST}
       extra-pay-corea:
-        krw: 2500000
-        rub: 100000
+        krw: ${EXTRA_PAY_KOREA_KRW}
+        rub: ${EXTRA_PAY_KOREA_RUB}
       extra-pay-china:
-        cny: 25000
-        rub: 200000
+        cny: ${EXTRA_PAY_CHINA_CNY}
+        rub: ${EXTRA_PAY_CHINA_RUB}

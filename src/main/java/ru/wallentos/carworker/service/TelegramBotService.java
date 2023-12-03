@@ -23,6 +23,7 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.RESET_MESSAGE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.RUB;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.TO_SET_CURRENCY_MENU;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.USD;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.conversionRatesMap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -802,15 +803,15 @@ public class TelegramBotService extends TelegramLongPollingBot {
         CarPriceResultData resultData = executionService.executeCarPriceResultData(data);
         int carId = data.getCarId();
         log.info("""
-                Данные рассчёта:
-                First price in rubles {},
-                Extra pay amount RUB {},
-                Extra pay amount curr {},
-                Extra pay amount {},
-                Fee rate {},
-                Duty {},
-                Recycling fee {}
-                """, resultData.getFirstPriceInRubles(), resultData.getExtraPayAmountRublePart(),
+                        Данные рассчёта:
+                        First price in rubles {},
+                        Extra pay amount RUB {},
+                        Extra pay amount curr {},
+                        Extra pay amount {},
+                        Fee rate {},
+                        Duty {},
+                        Recycling fee {}
+                        """, resultData.getFirstPriceInRubles(), resultData.getExtraPayAmountRublePart(),
                 resultData.getExtraPayAmountValutePart(), resultData.getExtraPayAmountValutePart(),
                 resultData.getFeeRate(), resultData.getDuty(), resultData.getRecyclingFee());
         String text = utilService.getResultHeaderMessageByBotNameAndCurrency(config.getName(), data.getCurrency(), resultData);
@@ -965,7 +966,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     private void cbrCommandReceived(long chatId) {
         restService.refreshExchangeRates();
-        Map<String, Double> rates = restService.getConversionRatesMap();
+        Map<String, Double> rates = conversionRatesMap;
         StringBuilder builder = new StringBuilder("");
         configDataPool.getCurrencies().forEach(currency -> {
             builder.append(String.format("%n%s %,.4f ₽", currency, rates.get(RUB) / rates.get(currency)));

@@ -16,6 +16,7 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR_PRICE_
 import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR_RECYCLING_FEE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.RUB;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.USD;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.conversionRatesMap;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.feeRateMap;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.manualConversionRatesMapInRubles;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.newCarCustomsMap;
@@ -44,8 +45,8 @@ public class ExecutionService {
         this.restService = restService;
         this.configDataPool = configDataPool;
         restService.refreshExchangeRates();
-        double rub = restService.getConversionRatesMap().get("RUB");
-        restService.getConversionRatesMap().forEach((key, value) -> {
+        double rub = conversionRatesMap.get("RUB");
+        conversionRatesMap.forEach((key, value) -> {
             ConfigDataPool.manualConversionRatesMapInRubles.put(key, rub * configDataPool.coefficient / value);
         });
     }
@@ -254,11 +255,11 @@ public class ExecutionService {
 
 
     private double convertMoneyFromEuro(double count, String toCurrency) {
-        return count * restService.getConversionRatesMap().get(toCurrency);
+        return count * conversionRatesMap.get(toCurrency);
     }
 
     public double convertMoneyToEuro(double count, String fromCurrency) {
-        return count / restService.getConversionRatesMap().get(fromCurrency);
+        return count / conversionRatesMap.get(fromCurrency);
     }
 
     /**

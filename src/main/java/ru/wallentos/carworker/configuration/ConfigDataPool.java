@@ -23,6 +23,8 @@ public class ConfigDataPool {
     public boolean enableClientRequest;
     @Value("${ru.wallentos.carworker.korex-province-matrix:false}")
     public boolean isKorexProvinceMatrix;
+    @Value("${ru.wallentos.carworker.is-cbr-rate-to-calculate:false}")
+    public boolean isCbrRateToCalculate;
     @Value("${ru.wallentos.carworker.enable-result-detalization:false}")
     public boolean enableResultDetalization;
     @Value("${ru.wallentos.carworker.check-channel-subscribers:false}")
@@ -73,6 +75,7 @@ public class ConfigDataPool {
     @Value("${ru.wallentos.carworker.extra-pay-corea.rub}")
     public int EXTRA_PAY_AMOUNT_KOREA_RUB;
     public static Map<String, Double> manualConversionRatesMapInRubles = new HashMap<>();
+    public static Map<String, Double> conversionRatesMap;
     public static final int NEW_MID_CAR_RECYCLING_FEE = 970_000;
     public static final int NEW_BIG_CAR_RECYCLING_FEE = 1_235_200;
     public static final int NORMAL_MID_CAR_RECYCLING_FEE = 1_485_000;

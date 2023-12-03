@@ -12,7 +12,8 @@ ru:
       enable-client-request: true
       enable-encar-report-mode: true
       enable-result-detalization: true
-      check-channel-subscribers: true
+      check-channel-subscribers: false
+      is-cbr-rate-to-calculate: true
       channel-subscribers-id: -1002123611967
       channel-subscribers-link: https://t.me/MikhailValTest
       update-cache-job:
