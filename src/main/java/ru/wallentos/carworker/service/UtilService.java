@@ -571,7 +571,7 @@ public class UtilService {
                                                 
                         Таможенная пошлина и утилизационный сбор: %,.0f ₽
                         """,
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 resultData.getExtraPayAmountValutePart(),
                 resultData.getExtraPayAmountRublePart(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee());
@@ -591,7 +591,7 @@ public class UtilService {
                                                 
                         Таможенная пошлина и утилизационный сбор: %,.0f ₽
                         """,
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getExtraPayAmountValutePart(),
@@ -623,7 +623,7 @@ public class UtilService {
                         <a href="https://t.me/EastWayOfficial">🔗Официальный телеграмм канал</a>
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
@@ -654,7 +654,7 @@ public class UtilService {
                         <a href="https://t.me/EastWayOfficial">🔗Официальный телеграмм канал</a>
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 getEncarLinkStringByCarId(resultData.getCarId()));
     }
@@ -686,7 +686,7 @@ public class UtilService {
                         <a href="https://t.me/autodiler61">🔗Официальный телеграмм канал</a>
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
@@ -720,7 +720,7 @@ public class UtilService {
                         <a href="https://t.me/autodiler61">🔗Официальный телеграмм канал</a>
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 resultData.getExtraPayAmountRublePart(),
                 getEncarLinkStringByCarId(resultData.getCarId()));
@@ -743,7 +743,7 @@ public class UtilService {
                         Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
@@ -766,7 +766,7 @@ public class UtilService {
                         Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Корее, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 getEncarLinkStringByCarId(resultData.getCarId()));
     }
@@ -792,7 +792,7 @@ public class UtilService {
                         @Korexkorea
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles() ,
                 getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
@@ -820,7 +820,7 @@ public class UtilService {
                         @Korexkorea
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles() ,
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 getEncarLinkStringByCarId(resultData.getCarId()));
     }
