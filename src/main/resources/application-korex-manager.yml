@@ -9,6 +9,7 @@ ru:
       enable-cny-link-mode: ${ENABLE_CNY_LINK_MODE}
       enable-krw-auction-mode: true
       auction-coefficient: ${AUCTION_COEFFICIENT}
+      manager-logistics-spreedsheet-id: 1BkK8M7KNuR4Rp8VQciQL2tuFinEBFd2sNLD1KlpwoSc
       disable-double-convertation: true
       manager-link: https://t.me/Mikhail_Ung
       manager-bot: true

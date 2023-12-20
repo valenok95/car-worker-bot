@@ -24,9 +24,11 @@ import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import ru.wallentos.carworker.configuration.ConfigDataPool;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.model.CarDto;
 import ru.wallentos.carworker.model.CarPriceResultData;
+import ru.wallentos.carworker.model.DeliveryPrice;
 
 @Service
 @Slf4j
@@ -34,6 +36,8 @@ public class UtilService {
     private static final String VALUE = "Value";
     @Autowired
     private ObjectMapper mapper;
+    @Autowired
+    private GoogleService googleService;
 
     protected SendMessage prepareSendMessage(long chatId, String text, InlineKeyboardMarkup
             inlineKeyboardMarkup) {
@@ -205,7 +209,7 @@ public class UtilService {
      * @return
      */
     protected String getResultHeaderMessageByBotNameAndCurrency(String botName, String currency, CarPriceResultData resultData) {
-        if (botName.equals("KorexCalcBot") || botName.equals("carworkerbot")) {
+        if (botName.equals("KorexCalcBot")) {
             if (Objects.equals(currency, CNY)) {
                 return getKorexCnyMessageByResultData(resultData);
             } else if (Objects.equals(currency, KRW)) {
@@ -224,9 +228,10 @@ public class UtilService {
             } else if (Objects.equals(currency, KRW)) {
                 return getRostovKrwMessageByResultData(resultData);
             }
-        } else if (botName.equals("KorexManagerBot")) {
+        } else if (botName.equals("KorexManagerBot") || botName.equals("carworkerbot")) {
             if (Objects.equals(currency, CNY)) {
-                return getKorexManagerCnyMessageByResultData(resultData);
+                Map<String, DeliveryPrice> managerLogisticsMap = googleService.getManagerLogisticsMap();
+                return getKorexManagerCnyMessageToUssuriyskByResultData(resultData, managerLogisticsMap);
             } else if (Objects.equals(currency, KRW)) {
                 return getKorexManagerKrwMessageByResultData(resultData);
             }
@@ -433,6 +438,86 @@ public class UtilService {
                 getCheCarLinkStringByCarId(resultData.getCarId()));
     }
 
+    /**
+     * Сообщение с результатом до Уссурийска с учётом провинции.
+     *
+     * @param resultData
+     * @return
+     */
+    private String getKorexManagerCnyMessageToUssuriyskByResultData(CarPriceResultData resultData
+            , Map<String, DeliveryPrice> managerLogisticsMap) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                        %s
+                        Брокерские расходы, СВХ, СБКТС:
+                        100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽
+                        %s
+                        Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину
+                                                
+                        Стоимость с доставкой до Уссурийска:
+                        <u><b>%,.0f ¥</b></u>
+                        + доставка от %s = <u><b>%d ¥</b></u>
+                        + надбавка 15000¥
+                        <u><b>%,.0f $</b></u> + доставка $ + 15000¥$ (как переводить?)
+                                                
+                        Стоимость с доставкой до Бишкека:
+                        <u><b>%,.0f ¥</b></u>
+                         + доставка от %s = <u><b>%d ¥</b></u>
+                         + надбавка 16000¥
+                        <u><b>%,.0f $</b></u>  + доставка $ + 16000¥$ (как переводить?)
+                                                
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
+                        resultData.getProvincePriceInRubles()),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getCheCarLinkStringByCarId(resultData.getCarId()),
+                resultData.getResultPrice() / ConfigDataPool.manualConversionRatesMapInRubles.get(CNY),
+                resultData.getProvinceName(), 
+                managerLogisticsMap.get(resultData.getProvinceName()).getUssuriyskDeliveryPrice(),
+                resultData.getResultPrice() / ConfigDataPool.manualConversionRatesMapInRubles.get(USD),
+                resultData.getResultPrice() / ConfigDataPool.manualConversionRatesMapInRubles.get(CNY),
+                resultData.getProvinceName(),
+                managerLogisticsMap.get(resultData.getProvinceName()).getBishkekDeliveryPrice(),
+                resultData.getResultPrice() / ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
+    }
+
+    /**
+     * Сообщение с результатом до Бишкека с учётом провинции.
+     *
+     * @param resultData
+     * @return
+     */
+    private String getKorexManagerCnyMessageToBishkekByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                                                
+                        Стоимость автомобиля с учетом доставки до Владивостока:
+                        %,.0f ₽
+                        %s
+                        Брокерские расходы, СВХ, СБКТС:
+                        100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽
+                        %s
+                        Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину
+                        """,
+                resultData.getResultPrice(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
+                        resultData.getProvincePriceInRubles()),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
+                getCheCarLinkStringByCarId(resultData.getCarId()));
+    }
+
     private String getKorexManagerKrwMessageByResultData(CarPriceResultData resultData) {
         return String.format(Locale.FRANCE, """
                         Стоимость автомобиля под ключ во Владивостоке:
@@ -571,7 +656,7 @@ public class UtilService {
                                                 
                         Таможенная пошлина и утилизационный сбор: %,.0f ₽
                         """,
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 resultData.getExtraPayAmountValutePart(),
                 resultData.getExtraPayAmountRublePart(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee());
@@ -591,7 +676,7 @@ public class UtilService {
                                                 
                         Таможенная пошлина и утилизационный сбор: %,.0f ₽
                         """,
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getExtraPayAmountValutePart(),
@@ -623,7 +708,7 @@ public class UtilService {
                         <a href="https://t.me/EastWayOfficial">🔗Официальный телеграмм канал</a>
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
@@ -654,7 +739,7 @@ public class UtilService {
                         <a href="https://t.me/EastWayOfficial">🔗Официальный телеграмм канал</a>
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 getEncarLinkStringByCarId(resultData.getCarId()));
     }
@@ -686,7 +771,7 @@ public class UtilService {
                         <a href="https://t.me/autodiler61">🔗Официальный телеграмм канал</a>
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
@@ -720,7 +805,7 @@ public class UtilService {
                         <a href="https://t.me/autodiler61">🔗Официальный телеграмм канал</a>
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 resultData.getExtraPayAmountRublePart(),
                 getEncarLinkStringByCarId(resultData.getCarId()));
@@ -743,7 +828,7 @@ public class UtilService {
                         Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
@@ -766,7 +851,7 @@ public class UtilService {
                         Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Корее, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 getEncarLinkStringByCarId(resultData.getCarId()));
     }
@@ -792,7 +877,7 @@ public class UtilService {
                         @Korexkorea
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
@@ -820,7 +905,7 @@ public class UtilService {
                         @Korexkorea
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 getEncarLinkStringByCarId(resultData.getCarId()));
     }

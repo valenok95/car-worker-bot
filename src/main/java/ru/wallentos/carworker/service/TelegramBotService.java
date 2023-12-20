@@ -138,6 +138,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 case "/sleep":
                     unsubscribeCommandReceived(chatId);
                     break;
+                case "/total":
+                    totalManagerCommandReceived(chatId);
+                    break;
                 default:
                     handleMessage(update, receivedText);
                     break;
@@ -152,6 +155,13 @@ public class TelegramBotService extends TelegramLongPollingBot {
         } else {
             unrecognizedCommandReceived(update.getMessage().getChatId());
         }
+    }
+
+    /**
+     * Получена команда от манагеров, чтобы посчитать ЮАНИ. Надо спросить у них ссылку.
+     * @param chatId
+     */
+    private void totalManagerCommandReceived(long chatId) {
     }
 
     /**
