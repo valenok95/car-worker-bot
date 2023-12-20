@@ -140,8 +140,10 @@ public class ConfigDataPool {
     public static final String NORMAL_CAR = "От 3 до 5 лет";
     public static final String OLD_CAR = "От 5 лет";
     public static final String CANCEL_BUTTON = "Отмена";
+    public static final String RESET_MANAGER_BUTTON = "Расчет стоимости Total to Ussurisk/Bishkek";
     public static final String RESET_MESSAGE = "Рассчитать стоимость другого автомобиля";
     public static final String RESET_CALLBACK = "reset_callback";
+    public static final String RESET_MANAGER_CALLBACK = "reset_manager_callback";
     public static final String TO_SET_CURRENCY_MENU = "Меню установки валюты";
     public static final String MANAGER_MESSAGE = "Связаться с менеджером";
     public static final String CAR_RESULT_DETAIL_BUTTON_TEXT = "Детализация расчёта";

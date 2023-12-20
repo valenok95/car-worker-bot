@@ -49,7 +49,6 @@ public class WebController {
 
     @GetMapping("/googleTest")
     public ResponseEntity<?> testG() {
-        executionService.executeCarTotalResultData();
         googleService.getManagerLogisticsMap();
         return ResponseEntity.accepted().build();
     }

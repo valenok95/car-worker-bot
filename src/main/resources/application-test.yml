@@ -13,6 +13,7 @@ ru:
       enable-client-request: true
       enable-encar-report-mode: true
       enable-result-detalization: true
+      exchange-manager-coefficient: 1.009
       check-channel-subscribers: true
       channel-subscribers-id: -1002123611967
       channel-subscribers-link: https://t.me/MikhailValTest

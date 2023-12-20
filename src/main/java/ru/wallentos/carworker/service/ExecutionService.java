@@ -117,9 +117,9 @@ public class ExecutionService {
         CarTotalResultData resultData = new CarTotalResultData();
         resultData.setCarId(userCarInputData.getCarId());
         resultData.setCnyPrice(userCarInputData.getPrice());
-        resultData.setDollarPrice(userCarInputData.getPrice()/ conversionRatesMap.get(USD));
         // Стоимость логистики из провинции Китая
-            resultData.setProvinceName(userCarInputData.getProvince().getProvinceFullName());
+        System.out.println("курс расчёта USDCNY " + restService.getManagerCnyUsdRate());
+        resultData.setProvinceName(userCarInputData.getProvince().getProvinceFullName());
         return resultData;
     }
 
