@@ -1408,6 +1408,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         inlineKeyboardMarkup.setKeyboard(rows);
 
         subscriptionIds.forEach(id -> {
+            log.info("Начинаем отправку сообщение пользователю с id {}", id);
             try {
                 if (Objects.nonNull(subscribeService.getPhotoData())) {
                     executeMessage(utilService.prepareSendMessage(id, subscribeService.getPhotoData(), subscribeService.getMailingText(), inlineKeyboardMarkup));
@@ -1415,10 +1416,12 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     executeMessage(utilService.prepareSendMessage(id, subscribeService.getMailingText(), inlineKeyboardMarkup));
                 }
                 Thread.sleep(200);
+                log.info("Сообщение пользователю отправлено пользователю с id {}", id);
+
             } catch (InterruptedException e) {
-                log.warn("Interrupted!", e);
-                // Restore interrupted state...
-                Thread.currentThread().interrupt();
+                log.error("поток прерван");
+            } catch (RuntimeException e) {
+                log.error("Ошибка отправки сообщения пользователю с id {} , {}", id, e.getMessage());
             }
         });
         String finishMessage = """
