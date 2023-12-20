@@ -1414,7 +1414,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 } else {
                     executeMessage(utilService.prepareSendMessage(id, subscribeService.getMailingText(), inlineKeyboardMarkup));
                 }
-                Thread.sleep(1000);
+                Thread.sleep(200);
             } catch (InterruptedException e) {
                 log.warn("Interrupted!", e);
                 // Restore interrupted state...
