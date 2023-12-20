@@ -159,9 +159,16 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     /**
      * Получена команда от манагеров, чтобы посчитать ЮАНИ. Надо спросить у них ссылку.
+     *
      * @param chatId
      */
     private void totalManagerCommandReceived(long chatId) {
+        String text = String.format("""
+                Здравствуйте, пожалуйста отправьте ссылку с сайта che168.com
+                """);
+        executeMessage(utilService.prepareSendMessage(chatId, text));
+        UserCarInputData userCarInputData = cache.getUserCarData(chatId);
+cache.setUsersCurrentBotState(chatId,BotState.ASK_CHINA_LINK);
     }
 
     /**
@@ -568,6 +575,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 case ASK_CLIENT_CONTACT:
                     clientContactReceivedCommand(chatId, update);
                     break;
+                case ASK_CHINA_LINK:
+                    executeChinaResult(chatId, update);
+                    break;
                 default:
                     break;
             }
@@ -575,6 +585,15 @@ public class TelegramBotService extends TelegramLongPollingBot {
             executeMessage(utilService.prepareSendMessage(chatId, "Некорректный формат данных, попробуйте ещё раз."));
             return;
         }
+    }
+
+    /**
+     * Получена ссылка на che168 , посчитать тачки и вывести ответ манагерам.
+     *
+     * @param chatId
+     * @param update
+     */
+    private void executeChinaResult(long chatId, Update update) {
     }
 
     /**
@@ -812,15 +831,15 @@ public class TelegramBotService extends TelegramLongPollingBot {
         CarPriceResultData resultData = executionService.executeCarPriceResultData(data);
         int carId = data.getCarId();
         log.info("""
-                Данные рассчёта:
-                First price in rubles {},
-                Extra pay amount RUB {},
-                Extra pay amount curr {},
-                Extra pay amount {},
-                Fee rate {},
-                Duty {},
-                Recycling fee {}
-                """, resultData.getFirstPriceInRubles(), resultData.getExtraPayAmountRublePart(),
+                        Данные рассчёта:
+                        First price in rubles {},
+                        Extra pay amount RUB {},
+                        Extra pay amount curr {},
+                        Extra pay amount {},
+                        Fee rate {},
+                        Duty {},
+                        Recycling fee {}
+                        """, resultData.getFirstPriceInRubles(), resultData.getExtraPayAmountRublePart(),
                 resultData.getExtraPayAmountValutePart(), resultData.getExtraPayAmountValutePart(),
                 resultData.getFeeRate(), resultData.getDuty(), resultData.getRecyclingFee());
         String text = utilService.getResultHeaderMessageByBotNameAndCurrency(config.getName(), data.getCurrency(), resultData);
@@ -1240,6 +1259,55 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     /**
+     * Расчитываем стоимость по ссылке che168.com для манагеров.
+     *
+     * @param link
+     */
+    private void processCalculateByCheCarLinkForManagers(Message message, String link) {
+        long chatId = message.getChatId();
+        String carId;
+        CarDto carDto;
+        try {
+            carId = utilService.parseLinkToCarId(link);
+            carDto = cheCarCacheService.fetchAndUpdateCheCarDtoByCarId(carId);
+        } catch (GetCarDetailException | RecaptchaException e) {
+            String errorMessage = """
+                    Ошибка получения данных с сайта che168.com
+                                        
+                    Попробуйте позже...
+                    """;
+            InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            InlineKeyboardButton cancelButton = new InlineKeyboardButton(CANCEL_BUTTON);
+            cancelButton.setCallbackData(CANCEL_BUTTON);
+            row.add(cancelButton);
+            rows.add(row);
+            inlineKeyboardMarkup.setKeyboard(rows);
+            executeMessage(utilService.prepareSendMessage(chatId, errorMessage, inlineKeyboardMarkup));
+            return;
+        }
+        UserCarInputData data = cache.getUserCarData(chatId);
+
+        int priceInCurrency = carDto.getRawCarPrice();
+        data.setPrice(priceInCurrency);
+        data.setCarId(carDto.getCarId());
+        data.setProvince(ConfigDataPool.provincePriceMap.get(carDto.getRawCarProvinceName()));
+
+        processExecuteResultForChinaManagers(data, chatId);
+    }
+
+    /**
+     * Рассчитать для манагеров стоимость тачек с доставкой без таможни по исходным данным.
+     * @param data
+     * @param chatId
+     */
+    private void processExecuteResultForChinaManagers(UserCarInputData data, long chatId) {
+        
+    }
+
+
+    /**
      * Расчитываем стоимость по ссылке che168.com
      *
      * @param link
@@ -1288,7 +1356,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         } else {
             data.setProvince(ConfigDataPool.provincePriceMap.get(carDto.getRawCarProvinceName()));
         }
-
         // Удаляем сообщения
         deleteMessage(data.getLastMessageToDelete());
         deleteMessage(message);
