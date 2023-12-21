@@ -15,12 +15,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
 import ru.wallentos.carworker.model.DeliveryPrice;
 
 @Service
+@Slf4j
 public class GoogleService {
     @Autowired
     private ConfigDataPool configDataPool;
@@ -105,10 +107,17 @@ public class GoogleService {
             var selection =
                     sheets.spreadsheets().values().get(configDataPool.managerLogisticsSpreedSheetId, "last!C3:G").execute();
             var values = selection.getValues();
-            values.forEach(data -> result.put(data.get(0).toString(),
-                    new DeliveryPrice(Integer.parseInt(data.get(4).toString().replace("¥", "").replace(" ", "")),
-                            Integer.parseInt(data.get(2).toString().replace("¥", "").replace(" ",
-                                    "")))));
+            values.forEach(data -> {
+                        try {
+                            result.put(data.get(0).toString(),
+                                    new DeliveryPrice(Integer.parseInt(data.get(4).toString().replace("¥", "").replace(" ", "")),
+                                            Integer.parseInt(data.get(2).toString().replace("¥", "").replace(" ",
+                                                    ""))));
+                        } catch (RuntimeException e) {
+                            log.warn("не удалось считать строку из гугла. {}", e.getMessage());
+                        }
+                    }
+            );
         } catch (GoogleJsonResponseException e) {
             // TODO(developer) - handle error appropriately
             GoogleJsonError error = e.getDetails();

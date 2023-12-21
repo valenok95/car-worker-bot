@@ -1319,8 +1319,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
         log.info("""
                         Данные рассчёта:
                         price in CNY {},
-                        price in USD {},
-                        provinceName {}
+                        provinceName {},
+                        carId {}
                         """, resultData.getCnyPrice(),
                 resultData.getProvinceName(), resultData.getCarId());
         Map<String, DeliveryPrice> managerLogisticsMap = googleService.getManagerLogisticsMap();
