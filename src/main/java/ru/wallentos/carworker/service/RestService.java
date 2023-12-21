@@ -1,5 +1,7 @@
 package ru.wallentos.carworker.service;
 
+import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.USD;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.conversionRatesMap;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.manualConversionRatesMapInRubles;
 
@@ -166,7 +168,7 @@ public class RestService {
             throw new GetCarDetailException(errorMessage);
         }
     }
-    
+
     /**
      * Курс доллара по китаю для манагеров.
      *
