@@ -10,6 +10,7 @@ import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
 import ru.wallentos.carworker.service.CheCarCacheService;
 import ru.wallentos.carworker.service.EncarCacheService;
+import ru.wallentos.carworker.service.ExecutionService;
 import ru.wallentos.carworker.service.GoogleService;
 import ru.wallentos.carworker.service.RecaptchaService;
 import ru.wallentos.carworker.service.RestService;
@@ -19,6 +20,7 @@ import ru.wallentos.carworker.service.UtilService;
 @RestController
 public class WebController {
     private final RestService restService;
+    private final ExecutionService executionService;
     private final EncarCache encarCache;
     private final EncarCacheService encarCacheService;
     private final CheCarCacheService cheCarCacheService;
@@ -28,7 +30,11 @@ public class WebController {
     private final GoogleService googleService;
 
     @Autowired
-    public WebController(RestService restService, EncarCache encarCache, EncarCacheService encarCacheService, CheCarCacheService cheCarCacheService, UtilService utilService, RecaptchaService recaptchaService, SubscribeService subscribeService, GoogleService googleService) {
+    public WebController(RestService restService, EncarCache encarCache,
+                         EncarCacheService encarCacheService,
+                         CheCarCacheService cheCarCacheService, UtilService utilService,
+                         RecaptchaService recaptchaService, SubscribeService subscribeService,
+                         GoogleService googleService, ExecutionService executionService) {
         this.restService = restService;
         this.encarCache = encarCache;
         this.encarCacheService = encarCacheService;
@@ -37,9 +43,15 @@ public class WebController {
         this.recaptchaService = recaptchaService;
         this.subscribeService = subscribeService;
         this.googleService = googleService;
+        this.executionService = executionService;
     }
 
 
+    @GetMapping("/googleTest")
+    public ResponseEntity<?> testG() {
+        googleService.getManagerLogisticsMap();
+        return ResponseEntity.accepted().build();
+    }
     @GetMapping("/getEncarByIdJsoup")
     public ResponseEntity<?> getCarByIdJsoup(@RequestParam String carId) throws GetCarDetailException, RecaptchaException {
         return ResponseEntity.accepted().body(restService.getEncarDataByJsoup(carId));

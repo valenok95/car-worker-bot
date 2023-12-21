@@ -32,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
 import ru.wallentos.carworker.model.CarPriceResultData;
+import ru.wallentos.carworker.model.CarTotalResultData;
 import ru.wallentos.carworker.model.Province;
 import ru.wallentos.carworker.model.UserCarInputData;
 
@@ -104,6 +105,22 @@ public class ExecutionService {
         resultData.setExtraPayAmountValutePart(extraPayAmountRublePart + extraPayAmountCurrencyPart);
         resultData.setStock(executeStock(userCarInputData.getCurrency()));
         resultData.setLocation(executeLocation(userCarInputData.getCurrency()));
+        return resultData;
+    }
+
+    /**
+     * Расчёт для менеджеров без рублей в ЮАНЯХ.
+     *
+     * @param userCarInputData
+     * @return
+     */
+    public CarTotalResultData executeCarTotalResultData(UserCarInputData userCarInputData) {
+        CarTotalResultData resultData = new CarTotalResultData();
+        resultData.setCarId(userCarInputData.getCarId());
+        resultData.setCnyPrice(userCarInputData.getPrice());
+        // Стоимость логистики из провинции Китая
+        System.out.println("курс расчёта USDCNY " + restService.getManagerCnyUsdRate());
+        resultData.setProvinceName(userCarInputData.getProvince().getProvinceFullName());
         return resultData;
     }
 

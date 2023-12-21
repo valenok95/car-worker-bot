@@ -12,10 +12,13 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
+import ru.wallentos.carworker.model.DeliveryPrice;
 
 @Service
 public class GoogleService {
@@ -90,6 +93,35 @@ public class GoogleService {
     }
 
     /**
+     * Получаем из гугл таблицы данные по доставкам, преобразовываем в мапу ПРОВИНЦИЯ-ЮАНИ
+     *
+     * @return Values in the range
+     * @throws IOException - if credentials file not found.
+     */
+    public Map<String, DeliveryPrice> getManagerLogisticsMap() {
+        Map<String, DeliveryPrice> result = new HashMap<>();
+        try {
+            // Gets the values of the cells in the specified range.
+            var selection =
+                    sheets.spreadsheets().values().get(configDataPool.managerLogisticsSpreedSheetId, "last!C3:G").execute();
+            var values = selection.getValues();
+            values.forEach(data -> result.put(data.get(0).toString(),
+                    new DeliveryPrice(Integer.parseInt(data.get(4).toString().replace("¥", "").replace(" ", "")),
+                            Integer.parseInt(data.get(2).toString().replace("¥", "").replace(" ",
+                                    "")))));
+        } catch (GoogleJsonResponseException e) {
+            // TODO(developer) - handle error appropriately
+            GoogleJsonError error = e.getDetails();
+            if (error.getCode() == 404) {
+                System.out.printf("Spreadsheet not found with id '%s'.\n", configDataPool.managerLogisticsSpreedSheetId);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+    /**
      * Appends values to a spreadsheet.
      *
      * @param spreadsheetId    - Id of the spreadsheet.
@@ -145,4 +177,6 @@ public class GoogleService {
             throw new RuntimeException(e);
         }
     }
+
+
 }

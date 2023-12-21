@@ -27,6 +27,8 @@ import ru.wallentos.carworker.model.CarEntity;
 @Data
 @Slf4j
 public class RestService {
+    @Value("${ru.wallentos.carworker.exchange-manager-coefficient:1}")
+    public double managerCoefficient;
     @Value("${ru.wallentos.carworker.exchange-api.host-cbr}")
     private String cbrMethod;
     @Value("${ru.wallentos.carworker.exchange-api.host-naver}")
@@ -163,6 +165,15 @@ public class RestService {
                     carId);
             throw new GetCarDetailException(errorMessage);
         }
+    }
+    
+    /**
+     * Курс доллара по китаю для манагеров.
+     *
+     * @return
+     */
+    public double getManagerCnyUsdRate() {
+        return managerCoefficient * (conversionRatesMap.get(CNY) / conversionRatesMap.get(USD));
     }
 
     public CarDto getCheDataByJsoup(String carId) throws GetCarDetailException, RecaptchaException {

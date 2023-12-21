@@ -15,6 +15,8 @@ import ru.wallentos.carworker.model.Province;
 public class ConfigDataPool {
     @Value("${ru.wallentos.carworker.client-request-spreedsheet-id:test}")
     public String clientRequestSpreedSheetId;
+    @Value("${ru.wallentos.carworker.manager-logistics-spreedsheet-id:test}")
+    public String managerLogisticsSpreedSheetId;
     @Value("${ru.wallentos.carworker.admin-list}")
     public List<String> adminList;
     @Value("${ru.wallentos.carworker.client-request-group-id}")
@@ -141,13 +143,15 @@ public class ConfigDataPool {
     public static final String NORMAL_CAR = "От 3 до 5 лет";
     public static final String OLD_CAR = "От 5 лет";
     public static final String CANCEL_BUTTON = "Отмена";
+    public static final String RESET_MANAGER_BUTTON = "Расчет стоимости Total to Ussurisk/Bishkek";
     public static final String RESET_MESSAGE = "Рассчитать стоимость другого автомобиля";
     public static final String RESET_CALLBACK = "reset_callback";
+    public static final String RESET_MANAGER_CALLBACK = "reset_manager_callback";
     public static final String TO_SET_CURRENCY_MENU = "Меню установки валюты";
     public static final String MANAGER_MESSAGE = "Связаться с менеджером";
     public static final String CAR_RESULT_DETAIL_BUTTON_TEXT = "Детализация расчёта";
     public static final String CAR_RESULT_DETAIL_BUTTON_CALLBACK = "result_details_callback";
-    
+
     public static final String CAR_REPORT_BUTTON_TEXT = "Технический отчёт об автомобиле";
     public static final String CAR_REPORT_BUTTON_CALLBACK = "report_callback";
     public static final String CLIENT_REQUEST_BUTTON = "Оставить заявку";

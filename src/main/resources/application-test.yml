@@ -9,11 +9,13 @@ ru:
       user-prefix: "user_test_"
       client-request-spreedsheet-id: ${CLIENT_REQUEST_SPREEDSHEET_ID}
       client-request-group-id: -1001801658754
+      manager-logistics-spreedsheet-id: 1BkK8M7KNuR4Rp8VQciQL2tuFinEBFd2sNLD1KlpwoSc
       enable-client-request: true
       enable-encar-report-mode: true
       enable-result-detalization: true
-      check-channel-subscribers: false
+      exchange-manager-coefficient: 1.009
       is-cbr-rate-to-calculate: true
+      check-channel-subscribers: true
       channel-subscribers-id: -1002123611967
       channel-subscribers-link: https://t.me/MikhailValTest
       update-cache-job:
