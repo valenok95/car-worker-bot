@@ -325,12 +325,12 @@ public class UtilMessageService {
     public String getKorexManagerCnyMessageToUssuriyskByResultData(CarTotalResultData resultData
             , Map<String, DeliveryPrice> managerLogisticsMap) {
         return String.format(Locale.FRANCE, """
-                        %s
-                                                
-                        Доставка из провинции %s до Суньфыньхэ:
-                        <u><b>%,.0f ¥</b></u>
-                        <u><b>%,.0f $</b></u>
-                                            
+                        Ссылка на авто: %s
+                              
+                        Провинция: %s
+                              
+                        Total to Ussuriysk CNY: <u><b>%,.0f</b></u>
+                        Total to Ussuriysk USD: <u><b>%,.0f</b></u>
                         """,
                 String.format("https://www.che168.com/dealer/416034/%d.html", resultData.getCarId()),
                 resultData.getProvinceName(),
@@ -347,12 +347,12 @@ public class UtilMessageService {
     public String getKorexManagerCnyMessageToBishkekByResultData(CarTotalResultData resultData
             , Map<String, DeliveryPrice> managerLogisticsMap) {
         return String.format(Locale.FRANCE, """
-                        %s
-                                                
-                        Доставка из провинции %s до Хоргоса:
-                        <u><b>%,.0f ¥</b></u>
-                        <u><b>%,.0f $</b></u>
-                                            
+                        Ссылка на авто: %s
+                              
+                        Провинция: %s
+                              
+                        Total to Bishkek CNY: <u><b>%,.0f</b></u>
+                        Total to Bishkek USD: <u><b>%,.0f</b></u>          
                         """,
                 String.format("https://www.che168.com/dealer/416034/%d.html", resultData.getCarId()),
                 resultData.getProvinceName(),
