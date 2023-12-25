@@ -508,6 +508,12 @@ public class UtilMessageService {
             } else if (Objects.equals(currency, KRW)) {
                 return getKorexDemoKrwDetailMessageByResultData(resultData);
             }
+        } else if (botName.equals("MCARCalcBot")) {
+            if (Objects.equals(currency, CNY)) {
+                return getMCarCnyDetailMessageByResultData(resultData);
+            } else if (Objects.equals(currency, KRW)) {
+                return getMCarKrwDetailMessageByResultData(resultData);
+            }
         }
         return String.format("""
                 %s
@@ -590,7 +596,7 @@ public class UtilMessageService {
 
     private String getEastWayKrwDetailMessageByResultData(CarPriceResultData resultData) {
         return String.format(Locale.FRANCE, """
-                        Detail Стоимость автомобиля под ключ во Владивостоке:
+                        Стоимость автомобиля под ключ во Владивостоке:
                         <u><b>%,.0f ₽</b></u>
                                                 
                         Стоимость автомобиля с учетом доставки до Владивостока:
@@ -780,6 +786,45 @@ public class UtilMessageService {
                 resultData.getFirstPriceInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 utilService.getEncarLinkStringByCarId(resultData.getCarId()));
+    }
+
+
+    private String getMCarCnyDetailMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля в Китае:
+                        %,.0f ₽
+                                                
+                        Стоимость оформления экспортных документов и доставки до Владивостока:
+                        %,.0f ₽
+                                                
+                        Брокерские расходы, СВХ, СБКТС:
+                        95 000 ₽
+                                                
+                        Комиссия компании: 100 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽""",
+                resultData.getFirstPriceInRubles(),
+                resultData.getExtraPayAmountValutePart(),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee());
+    }
+
+    private String getMCarKrwDetailMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля в Корее:
+                        %,.0f ₽
+                                                
+                        Стоимость оформления экспортных документов и доставки до Владивостока:
+                        %,.0f ₽
+                                                
+                        Брокерские расходы, СВХ, СБКТС:
+                        95 000 ₽
+                                                
+                        Комиссия компании: 80 000 ₽
+                                                
+                        Таможенная пошлина и утилизационный сбор: %,.0f ₽""",
+                resultData.getFirstPriceInRubles(),
+                resultData.getExtraPayAmountValutePart(),
+                resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee());
     }
 
     public String getEncarReportMessage(CarDto carDto) {
