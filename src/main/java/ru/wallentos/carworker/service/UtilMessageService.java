@@ -119,6 +119,12 @@ public class UtilMessageService {
             } else if (Objects.equals(currency, KRW)) {
                 return getKorexDemoKrwMessageByResultData(resultData);
             }
+        } else if (botName.equals("MCARCalcBot")) {
+            if (Objects.equals(currency, CNY)) {
+                return getMCarCnyMessageByResultData(resultData);
+            } else if (Objects.equals(currency, KRW)) {
+                return getMCarKrwMessageByResultData(resultData);
+            }
         }
         return String.format("""
                 %s
@@ -436,6 +442,34 @@ public class UtilMessageService {
                 resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 utilService.getEncarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    private String getMCarCnyMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                        %s
+                        Стоимость "под ключ" включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Корее, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину️.
+                                                
+                        Актуальные курсы валют вы можете посмотреть в Меню.
+                                                
+                        По вопросам заказа авто вы можете обратиться к нашему менеджеру @Konstantin_k12""",
+                resultData.getResultPrice(),
+                utilService.getCheCarLinkStringByCarId(resultData.getCarId()));
+    }
+
+    private String getMCarKrwMessageByResultData(CarPriceResultData resultData) {
+        return String.format(Locale.FRANCE, """
+                        Стоимость автомобиля под ключ во Владивостоке:
+                        <u><b>%,.0f ₽</b></u>
+                        %s
+                        Стоимость "под ключ" включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, логистику, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину.
+                                                
+                        Актуальные курсы валют вы можете посмотреть в Меню.
+                                                
+                        По вопросам проведения платежа и заказа авто вы можете обратиться к нашему менеджеру @Konstantin_k12""",
+                resultData.getResultPrice(),
+                utilService.getCheCarLinkStringByCarId(resultData.getCarId()));
     }
 
     /**
