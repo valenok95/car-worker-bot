@@ -98,7 +98,7 @@ public class ExecutionService {
         resultData.setExtraPayAmountValutePart(extraPayAmountCurrencyPart);
         // Стоимость логистики из провинции Китая
         if (Objects.nonNull(userCarInputData.getProvince())) {
-            resultData.setProvincePriceInRubles(executeProvincePriceInRubles(userCarInputData.getCurrency(), userCarInputData.getProvince()));
+            resultData.setProvincePriceInRubles(executeProvincePriceInRublesToSuyfynkhe(userCarInputData.getCurrency(), userCarInputData.getProvince()));
             resultData.setProvinceName(userCarInputData.getProvince().getProvinceFullName());
         }
 
@@ -118,21 +118,21 @@ public class ExecutionService {
         CarTotalResultData resultData = new CarTotalResultData();
         resultData.setCarId(userCarInputData.getCarId());
         resultData.setCnyPrice(userCarInputData.getPrice());
+        resultData.setProvince(userCarInputData.getProvince());
         // Стоимость логистики из провинции Китая
         System.out.println("курс расчёта USDCNY " + restService.getManagerCnyUsdRate());
-        resultData.setProvinceName(userCarInputData.getProvince().getProvinceFullName());
         return resultData;
     }
 
     /**
-     * Расчитываем логистику для доставки по провинциям Китая.
+     * Расчитываем логистику для доставки по провинциям Китая до Суйфынхэ.
      *
      * @param currency
      * @param province
      * @return
      */
-    private double executeProvincePriceInRubles(String currency, Province province) {
-        return manualConversionRatesMapInRubles.get(currency) * province.getProvincePriceInCurrency();
+    private double executeProvincePriceInRublesToSuyfynkhe(String currency, Province province) {
+        return manualConversionRatesMapInRubles.get(currency) * province.getProvincePriceInCurrencyToSuyfynkhe();
     }
 
 

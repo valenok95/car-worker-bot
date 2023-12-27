@@ -7,5 +7,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class Province {
     private String provinceFullName;
-    private int provincePriceInCurrency;
+    private int provincePriceInCurrencyToSuyfynkhe;
+    private int provincePriceInCurrencyToHorgos;
 }

@@ -4,7 +4,6 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.KRW;
 
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +17,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import ru.wallentos.carworker.model.CarDto;
 import ru.wallentos.carworker.model.CarPriceResultData;
 import ru.wallentos.carworker.model.CarTotalResultData;
-import ru.wallentos.carworker.model.DeliveryPrice;
 
 @Service
 @Slf4j
@@ -178,7 +176,7 @@ public class UtilMessageService {
                                                 
                         Стоимость автомобиля с учетом доставки до Владивостока:
                         %,.0f ₽
-                        %s             
+                        %s
                         Брокерские расходы, СВХ, СБКТС:
                         100 000 ₽
                                                 
@@ -239,7 +237,7 @@ public class UtilMessageService {
                                                 
                         Стоимость автомобиля с учетом доставки до Уссурийска:
                         %,.0f ₽
-                        %s             
+                        %s
                         Брокерские расходы, СВХ, СБКТС:
                         100 000 ₽
                                                 
@@ -328,8 +326,7 @@ public class UtilMessageService {
      * @param resultData
      * @return
      */
-    public String getKorexManagerCnyMessageToUssuriyskByResultData(CarTotalResultData resultData
-            , Map<String, DeliveryPrice> managerLogisticsMap) {
+    public String getKorexManagerCnyMessageToUssuriyskByResultData(CarTotalResultData resultData) {
         return String.format(Locale.FRANCE, """
                         Ссылка на авто: %s
                               
@@ -339,9 +336,9 @@ public class UtilMessageService {
                         Total to Ussuriysk USD: <u><b>%,.0f</b></u>
                         """,
                 String.format("https://www.che168.com/dealer/416034/%d.html", resultData.getCarId()),
-                resultData.getProvinceName(),
-                resultData.getCnyPrice() + managerLogisticsMap.get(resultData.getProvinceName()).getUssuriyskDeliveryPrice() + 15000,
-                (resultData.getCnyPrice() + managerLogisticsMap.get(resultData.getProvinceName()).getUssuriyskDeliveryPrice() + 15000) / restService.getManagerCnyUsdRate());
+                resultData.getProvince().getProvinceFullName(),
+                resultData.getCnyPrice() + resultData.getProvince().getProvincePriceInCurrencyToSuyfynkhe() + 15000,
+                (resultData.getCnyPrice() + resultData.getProvince().getProvincePriceInCurrencyToSuyfynkhe() + 15000) / restService.getManagerCnyUsdRate());
     }
 
     /**
@@ -350,8 +347,7 @@ public class UtilMessageService {
      * @param resultData
      * @return
      */
-    public String getKorexManagerCnyMessageToBishkekByResultData(CarTotalResultData resultData
-            , Map<String, DeliveryPrice> managerLogisticsMap) {
+    public String getKorexManagerCnyMessageToBishkekByResultData(CarTotalResultData resultData) {
         return String.format(Locale.FRANCE, """
                         Ссылка на авто: %s
                               
@@ -361,9 +357,9 @@ public class UtilMessageService {
                         Total to Bishkek USD: <u><b>%,.0f</b></u>          
                         """,
                 String.format("https://www.che168.com/dealer/416034/%d.html", resultData.getCarId()),
-                resultData.getProvinceName(),
-                resultData.getCnyPrice() + managerLogisticsMap.get(resultData.getProvinceName()).getBishkekDeliveryPrice() + 16000,
-                (resultData.getCnyPrice() + managerLogisticsMap.get(resultData.getProvinceName()).getBishkekDeliveryPrice() + 16000) / restService.getManagerCnyUsdRate());
+                resultData.getProvince().getProvinceFullName(),
+                resultData.getCnyPrice() + resultData.getProvince().getProvincePriceInCurrencyToSuyfynkhe() + 16000,
+                (resultData.getCnyPrice() + resultData.getProvince().getProvincePriceInCurrencyToSuyfynkhe() + 16000) / restService.getManagerCnyUsdRate());
     }
 
     private String getKorexManagerKrwMessageByResultData(CarPriceResultData resultData) {
@@ -406,11 +402,7 @@ public class UtilMessageService {
                         Telegram / WhatsApp
                         +82 10-9926-0978 Сергей Шек
                              
-                        @param botName
-                        @param currency
-                        @param resultData
-                        @return
-                        @Korexkorea """,
+                        @Korexkorea""",
                 resultData.getResultPrice(),
                 resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
                 utilService.getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),

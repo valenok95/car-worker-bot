@@ -49,7 +49,7 @@ public class WebController {
 
     @GetMapping("/googleTest")
     public ResponseEntity<?> testG() {
-        googleService.getManagerLogisticsMap();
+        googleService.getManagerLogisticsProvinceMap();
         return ResponseEntity.accepted().build();
     }
     @GetMapping("/getEncarByIdJsoup")

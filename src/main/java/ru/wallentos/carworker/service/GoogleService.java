@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
-import ru.wallentos.carworker.model.DeliveryPrice;
+import ru.wallentos.carworker.model.Province;
 
 @Service
 @Slf4j
@@ -100,19 +100,22 @@ public class GoogleService {
      * @return Values in the range
      * @throws IOException - if credentials file not found.
      */
-    public Map<String, DeliveryPrice> getManagerLogisticsMap() {
-        Map<String, DeliveryPrice> result = new HashMap<>();
+    public Map<String, Province> getManagerLogisticsProvinceMap() {
+        Map<String, Province> result = new HashMap<>();
         try {
             // Gets the values of the cells in the specified range.
             var selection =
-                    sheets.spreadsheets().values().get(configDataPool.managerLogisticsSpreedSheetId, "last!C3:G").execute();
+                    sheets.spreadsheets().values().get(configDataPool.managerLogisticsSpreedSheetId, "last!C3:H").execute();
             var values = selection.getValues();
             values.forEach(data -> {
                         try {
-                            result.put(data.get(0).toString(),
-                                    new DeliveryPrice(Integer.parseInt(data.get(4).toString().replace("¥", "").replace(" ", "")),
-                                            Integer.parseInt(data.get(2).toString().replace("¥", "").replace(" ",
-                                                    ""))));
+                            result.put(data.get(1).toString(),
+                                    new Province(data.get(0).toString(),
+                                            Integer.parseInt(data.get(5).toString().replace("¥",
+                                                    "").replace(" ", "")),
+                                            Integer.parseInt(data.get(3).toString().replace("¥", "").replace(" ",
+                                                    ""))
+                                    ));
                         } catch (RuntimeException e) {
                             log.warn("не удалось считать строку из гугла. {}", e.getMessage());
                         }

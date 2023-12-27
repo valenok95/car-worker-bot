@@ -8,6 +8,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CarTotalResultData {
     double cnyPrice;
-    String provinceName;
+    Province province;
     int carId;
 }

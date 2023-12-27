@@ -59,7 +59,7 @@ import ru.wallentos.carworker.model.BotState;
 import ru.wallentos.carworker.model.CarDto;
 import ru.wallentos.carworker.model.CarPriceResultData;
 import ru.wallentos.carworker.model.CarTotalResultData;
-import ru.wallentos.carworker.model.DeliveryPrice;
+import ru.wallentos.carworker.model.Province;
 import ru.wallentos.carworker.model.UserCarInputData;
 
 @Service
@@ -1302,8 +1302,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
         int priceInCurrency = carDto.getRawCarPrice();
         data.setPrice(priceInCurrency);
         data.setCarId(carDto.getCarId());
-        data.setProvince(ConfigDataPool.provincePriceMap.get(carDto.getRawCarProvinceName()));
-
+        Map<String, Province> managerLogisticsProvinceMap = googleService.getManagerLogisticsProvinceMap();
+        data.setProvince(managerLogisticsProvinceMap.get(carDto.getRawCarProvinceName()));
         processExecuteResultForChinaManagers(data, chatId);
     }
 
@@ -1322,14 +1322,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
                         provinceName {},
                         carId {}
                         """, resultData.getCnyPrice(),
-                resultData.getProvinceName(), resultData.getCarId());
-        Map<String, DeliveryPrice> managerLogisticsMap = googleService.getManagerLogisticsMap();
+                resultData.getProvince().getProvinceFullName(), resultData.getCarId());
         String textUssuriysk =
-                utilMessageService.getKorexManagerCnyMessageToUssuriyskByResultData(resultData,
-                        managerLogisticsMap);
+                utilMessageService.getKorexManagerCnyMessageToUssuriyskByResultData(resultData);
         String textBishkek =
-                utilMessageService.getKorexManagerCnyMessageToBishkekByResultData(resultData,
-                        managerLogisticsMap);
+                utilMessageService.getKorexManagerCnyMessageToBishkekByResultData(resultData);
         executeMessage(utilMessageService.prepareSendMessage(chatId, textUssuriysk));
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
