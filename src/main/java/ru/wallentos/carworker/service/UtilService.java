@@ -134,8 +134,9 @@ public class UtilService {
     public String parseCheCarPower(String string) {
         Pattern pattern = Pattern.compile("排量\\(mL\\)\\\", \"id\": \\d+, \"value\\\": \\\"(\\d+)");
         Matcher matcher = pattern.matcher(string);
-        matcher.find();
-        return matcher.group(1);
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else return "0";
     }
 
 
