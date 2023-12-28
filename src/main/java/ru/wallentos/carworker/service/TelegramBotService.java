@@ -494,9 +494,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
      * @param chatId
      */
     private void setCurrencyCommandReceived(long chatId, Message updateMessage) {
-        String userName = updateMessage.getChat().getUserName().toLowerCase();
+        String userName = updateMessage.getChat().getUserName();
 
-        if (!configDataPool.getAdminList().contains(userName)) {
+        if (configDataPool.getAdminList().stream().noneMatch(userName::equalsIgnoreCase)) {
             executeMessage(utilMessageService.prepareSendMessage(chatId, "Доступ к функционалу ограничен"));
             return;
         }
@@ -512,10 +512,10 @@ public class TelegramBotService extends TelegramLongPollingBot {
             builder.append(String.format("%n%s = %,.4f ₽", currency, ConfigDataPool.manualConversionRatesMapInRubles.get(currency)));
         });
         String message = String.format("""
-                Актуальный курс оплаты:            
+                Актуальный курс оплаты:
                 %s
                 USD = %,.4f  ₽
-                    
+                                
                 Пожалуйста, выберите валюту для ручной установки курса:
                     """, builder, ConfigDataPool.manualConversionRatesMapInRubles.get(USD));
         usdButton.setCallbackData(USD);
@@ -944,10 +944,10 @@ public class TelegramBotService extends TelegramLongPollingBot {
         long chatId = message.getChatId();
         String name = message.getChat().getFirstName();
 
-        if (configDataPool.isManagerBot && !configDataPool.getWhiteManagerList().contains(message.getChat().getUserName().toLowerCase())) {
+        if (configDataPool.isManagerBot && configDataPool.getWhiteManagerList().stream().noneMatch(message.getChat().getUserName()::equalsIgnoreCase)) {
             String text = String.format("""
                     Отсутствуют правa доступа к функционалу.
-                    Для использования бота пройдите по ссылке: %s       
+                    Для использования бота пройдите по ссылке: %s
                     """, configDataPool.getParentLink());
             executeMessage(utilMessageService.prepareSendMessage(chatId, text));
             return;
