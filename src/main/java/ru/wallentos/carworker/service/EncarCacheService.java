@@ -35,7 +35,7 @@ public class EncarCacheService {
         }
         log.info("Попробуем найти и добавить в КЭШ автомобиль с id {}", carId);
         try {
-            result = restService.getEncarDataByJsoup(carId);
+            result = restService.getEncarData(carId);
         } catch (GetCarDetailException e) {
             encarCache.deleteById(carId);
             throw new GetCarDetailException(e.getMessage());
@@ -69,7 +69,7 @@ public class EncarCacheService {
     private void updateEncarCacheByCarId(String carId) { // 
         CarDto carDto;
         try {
-            carDto = restService.getEncarDataByJsoup(carId);
+            carDto = restService.getEncarData(carId);
             encarCache.save(carId, carDto);
             log.info("Обновлены данные для тачки:{}", carDto);
         } catch (GetCarDetailException e) {

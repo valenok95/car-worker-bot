@@ -52,9 +52,15 @@ public class WebController {
         googleService.getManagerLogisticsProvinceMap();
         return ResponseEntity.accepted().build();
     }
+
     @GetMapping("/getEncarByIdJsoup")
     public ResponseEntity<?> getCarByIdJsoup(@RequestParam String carId) throws GetCarDetailException, RecaptchaException {
         return ResponseEntity.accepted().body(restService.getEncarDataByJsoup(carId));
+    }
+
+    @GetMapping("/getEncarByIdJsoupAjax")
+    public ResponseEntity<?> getCarByIdJsoupAjax(@RequestParam String carId) throws GetCarDetailException, RecaptchaException {
+        return ResponseEntity.accepted().body(restService.getEncarDataByJsoupAjax(carId));
     }
 
     @GetMapping("/getCheByIdJsoup")

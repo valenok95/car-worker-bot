@@ -8,6 +8,7 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.manualConversi
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.Map;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -35,6 +36,8 @@ public class RestService {
     private String cbrMethod;
     @Value("${ru.wallentos.carworker.exchange-api.host-naver}")
     private String naverMethod;
+    @Value("${ru.wallentos.carworker.exchange-api.fem-encar-detail-url}")
+    private String femEncarDetailUrl;
     @Value("${ru.wallentos.carworker.exchange-api.encar-detail-url}")
     private String encarDetailUrl;
     @Value("${ru.wallentos.carworker.exchange-api.encar-vehicle-url}")
@@ -45,6 +48,8 @@ public class RestService {
     private String cheStartMethod;
     @Value("${ru.wallentos.carworker.exchange-api.host-che-detail}")
     private String cheDetailMethod;
+    @Value("${ru.wallentos.carworker.exchange-api.ajax}")
+    private boolean isAjax;
     private RestTemplate restTemplate;
     private UtilService utilService;
     private ObjectMapper mapper;
@@ -99,13 +104,31 @@ public class RestService {
      * @throws IOException
      */
     private JsonNode getEncarDetailJsonDataByJsoup(String carId) throws IOException {
-        var connection = Jsoup.connect(encarDetailUrl + carId).userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
+        var connection = Jsoup.connect(femEncarDetailUrl + carId).userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
         connection.execute();
         connection.execute();
         Document document = Jsoup.parse(connection.execute().body());
         String valueJson =
                 document.select("script:containsData(PRELOADED_STATE)").get(0).childNodes().get(0).toString().replace("__PRELOADED_STATE__ = ", "");
         return mapper.readTree(valueJson);
+    }
+
+    /**
+     * Получить информацию по автомобилю encar AJAX
+     *
+     * @param carId идентификатор авто
+     * @return данные со страницы ответа в json
+     * @throws IOException
+     */
+    private JsonNode getEncarDetailJsonDataByJsoupAjax(String carId) throws IOException {
+        var connection = Jsoup.newSession().url(encarDetailUrl).headers(Map.of("X-Requested-With",
+                        "XMLHttpRequest", "Accept", "application/json")).data(Map.of("method",
+                        "ajaxInspectView", "sdFlag", "N", "rgsid",
+                        carId))
+                .userAgent("Mozilla/5.0 (X11; " +
+                        "Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103" +
+                        ".0.0.0 Safari/537.36");
+        return mapper.readTree(connection.execute().body()).get(0).get("inspect").get("carSaleDto");
     }
 
     /**
@@ -168,6 +191,55 @@ public class RestService {
             throw new GetCarDetailException(errorMessage);
         }
     }
+
+    public CarDto getEncarDataByJsoupAjax(String carId) throws GetCarDetailException {
+        try {
+            JsonNode jsonDetail = getEncarDetailJsonDataByJsoupAjax(carId);
+            int myAccidentCost = 0;
+            int otherAccidentCost = 0;
+            boolean hasInsuranceInfo = false;
+            try {
+                JsonNode jsonInsurance = getEncarInsuranceJsonDataByJsoup(carId);
+                myAccidentCost = jsonInsurance.get("myAccidentCost").asInt();
+                otherAccidentCost = jsonInsurance.get("otherAccidentCost").asInt();
+                hasInsuranceInfo = true;
+
+            } catch (IOException e) {
+                log.warn("cannot get insurance information by carId {}", carId);
+            }
+
+            var encarEntity = new CarEntity(
+                    carId,
+                    jsonDetail.get("price").asText(),
+                    jsonDetail.get("year").asText().substring(0, 4),
+                    jsonDetail.get("year").asText().substring(4, 6),
+                    jsonDetail.get("displacement").asText(),
+                    null, myAccidentCost, otherAccidentCost, hasInsuranceInfo);
+            return carConverter.convertToDto(encarEntity);
+        } catch (IOException | NullPointerException e) {
+            String errorMessage = String.format("Error while getting info by id %s",
+                    carId);
+            throw new GetCarDetailException(errorMessage);
+        }
+    }
+
+    /**
+     * в зависимости от настройки либо используем новый метод ajax либо старый, который сломался
+     * из-за каптчи.
+     *
+     * @param carId
+     * @return
+     * @throws GetCarDetailException
+     * @throws RecaptchaException
+     */
+    public CarDto getEncarData(String carId) throws GetCarDetailException, RecaptchaException {
+        if (isAjax) {
+            return getEncarDataByJsoupAjax(carId);
+        } else {
+            return getEncarDataByJsoup(carId);
+        }
+    }
+
 
     /**
      * Курс доллара по китаю для манагеров.
