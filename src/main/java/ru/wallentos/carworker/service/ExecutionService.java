@@ -102,7 +102,7 @@ public class ExecutionService {
             resultData.setProvinceName(userCarInputData.getProvince().getProvinceFullName());
         }
 
-        resultData.setExtraPayAmountValutePart(extraPayAmountRublePart + extraPayAmountCurrencyPart);
+        resultData.setExtraPayAmountValutePart(extraPayAmountCurrencyPart);
         resultData.setStock(executeStock(userCarInputData.getCurrency()));
         resultData.setLocation(executeLocation(userCarInputData.getCurrency()));
         return resultData;

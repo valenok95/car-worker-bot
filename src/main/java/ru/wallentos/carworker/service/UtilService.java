@@ -65,6 +65,8 @@ public class UtilService {
                 return parseFemEncarLinkToCarId(link);
             } else if (link.contains("encar.com")) {
                 return parseEncarLinkToCarId(link);
+            } else if (link.contains("pcm.che168.com")) {
+                return parseMobileCheCarLinkToCarId(link);
             } else if (link.contains("che168.com")) {
                 return parseCheCarLinkToCarId(link);
             } else {
@@ -103,6 +105,16 @@ public class UtilService {
      */
     public String parseCheCarLinkToCarId(String link) {
         Pattern pattern = Pattern.compile("\\/(\\d+)\\.html");
+        Matcher matcher = pattern.matcher(link);
+        matcher.find();
+        return matcher.group(1);
+    }
+
+    /**
+     * Вытащить id из ссылки pem.che168.com.
+     */
+    public String parseMobileCheCarLinkToCarId(String link) {
+        Pattern pattern = Pattern.compile("infoid=(\\d{8})");
         Matcher matcher = pattern.matcher(link);
         matcher.find();
         return matcher.group(1);
