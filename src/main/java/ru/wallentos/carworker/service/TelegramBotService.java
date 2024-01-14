@@ -1229,7 +1229,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     Ошибка получения данных с сайта Encar.com
                                         
                     Попробуйте позже...
-                    Если вы пытались отправить ссылку с мобильной версии сайта, пожалуйста, отправьте ссылку с полной версии сайта(внизу кнопка <u><b>PC버전</b></u>).
+                    
+                    Если вы пытались отправить ссылку с мобильной версии сайта, пожалуйста, отправьте ссылку с полной версии сайта(внизу кнопка <b>PC버전</b>).
                     """;
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> rows = new ArrayList<>();
