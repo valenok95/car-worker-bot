@@ -11,7 +11,7 @@ ru:
       client-request-group-id: -1002007059186
       enable-client-request: ${ENABLE_CLIENT_REQUEST}
       enable-result-detalization: true
-      manager-link: T.me/Konstantin_k12
+      manager-link: T.me/NikitaMcar
       user-prefix: "user_mcar_"
       extra-pay-corea:
         krw: ${EXTRA_PAY_KOREA_KRW}
