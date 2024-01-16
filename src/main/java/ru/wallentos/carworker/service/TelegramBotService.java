@@ -128,7 +128,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
             log.info("message received: " + receivedText);
             switch (receivedText) {
                 case "/start":
-                    startCommandReceived(update.getMessage());
+                    startCommandReceivedUniversal(update.getMessage());
                     break;
                 case "/cbr":
                     cbrCommandReceived(chatId);
@@ -224,7 +224,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         BotState currentState = cache.getUsersCurrentBotState(chatId);
         switch (callbackData) {
             case RESET_CALLBACK, CANCEL_BUTTON:
-                startCommandReceived(update.getCallbackQuery().getMessage());
+                startCommandReceivedUniversal(update.getCallbackQuery().getMessage());
                 return;
             case TO_SET_CURRENCY_MENU:
                 setCurrencyCommandReceived(chatId, update.getCallbackQuery().getMessage());
@@ -573,7 +573,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     processSetCurrency(chatId, receivedText);
                     break;
                 case WAITING_FOR_LINK:
-                    processCalculateByLink(update.getMessage(), receivedText);
+                    processCalculateByLinkUniversal(update.getMessage(), receivedText);
                     break;
                 case MAILING_MENU:
                     processStartMailing(update);
@@ -1002,6 +1002,61 @@ public class TelegramBotService extends TelegramLongPollingBot {
         subscribeService.subscribeUser(chatId);
     }
 
+    /**
+     * Новый метод старта использующий автоопределение валюты по ссылке. Сразу ждёт ссылку.
+     *
+     * @param message
+     */
+    private void startCommandReceivedUniversal(Message message) {
+        long chatId = message.getChatId();
+        String name = message.getChat().getFirstName();
+
+        if (configDataPool.isManagerBot && configDataPool.getWhiteManagerList().stream().noneMatch(message.getChat().getUserName()::equalsIgnoreCase)) {
+            String text = String.format("""
+                    Отсутствуют правa доступа к функционалу.
+                    Для использования бота пройдите по ссылке: %s
+                    """, configDataPool.getParentLink());
+            executeMessage(utilMessageService.prepareSendMessage(chatId, text));
+            return;
+        }
+        if (configDataPool.isCheckChannelSubscribers && !isChannelSubscriber(chatId)) {
+            String text = String.format("""
+                    Здравствуйте %s! Для доступа к калькулятору, пожалуйста подпишитесь на <a href="%s">🔗Официальный телеграмм канал</a>     
+                    """, name, configDataPool.getChannelSubscribersLink());
+
+            InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            InlineKeyboardButton readyButton = new InlineKeyboardButton(READY_BUTTON);
+            readyButton.setCallbackData(RESET_CALLBACK);
+            row.add(readyButton);
+            rows.add(row);
+            inlineKeyboardMarkup.setKeyboard(rows);
+            executeMessage(utilMessageService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
+            return;
+        }
+
+        // Удаляем сообщения
+        UserCarInputData data = cache.getUserCarData(chatId);
+        deleteMessage(data.getLastMessageToDelete());
+        deleteMessage(data.getPreLastMessageToDelete());
+
+        if (configDataPool.isSingleCurrencyMode()) { //singleCurrencyMode не спрашиваем валюту
+            processSingleCurrencyStart(message, name);
+            restService.refreshExchangeRates();
+            subscribeService.subscribeUser(chatId);
+            return;
+        }
+        String text = String.format("""
+                Здравствуйте, %s!
+                Я бот для расчета стоимости авто до Владивостока, просто отправьте мне ссылку на авто и я рассчитаю вам конечную стоимость автомобиля с учетом всех расходов до Владивостока 💪
+                """, name);
+        executeMessage(utilMessageService.prepareSendMessage(chatId, text));
+        cache.setUsersCurrentBotState(chatId, BotState.WAITING_FOR_LINK);
+        restService.refreshExchangeRates();
+        subscribeService.subscribeUser(chatId);
+    }
+
     private void cbrCommandReceived(long chatId) {
         restService.refreshExchangeRates();
         Map<String, Double> rates = conversionRatesMap;
@@ -1213,6 +1268,47 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     /**
+     * Используем полученную ссылку для расчёта стоимости автомобиля.
+     * На месте определяем валюту по ссылке.
+     *
+     * @param link
+     */
+    private void processCalculateByLinkUniversal(Message message, String link) {
+        long chatId = message.getChatId();
+        String currentCurrency;
+        try {
+            currentCurrency = utilService.defineCurrencyByLink(link);
+        } catch (GetCarDetailException e) {
+            String errorMessage = "Ошибка при обработке ссылки, валюту расчёта определить не удалось.";
+            InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            InlineKeyboardButton cancelButton = new InlineKeyboardButton(CANCEL_BUTTON);
+            cancelButton.setCallbackData(CANCEL_BUTTON);
+            row.add(cancelButton);
+            rows.add(row);
+            inlineKeyboardMarkup.setKeyboard(rows);
+            Message sendOutMessage = executeMessage(utilMessageService.prepareSendMessage(chatId, errorMessage, inlineKeyboardMarkup));
+
+            // запомнить сообщение для удаления
+            UserCarInputData data = cache.getUserCarData(chatId);
+            deleteMessage(data.getLastMessageToDelete());
+            data.setLastMessageToDelete(sendOutMessage);
+            data.setPreLastMessageToDelete(message);
+            cache.saveUserCarData(chatId, data);
+            return;
+        }
+        var data = cache.getUserCarData(chatId);
+        data.setCurrency(currentCurrency);
+        cache.saveUserCarData(chatId, data);
+        switch (data.getCurrency()) {
+            case KRW -> processCalculateByEncarLink(message, link);
+            case CNY -> processCalculateByCheCarLink(message, link);
+            default -> log.info("Link mode unavaliable for currency");
+        }
+    }
+
+    /**
      * Расчитываем стоимость по ссылке encar.com
      *
      * @param link
@@ -1229,7 +1325,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     Ошибка получения данных с сайта Encar.com
                                         
                     Попробуйте позже...
-                    
+                                        
                     Если вы пытались отправить ссылку с мобильной версии сайта, пожалуйста, отправьте ссылку с полной версии сайта(внизу кнопка <b>PC버전</b>).
                     """;
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
