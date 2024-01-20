@@ -86,7 +86,7 @@ public class UtilMessageService {
      * @return
      */
     protected String getResultHeaderMessageByBotNameAndCurrency(String botName, String currency, CarPriceResultData resultData) {
-        if (botName.equals("KorexCalcBot")) {
+        if (botName.equals("KorexCalcBot") || botName.equals("carworkerbot")) {
             if (Objects.equals(currency, CNY)) {
                 return getKorexCnyMessageByResultData(resultData);
             } else if (Objects.equals(currency, KRW)) {
@@ -105,7 +105,7 @@ public class UtilMessageService {
             } else if (Objects.equals(currency, KRW)) {
                 return getRostovKrwMessageByResultData(resultData);
             }
-        } else if (botName.equals("KorexManagerBot") || botName.equals("carworkerbot")) {
+        } else if (botName.equals("KorexManagerBot")) {
             if (Objects.equals(currency, CNY)) {
                 return getKorexManagerCnyMessageByResultData(resultData);
             } else if (Objects.equals(currency, KRW)) {

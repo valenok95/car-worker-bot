@@ -176,7 +176,8 @@ public class ExecutionService {
 
     private double calculateFirstCarPriceInRublesByUserCarData(UserCarInputData userCarInputData) {
         String currentCurrency = userCarInputData.getCurrency();
-        if (currentCurrency.equals(KRW) && !userCarInputData.isSanctionCar()) {
+        // добавить двойную конвертацию
+        if (currentCurrency.equals(KRW) && !configDataPool.disableDoubleConvertation && !userCarInputData.isSanctionCar()) {
             return (userCarInputData.getPrice() / restService.getCbrUsdKrwMinus20()) * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
         } else {
             return userCarInputData.getPrice() * ConfigDataPool.manualConversionRatesMapInRubles.get(currentCurrency);

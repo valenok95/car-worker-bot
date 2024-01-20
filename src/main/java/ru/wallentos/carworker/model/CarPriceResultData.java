@@ -28,7 +28,7 @@ public class CarPriceResultData {
     String currency;
 
     public double getResultPrice() {
-        return firstPriceInRubles + feeRate + duty + recyclingFee + extraPayAmountValutePart + provincePriceInRubles;
+        return firstPriceInRubles + feeRate + duty + recyclingFee + extraPayAmountValutePart + extraPayAmountRublePart + provincePriceInRubles;
     }
 
 
