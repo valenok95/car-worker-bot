@@ -445,7 +445,7 @@ public class UtilMessageService {
                                                 
                         Актуальные курсы валют вы можете посмотреть в Меню.
                                                 
-                        По вопросам проведения платежа, заказа авто, отправки в Москву и регионы вы можете обратиться к нашему менеджеру @mcarvl""",
+                        По вопросам проведения платежа, заказа авто, отправки в Москву и регионы вы можете обратиться к нашему менеджеру @mcar_vl""",
                 resultData.getResultPrice(),
                 utilService.getCheCarLinkStringByCarId(resultData.getCarId()));
     }
@@ -459,9 +459,9 @@ public class UtilMessageService {
                                                 
                         Актуальные курсы валют вы можете посмотреть в Меню.
                                                 
-                        По вопросам проведения платежа, заказа авто, отправки в Москву и регионы вы можете обратиться к нашему менеджеру @mcarvl""",
+                        По вопросам проведения платежа, заказа авто, отправки в Москву и регионы вы можете обратиться к нашему менеджеру @mcar_vl""",
                 resultData.getResultPrice(),
-                utilService.getCheCarLinkStringByCarId(resultData.getCarId()));
+                utilService.getEncarLinkStringByCarId(resultData.getCarId()));
     }
 
     /**
