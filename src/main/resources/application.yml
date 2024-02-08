@@ -34,5 +34,5 @@ spring:
     redis:
       password: ${REDIS_PASSWORD}
       host: ${REDIS_HOST}
-      port: '6472'
+      port: '33260'
       timeout: '60000'
