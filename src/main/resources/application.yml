@@ -11,11 +11,11 @@ ru:
       client-request-group-id: -1001801658754
       exchange-coefficient: ${COEFFICIENT}
       extra-pay-corea:
-        krw: 2500000
-        rub: 70000
+        krw: 1600000
+        rub: 100000
       extra-pay-china:
-        cny: 25000
-        rub: 250000
+        cny: 15000
+        rub: 100000
       exchange-api:
         ajax: true
         host-cbr: https://www.cbr-xml-daily.ru/daily_json.js
