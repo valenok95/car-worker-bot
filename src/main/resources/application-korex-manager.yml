@@ -7,8 +7,6 @@ ru:
       currencies: KRW, CNY
       enable-krw-link-mode: ${ENABLE_KRW_LINK_MODE}
       enable-cny-link-mode: ${ENABLE_CNY_LINK_MODE}
-      enable-krw-auction-mode: true
-      auction-coefficient: ${AUCTION_COEFFICIENT}
       manager-logistics-spreedsheet-id: ${MANAGER_LOGISTICS_SPREDSHEET_ID}
       disable-double-convertation: true
       exchange-manager-coefficient: ${MANAGER_COEFFICIENT}

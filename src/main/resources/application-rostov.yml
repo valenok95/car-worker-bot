@@ -8,8 +8,6 @@ ru:
       enable-krw-link-mode: ${ENABLE_KRW_LINK_MODE}
       enable-cny-link-mode: ${ENABLE_CNY_LINK_MODE}
       client-request-spreedsheet-id: ${CLIENT_REQUEST_SPREEDSHEET_ID}
-      enable-krw-auction-mode: true
-      auction-coefficient: ${AUCTION_COEFFICIENT}
       disable-double-convertation: true
       manager-link: https://t.me/Roman_autodiler
       client-request-group-id: -1001950549646

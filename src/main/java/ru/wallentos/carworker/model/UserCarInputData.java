@@ -12,6 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 public class UserCarInputData {
     int carId;
     boolean isSanctionCar;
+    boolean isElectric;
     String currency;
     int price;
     double userAuctionStartPrice;
@@ -19,6 +20,7 @@ public class UserCarInputData {
     double priceInEuro;
     LocalDate issueDate;
     int volume;
+    int power;
     String age;
     String stock;
     Province province;
@@ -32,11 +34,16 @@ public class UserCarInputData {
 
     @Override
     public String toString() {
+        if (isElectric()) {
+            return String.format(Locale.FRANCE, """
+                    Тип: Электромобиль.
+                    Возраст: %s.
+                    Стоимость: %d %s\s
+                    Мощность: %d л.с""", age, price, currency, power);
+        }
         return String.format(Locale.FRANCE, """
                 Возраст: %s.
                 Стоимость: %d %s\s
                 Объем двигателя: %d cc""", age, price, currency, volume);
-
-
     }
 }

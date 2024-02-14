@@ -15,10 +15,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
+import ru.wallentos.carworker.exceptions.ElectricCarNotFoundException;
 import ru.wallentos.carworker.model.Province;
 
 @Service
@@ -134,6 +136,40 @@ public class GoogleService {
     }
 
     /**
+     * Получаем из гугл таблицы данные по электромобилям, преобразовываем в мапу МОДЕЛЬ-МОЩНОСТЬ ЛС.
+     *
+     * @return Values in the range
+     * @throws IOException - if credentials file not found.
+     */
+    public Map<String, String> getEncarElectricPowerMap() {
+        Map<String, String> result = new HashMap<>();
+        try {
+            // Gets the values of the cells in the specified range.
+            var selection =
+                    sheets.spreadsheets().values().get(configDataPool.encarElectricSpreedSheetId,
+                            "Общая таблица!B2:D").execute();
+            List<List<Object>> values = selection.getValues();
+            values.forEach(currentString -> {
+                        try {
+                            result.put(currentString.get(0).toString(), currentString.get(2).toString());
+                        } catch (RuntimeException e) {
+                            log.warn("не удалось считать строку из гугла. {}", e.getMessage());
+                        }
+                    }
+            );
+        } catch (GoogleJsonResponseException e) {
+            // TODO(developer) - handle error appropriately
+            GoogleJsonError error = e.getDetails();
+            if (error.getCode() == 404) {
+                System.out.printf("Spreadsheet not found with id '%s'.\n", configDataPool.managerLogisticsSpreedSheetId);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+    /**
      * Appends values to a spreadsheet.
      *
      * @param spreadsheetId    - Id of the spreadsheet.
@@ -191,4 +227,13 @@ public class GoogleService {
     }
 
 
+    public String getCarPowerByCarName(String carName) throws IOException {
+        Map<String, String> encarElectricPowerMap = getEncarElectricPowerMap();
+        String resultCarPower = encarElectricPowerMap.get(carName);
+        if (Objects.isNull(resultCarPower)) {
+            log.info("car {} not found in electric table", carName);
+            throw new ElectricCarNotFoundException("В таблице электромобилей отсутствует " + carName);
+        }
+        return resultCarPower;
+    }
 }

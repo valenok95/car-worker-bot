@@ -12,9 +12,11 @@ public class CarDto {
     private int rawCarPrice;
     private int rawCarYear;
     private int rawCarMonth;
+    private int rawCarVolume;
     private int rawCarPower;
     private String rawCarProvinceName;
     private int myAccidentCost;
     private int otherAccidentCost;
     private boolean hasInsuranceInfo;
+    private boolean isElectric;
 }

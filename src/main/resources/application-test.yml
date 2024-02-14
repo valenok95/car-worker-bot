@@ -4,13 +4,14 @@ ru:
       currencies: KRW, CNY
       enable-krw-link-mode: true
       enable-cny-link-mode: true
-      enable-krw-auction-mode: true
       manager-link: https://t.me/wallentoss
       user-prefix: "user_test_"
       client-request-spreedsheet-id: ${CLIENT_REQUEST_SPREEDSHEET_ID}
+      encar-electric-spreedsheet-id: ${ENCAR_ELECTRIC_SPREEDSHEET_ID}
       client-request-group-id: -1001801658754
       manager-logistics-spreedsheet-id: 1jgTaPf6wNJj59rlBPIatZO9PM9xh8XgEy5-YOJpCynM
       enable-client-request: true
+      enable-cache: false
       enable-encar-report-mode: true
       enable-result-detalization: true
       exchange-manager-coefficient: 1.009
@@ -23,4 +24,8 @@ ru:
       update-cache-job:
         master-bot: ${IS_MASTER_BOT}
         cron: ${CRON}
+spring:
+  data:
+    redis:
+      port: ${REDIS_PORT}
         

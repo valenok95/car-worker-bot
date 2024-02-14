@@ -7,7 +7,6 @@ ru:
       currencies: KRW, CNY
       enable-krw-link-mode: ${ENABLE_KRW_LINK_MODE}
       enable-cny-link-mode: ${ENABLE_CNY_LINK_MODE}
-      enable-krw-auction-mode: true
       korex-province-matrix: true
       client-request-spreedsheet-id: 160dFiu2oswiYji4QUI-mlUVuFoTzH-sqX1OlQvaFuIc
       client-request-group-id: -1001854156002
@@ -19,7 +18,6 @@ ru:
       is-cbr-rate-to-calculate: true
       channel-subscribers-id: -1001423584530
       channel-subscribers-link: https://t.me/korex_official
-      auction-coefficient: ${AUCTION_COEFFICIENT}
       manager-link: T.me/Korex_Consultant
       user-prefix: "user_korex_"
       extra-pay-corea:

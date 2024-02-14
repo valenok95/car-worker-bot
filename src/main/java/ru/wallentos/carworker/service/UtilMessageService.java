@@ -193,7 +193,7 @@ public class UtilMessageService {
                         <a href="https://t.me/EastWayOfficial">🔗Официальный телеграмм канал</a>
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePartInRubles(),
                 utilService.getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
@@ -224,7 +224,7 @@ public class UtilMessageService {
                         <a href="https://t.me/EastWayOfficial">🔗Официальный телеграмм канал</a>
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePartInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 utilService.getEncarLinkStringByCarId(resultData.getCarId()));
     }
@@ -256,7 +256,7 @@ public class UtilMessageService {
                         <a href="https://t.me/autodiler61">🔗Официальный телеграмм канал</a>
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePartInRubles(),
                 utilService.getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
@@ -290,7 +290,7 @@ public class UtilMessageService {
                         <a href="https://t.me/autodiler61">🔗Официальный телеграмм канал</a>
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePartInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 resultData.getExtraPayAmountRublePart(),
                 utilService.getEncarLinkStringByCarId(resultData.getCarId()));
@@ -313,7 +313,7 @@ public class UtilMessageService {
                         Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Китае, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePartInRubles(),
                 utilService.getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
@@ -378,7 +378,7 @@ public class UtilMessageService {
                         Итоговая стоимость включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Корее, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину
                         """,
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePartInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 utilService.getEncarLinkStringByCarId(resultData.getCarId()));
     }
@@ -404,7 +404,7 @@ public class UtilMessageService {
                              
                         @Korexkorea""",
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePartInRubles(),
                 utilService.getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
@@ -431,7 +431,7 @@ public class UtilMessageService {
                         +82 10-9926-0978 Сергей Шек
                         @Korexkorea""",
                 resultData.getResultPrice(),
-                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePart(),
+                resultData.getFirstPriceInRubles() + resultData.getExtraPayAmountValutePartInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee(),
                 utilService.getEncarLinkStringByCarId(resultData.getCarId()));
     }
@@ -528,7 +528,7 @@ public class UtilMessageService {
                         Таможенная пошлина и утилизационный сбор: %,.0f ₽
                         """,
                 resultData.getFirstPriceInRubles(),
-                resultData.getExtraPayAmountValutePart(),
+                resultData.getExtraPayAmountValutePartInRubles(),
                 resultData.getExtraPayAmountRublePart(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee());
     }
@@ -550,7 +550,7 @@ public class UtilMessageService {
                 resultData.getFirstPriceInRubles(),
                 utilService.getProvinceStringByProvinceNameAndPrice(resultData.getProvinceName(),
                         resultData.getProvincePriceInRubles()),
-                resultData.getExtraPayAmountValutePart(),
+                resultData.getExtraPayAmountValutePartInRubles(),
                 resultData.getExtraPayAmountRublePart(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee());
     }
@@ -796,7 +796,7 @@ public class UtilMessageService {
                                                 
                         Таможенная пошлина и утилизационный сбор: %,.0f ₽""",
                 resultData.getFirstPriceInRubles(),
-                resultData.getExtraPayAmountValutePart(),
+                resultData.getExtraPayAmountValutePartInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee());
     }
 
@@ -815,7 +815,7 @@ public class UtilMessageService {
                                                 
                         Таможенная пошлина и утилизационный сбор: %,.0f ₽""",
                 resultData.getFirstPriceInRubles(),
-                resultData.getExtraPayAmountValutePart(),
+                resultData.getExtraPayAmountValutePartInRubles(),
                 resultData.getFeeRate() + resultData.getDuty() + resultData.getRecyclingFee());
     }
 
@@ -831,11 +831,5 @@ public class UtilMessageService {
                         """,
                 carDto.getMyAccidentCost(), carDto.getOtherAccidentCost(),
                 utilService.getEncarInspectLinkStringByCarId(carDto.getCarId()));
-    }
-
-    protected String getAuctionKrwResultMessage(double resultKrwPrice) {
-        return String.format(Locale.FRANCE, """
-                Ваша ставка на аукционе %,.0f KRW
-                """, resultKrwPrice);
     }
 }

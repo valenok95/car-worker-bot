@@ -17,12 +17,16 @@ public class ConfigDataPool {
     public String clientRequestSpreedSheetId;
     @Value("${ru.wallentos.carworker.manager-logistics-spreedsheet-id:test}")
     public String managerLogisticsSpreedSheetId;
+    @Value("${ru.wallentos.carworker.encar-electric-spreedsheet-id:test}")
+    public String encarElectricSpreedSheetId;
     @Value("${ru.wallentos.carworker.admin-list}")
     public List<String> adminList;
     @Value("${ru.wallentos.carworker.client-request-group-id}")
     public long clientRequestGroupId;
     @Value("${ru.wallentos.carworker.enable-client-request:false}")
     public boolean enableClientRequest;
+    @Value("${ru.wallentos.carworker.enable-cache:true}")
+    public boolean enableCache;
     @Value("${ru.wallentos.carworker.korex-province-matrix:false}")
     public boolean isKorexProvinceMatrix;
     @Value("${ru.wallentos.carworker.is-cbr-rate-to-calculate:false}")
@@ -52,12 +56,9 @@ public class ConfigDataPool {
     public static final String CANCEL_MAILING_BUTTON = "Отменить";
     public static final String LINK_BUTTON = "Расчёт по ссылке";
     public static final String READY_BUTTON = "Готово";
-    public static final String AUCTION_BUTTON = "Расчёт ставки на аукционе";
     public static final String MANUAL_BUTTON = "Расчёт вручную";
     @Value("${ru.wallentos.carworker.exchange-coefficient}")
     public double coefficient;
-    @Value("${ru.wallentos.carworker.auction-coefficient:0}")
-    public double auctionCoefficient;
     @Value("${ru.wallentos.carworker.extra-pay-china.cny}")
     public int EXTRA_PAY_AMOUNT_CHINA_CNY;
     @Value("${ru.wallentos.carworker.extra-pay-china.rub}")
@@ -68,8 +69,6 @@ public class ConfigDataPool {
     public boolean enableEncarReportMode;
     @Value("${ru.wallentos.carworker.enable-cny-link-mode:false}")
     public boolean enableCnyLinkMode;
-    @Value("${ru.wallentos.carworker.enable-krw-auction-mode:false}")
-    public boolean enableKrwAuctionMode;
     @Value("${ru.wallentos.carworker.disable-double-convertation:false}")
     public boolean disableDoubleConvertation;
     @Value("${ru.wallentos.carworker.extra-pay-corea.krw}")
@@ -139,6 +138,52 @@ public class ConfigDataPool {
     public static final double OLD_CAR_PRICE_FLAT_RATE_5 = 5;
     public static final double OLD_CAR_PRICE_FLAT_RATE_MAX = 5.7;
 
+    public static final int ELECTRIC_CAR_FEE_1 = 775;
+    public static final int ELECTRIC_CAR_PRICE_LIMIT_1 = 200_000;
+
+    public static final int ELECTRIC_CAR_FEE_2 = 1500;
+    public static final int ELECTRIC_CAR_PRICE_LIMIT_2 = 450_000;
+
+    public static final int ELECTRIC_CAR_FEE_3 = 3100;
+    public static final int ELECTRIC_CAR_PRICE_LIMIT_3 = 1_200_000;
+
+    public static final int ELECTRIC_CAR_FEE_4 = 8530;
+    public static final int ELECTRIC_CAR_PRICE_LIMIT_4 = 2_700_000;
+
+    public static final int ELECTRIC_CAR_FEE_5 = 12_000;
+    public static final int ELECTRIC_CAR_PRICE_LIMIT_5 = 4_200_000;
+
+    public static final int ELECTRIC_CAR_FEE_6 = 15_500;
+    public static final int ELECTRIC_CAR_PRICE_LIMIT_6 = 5_500_000;
+
+    public static final int ELECTRIC_CAR_FEE_7 = 20_000;
+    public static final int ELECTRIC_CAR_PRICE_LIMIT_7 = 7_000_000;
+
+    public static final int ELECTRIC_CAR_FEE_8 = 23_000;
+    public static final int ELECTRIC_CAR_PRICE_LIMIT_8 = 8_000_000;
+
+    public static final int ELECTRIC_CAR_FEE_9 = 25_000;
+    public static final int ELECTRIC_CAR_PRICE_LIMIT_9 = 9_000_000;
+
+    public static final int ELECTRIC_CAR_FEE_10 = 27_000;
+    public static final int ELECTRIC_CAR_PRICE_LIMIT_10 = 10_000_000;
+
+    public static final int ELECTRIC_CAR_FEE_MAX = 30_000;
+
+    public static final int ELECTRIC_CAR_POWER_1 = 90;
+    public static final int ELECTRIC_CAR_EXCISE_RATE_1 = 0;
+    public static final int ELECTRIC_CAR_POWER_2 = 150;
+    public static final int ELECTRIC_CAR_EXCISE_RATE_2 = 55;
+    public static final int ELECTRIC_CAR_POWER_3 = 200;
+    public static final int ELECTRIC_CAR_EXCISE_RATE_3 = 531;
+    public static final int ELECTRIC_CAR_POWER_4 = 300;
+    public static final int ELECTRIC_CAR_EXCISE_RATE_4 = 869;
+    public static final int ELECTRIC_CAR_POWER_5 = 400;
+    public static final int ELECTRIC_CAR_EXCISE_RATE_5 = 1482;
+    public static final int ELECTRIC_CAR_POWER_6 = 500;
+    public static final int ELECTRIC_CAR_EXCISE_RATE_6 = 1534;
+    public static final int ELECTRIC_CAR_EXCISE_RATE_MAX = 1584;
+
     public static final String NEW_CAR = "До 3 лет";
     public static final String NORMAL_CAR = "От 3 до 5 лет";
     public static final String OLD_CAR = "От 5 лет";
@@ -157,7 +202,7 @@ public class ConfigDataPool {
     public static final String CLIENT_REQUEST_BUTTON = "Оставить заявку";
 
     /**
-     * Карта рассчёта таможенной стоимости.
+     * Карта рассчёта таможенной стоимости для топливных авто.
      */
     public static final Map<Integer, Integer> feeRateMap = new LinkedHashMap<>() {
         {
@@ -175,7 +220,7 @@ public class ConfigDataPool {
     };
 
     /**
-     * Карта рассчёта размера пошлины для нового автомобиля.
+     * Карта рассчёта размера пошлины для нового автомобиля для топливных авто.
      */
     public static final Map<Integer, Map.Entry<Double, Double>> newCarCustomsMap = new LinkedHashMap<>() {
         {
@@ -186,6 +231,7 @@ public class ConfigDataPool {
             put(NEW_CAR_PRICE_DUTY_5, NEW_CAR_PRICE_FLAT_RATE_5);
         }
     };
+
     /**
      * Карта рассчёта размера пошлины для автомобиля от 3 до 5 лет.
      */
@@ -210,6 +256,42 @@ public class ConfigDataPool {
             put(OLD_CAR_ENGINE_VOLUME_DUTY_5, OLD_CAR_PRICE_FLAT_RATE_5);
         }
     };
+
+    /**
+     * Карта для сбора за таможенное оформление электромобиля.
+     * СТОИМОСТЬ АВТО В РУБЛЯХ -> СБОР
+     */
+    public static final Map<Integer, Integer> electricCarPriceToFeesMap =
+            new LinkedHashMap<>() {
+                {
+                    put(ELECTRIC_CAR_PRICE_LIMIT_1, ELECTRIC_CAR_FEE_1);
+                    put(ELECTRIC_CAR_PRICE_LIMIT_2, ELECTRIC_CAR_FEE_2);
+                    put(ELECTRIC_CAR_PRICE_LIMIT_3, ELECTRIC_CAR_FEE_3);
+                    put(ELECTRIC_CAR_PRICE_LIMIT_4, ELECTRIC_CAR_FEE_4);
+                    put(ELECTRIC_CAR_PRICE_LIMIT_5, ELECTRIC_CAR_FEE_5);
+                    put(ELECTRIC_CAR_PRICE_LIMIT_6, ELECTRIC_CAR_FEE_6);
+                    put(ELECTRIC_CAR_PRICE_LIMIT_7, ELECTRIC_CAR_FEE_7);
+                    put(ELECTRIC_CAR_PRICE_LIMIT_8, ELECTRIC_CAR_FEE_8);
+                    put(ELECTRIC_CAR_PRICE_LIMIT_9, ELECTRIC_CAR_FEE_9);
+                    put(ELECTRIC_CAR_PRICE_LIMIT_10, ELECTRIC_CAR_FEE_10);
+                }
+            };
+
+    /**
+     * Карта для расчёта акциза электромобиля.
+     * МОЩНОСТЬ -> СТОИМОСТЬ ЗА ЛС
+     */
+    public static final Map<Integer, Integer> electricCarPowerToExciseRateMap =
+            new LinkedHashMap<>() {
+                {
+                    put(ELECTRIC_CAR_POWER_1, ELECTRIC_CAR_EXCISE_RATE_1);
+                    put(ELECTRIC_CAR_POWER_2, ELECTRIC_CAR_EXCISE_RATE_2);
+                    put(ELECTRIC_CAR_POWER_3, ELECTRIC_CAR_EXCISE_RATE_3);
+                    put(ELECTRIC_CAR_POWER_4, ELECTRIC_CAR_EXCISE_RATE_4);
+                    put(ELECTRIC_CAR_POWER_5, ELECTRIC_CAR_EXCISE_RATE_5);
+                    put(ELECTRIC_CAR_POWER_6, ELECTRIC_CAR_EXCISE_RATE_6);
+                }
+            };
 
     /**
      * Карта китайских провинций и соответствующих им ценников, для расчёта по ссылке.

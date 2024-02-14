@@ -1,6 +1,5 @@
 package ru.wallentos.carworker.service;
 
-import static ru.wallentos.carworker.configuration.ConfigDataPool.AUCTION_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CANCEL_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CANCEL_MAILING_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CAR_REPORT_BUTTON_CALLBACK;
@@ -29,7 +28,6 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.conversionRate
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import lombok.Data;
@@ -232,9 +230,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
             case LINK_BUTTON:
                 processAskLink(update);
                 return;
-            case AUCTION_BUTTON:
-                processAuction(update);
-                return;
             case MANUAL_BUTTON:
                 processManualCalculation(update.getCallbackQuery().getMessage());
                 return;
@@ -268,9 +263,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 break;
             case ASK_ISSUE_DATE:
                 processIssueDate(update.getCallbackQuery().getMessage(), callbackData);
-                break;
-            case ASK_AUCTION_ISSUE_DATE:
-                processAuctionIssueDate(update.getCallbackQuery().getMessage(), callbackData);
                 break;
             default:
                 break;
@@ -464,31 +456,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     /**
-     * Расчёт ставки аукциона (в рублях).
-     *
-     * @param update
-     */
-    private void processAuction(Update update) {
-        var chatId = update.getCallbackQuery().getMessage().getChatId();
-
-        String text = "Пожалуйста, введите бюджет в рублях";
-        Message sendOutMessage = executeMessage(utilMessageService.prepareSendMessage(chatId, text));
-
-
-        UserCarInputData data = cache.getUserCarData(chatId);
-
-        // Удаляем сообщения
-        deleteMessage(data.getLastMessageToDelete());
-        deleteMessage(update.getCallbackQuery().getMessage());
-
-        // запомнить сообщение для удаления
-        data.setLastMessageToDelete(sendOutMessage);
-
-        cache.saveUserCarData(chatId, data);
-        cache.setUsersCurrentBotState(chatId, BotState.ASK_AUCTION_START_PRICE);
-    }
-
-    /**
      * Ручная установка валюты для курса оплаты.
      *
      * @param chatId
@@ -560,14 +527,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 case ASK_PRICE:
                     processPrice(update.getMessage(), receivedText);
                     break;
-                case ASK_AUCTION_START_PRICE:
-                    processAuctionStartPrice(update.getMessage(), receivedText);
-                    break;
                 case ASK_VOLUME:
                     processVolume(update.getMessage(), receivedText);
-                    break;
-                case ASK_AUCTION_VOLUME:
-                    processAuctionVolume(update.getMessage(), receivedText);
                     break;
                 case SET_CURRENCY:
                     processSetCurrency(chatId, receivedText);
@@ -698,47 +659,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     /**
-     * Процесс ввода бюджета пользователя для режима аукциона.
-     *
-     * @param receivedText
-     */
-    private void processAuctionStartPrice(Message message, String receivedText) {
-        long chatId = message.getChatId();
-        UserCarInputData data = cache.getUserCarData(chatId);
-        data.setCurrency(RUB);
-        int auctionStartPrice = Integer.parseInt(receivedText);
-        data.setUserAuctionStartPrice(auctionStartPrice);
-        data.setPriceInEuro(executionService.convertMoneyToEuro(auctionStartPrice, data.getCurrency()));
-
-        // Удаляем сообщения
-        deleteMessage(data.getLastMessageToDelete());
-        deleteMessage(message);
-
-        String text = "Пожалуйста, выберите возраст автомобиля:";
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        List<InlineKeyboardButton> row = new ArrayList<>();
-        InlineKeyboardButton newCar = new InlineKeyboardButton(NEW_CAR);
-        InlineKeyboardButton normalCar = new InlineKeyboardButton(NORMAL_CAR);
-        InlineKeyboardButton oldCar = new InlineKeyboardButton(OLD_CAR);
-        newCar.setCallbackData(NEW_CAR);
-        normalCar.setCallbackData(NORMAL_CAR);
-        oldCar.setCallbackData(OLD_CAR);
-        row.add(newCar);
-        row.add(normalCar);
-        row.add(oldCar);
-        rows.add(row);
-        inlineKeyboardMarkup.setKeyboard(rows);
-
-
-        Message sendOutMessage = executeMessage(utilMessageService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
-        data.setLastMessageToDelete(sendOutMessage);
-        cache.saveUserCarData(chatId, data);
-        cache.setUsersCurrentBotState(chatId, BotState.ASK_AUCTION_ISSUE_DATE);
-
-    }
-
-    /**
      * Процесс обработки возраста автомобиля.
      *
      * @param receivedText
@@ -761,32 +681,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     /**
-     * Процесс обработки возраста автомобиля для режима аукциона.
-     *
-     * @param receivedText
-     */
-    private void processAuctionIssueDate(Message message, String receivedText) {
-        long chatId = message.getChatId();
-        UserCarInputData data = cache.getUserCarData(chatId);
-
-        // Удаляем сообщения
-        deleteMessage(data.getLastMessageToDelete());
-
-        data.setAge(receivedText);
-        String text = """
-                Пожалуйста, введите объем двигателя в кубических сантиметрах.
-                                
-                Пример: 1995""";
-
-        Message sendOutMessage = executeMessage(utilMessageService.prepareSendMessage(chatId, text));
-
-        data.setLastMessageToDelete(sendOutMessage);
-        cache.saveUserCarData(chatId, data);
-        cache.setUsersCurrentBotState(chatId, BotState.ASK_AUCTION_VOLUME);
-
-    }
-
-    /**
      * Процесс ввода объема двигателя (запускает расчёт).
      *
      * @param receivedText
@@ -803,26 +697,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.DATA_PREPARED);
         processExecuteResultAndShowHeader(data, chatId);
-    }
-
-
-    /**
-     * Процесс ввода объема двигателя для режима аукциона(запускает расчёт).
-     *
-     * @param receivedText
-     */
-    private void processAuctionVolume(Message message, String receivedText) {
-        long chatId = message.getChatId();
-        UserCarInputData data = cache.getUserCarData(chatId);
-        data.setVolume(Integer.parseInt(receivedText));
-
-        // Удаляем сообщения
-        deleteMessage(data.getLastMessageToDelete());
-        deleteMessage(message);
-
-        cache.saveUserCarData(chatId, data);
-        cache.setUsersCurrentBotState(chatId, BotState.DATA_PREPARED);
-        processAuctionExecuteResult(data, chatId);
     }
 
     /**
@@ -850,7 +724,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                         Duty {},
                         Recycling fee {}
                         """, resultData.getFirstPriceInRubles(), resultData.getExtraPayAmountRublePart(),
-                resultData.getExtraPayAmountValutePart(), resultData.getExtraPayAmountValutePart(),
+                resultData.getExtraPayAmountValutePartInRubles(), resultData.getExtraPayAmountValutePartInRubles(),
                 resultData.getFeeRate(), resultData.getDuty(), resultData.getRecyclingFee());
         String text = utilMessageService.getResultHeaderMessageByBotNameAndCurrency(config.getName(), data.getCurrency(), resultData);
 
@@ -900,43 +774,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         // удаляем исходные данные и сохраняем результат для детализации
         cache.deleteUserCarDataByUserId(chatId);
         cache.saveResultCarData(chatId, resultData);
-    }
-
-    /**
-     * Расчитываем ставку аукциона для введённых данных.
-     *
-     * @param data
-     * @param chatId
-     */
-    private void processAuctionExecuteResult(UserCarInputData data, long chatId) {
-        String dataPreparedtext = String.format(Locale.FRANCE, """
-                Данные переданы в обработку ⏳
-                Возраст: %s.
-                Бюджет: %,.0f ₽
-                Объем двигателя: %d cc
-                """, data.getAge(), data.getUserAuctionStartPrice(), data.getVolume());
-        executeMessage(utilMessageService.prepareSendMessage(chatId, dataPreparedtext));
-        int resultAuctionPriceInKrw = executionService.executeAuctionResultInKrw(data);
-        cache.deleteUserCarDataByUserId(chatId);
-        String text = utilMessageService.getAuctionKrwResultMessage(resultAuctionPriceInKrw);
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        List<InlineKeyboardButton> row2 = new ArrayList<>();
-        InlineKeyboardButton reset = new InlineKeyboardButton(RESET_MESSAGE);
-        reset.setCallbackData(RESET_CALLBACK);
-
-        if (!configDataPool.isManagerBot) {
-            List<InlineKeyboardButton> row1 = new ArrayList<>();
-            InlineKeyboardButton manager = new InlineKeyboardButton(MANAGER_MESSAGE);
-            manager.setUrl(managerLink);
-            row1.add(manager);
-            rows.add(row1);
-        }
-
-        row2.add(reset);
-        rows.add(row2);
-        inlineKeyboardMarkup.setKeyboard(rows);
-        executeMessage(utilMessageService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
     }
 
 
@@ -1071,9 +908,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         cache.saveUserCarData(chatId, data);
         boolean isLinkModeEnabled = executionService.isLinkModeEnabled(currency);
-        boolean isAuctionModeEnabled = executionService.isAuctionModeEnabled(currency);
-        if (isLinkModeEnabled || isAuctionModeEnabled) {
-            processChooseModeForCalculation(chatId, isLinkModeEnabled, isAuctionModeEnabled);
+        if (isLinkModeEnabled) {
+            processChooseModeForCalculation(chatId, isLinkModeEnabled);
         } else {
             processManualCalculation(message);
         }
@@ -1104,9 +940,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     /**
-     * Процесс выбора расчёта ВРУЧНУЮ/ПО ССЫЛКЕ/АУКЦИОН. До трёх кнопок.
+     * Процесс выбора расчёта ВРУЧНУЮ/ПО ССЫЛКЕ. До трёх кнопок.
      */
-    private void processChooseModeForCalculation(long chatId, boolean isLinkModeEnabled, boolean isAuctionModeEnabled) {
+    private void processChooseModeForCalculation(long chatId, boolean isLinkModeEnabled) {
         String message = """
                 Вы можете выбрать тип расчёта 🔻
                 """;
@@ -1114,7 +950,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
-        List<InlineKeyboardButton> row3 = new ArrayList<>();
         if (isLinkModeEnabled) {
             InlineKeyboardButton linkModeButton = new InlineKeyboardButton(LINK_BUTTON);
             linkModeButton.setCallbackData(LINK_BUTTON);
@@ -1125,12 +960,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         manualModeButton.setCallbackData(MANUAL_BUTTON);
         row2.add(manualModeButton);
         rows.add(row2);
-        if (isAuctionModeEnabled) {
-            InlineKeyboardButton auctionModeButton = new InlineKeyboardButton(AUCTION_BUTTON);
-            auctionModeButton.setCallbackData(AUCTION_BUTTON);
-            row3.add(auctionModeButton);
-            rows.add(row3);
-        }
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(utilMessageService.prepareSendMessage(chatId, message, inlineKeyboardMarkup));
         cache.setUsersCurrentBotState(chatId, BotState.ASK_CALCULATION_MODE);
@@ -1223,13 +1052,17 @@ public class TelegramBotService extends TelegramLongPollingBot {
         CarDto carDto;
         try {
             carId = utilService.parseLinkToCarId(link);
-            carDto = encarCacheService.fetchAndUpdateEncarDtoByCarId(carId);
+            if (configDataPool.isEnableCache()) {
+                carDto = encarCacheService.fetchAndUpdateEncarDtoByCarId(carId);
+            } else {
+                carDto = restService.getEncarData(carId);
+            }
         } catch (GetCarDetailException | RecaptchaException e) {
             String errorMessage = """
                     Ошибка получения данных с сайта Encar.com
                                         
                     Попробуйте позже...
-                    
+                                        
                     Если вы пытались отправить ссылку с мобильной версии сайта, пожалуйста, отправьте ссылку с полной версии сайта(внизу кнопка <b>PC버전</b>).
                     """;
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
@@ -1252,9 +1085,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         }
         UserCarInputData data = cache.getUserCarData(chatId);
         int priceInCurrency = carDto.getRawCarPrice() * 10_000;
+        data.setElectric(carDto.isElectric());
         data.setPrice(priceInCurrency);
         data.setPriceInEuro(executionService.convertMoneyToEuro(priceInCurrency, data.getCurrency()));
-        data.setVolume(carDto.getRawCarPower());
+        data.setVolume(carDto.getRawCarVolume());
+        data.setPower(carDto.getRawCarPower());
         data.setAge(executionService.calculateCarAgeByRawDate(carDto.getRawCarYear(), carDto.getRawCarMonth()));
         data.setCarId(carDto.getCarId());
         if (carDto.isHasInsuranceInfo()) {
@@ -1355,7 +1190,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         CarDto carDto;
         try {
             carId = utilService.parseLinkToCarId(link);
-            carDto = cheCarCacheService.fetchAndUpdateCheCarDtoByCarId(carId);
+            if (configDataPool.isEnableCache()) {
+                carDto = cheCarCacheService.fetchAndUpdateCheCarDtoByCarId(carId);
+            } else {
+                carDto = restService.getCheDataByJsoup(carId);
+            }
         } catch (GetCarDetailException | RecaptchaException e) {
             String errorMessage = """
                     Ошибка получения данных с сайта che168.com
@@ -1383,9 +1222,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         UserCarInputData data = cache.getUserCarData(chatId);
 
         int priceInCurrency = carDto.getRawCarPrice();
+        data.setElectric(carDto.isElectric());
         data.setPrice(priceInCurrency);
         data.setPriceInEuro(executionService.convertMoneyToEuro(priceInCurrency, data.getCurrency()));
-        data.setVolume(carDto.getRawCarPower());
+        data.setVolume(carDto.getRawCarVolume());
+        data.setPower(carDto.getRawCarPower());
         data.setAge(executionService.calculateCarAgeByRawDate(carDto.getRawCarYear(), carDto.getRawCarMonth()));
         data.setCarId(carDto.getCarId());
         if (configDataPool.isKorexProvinceMatrix) {

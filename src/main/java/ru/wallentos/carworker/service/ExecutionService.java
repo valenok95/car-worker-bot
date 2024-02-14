@@ -1,6 +1,8 @@
 package ru.wallentos.carworker.service;
 
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.ELECTRIC_CAR_EXCISE_RATE_MAX;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.ELECTRIC_CAR_FEE_MAX;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.KRW;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.LAST_FEE_RATE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_BIG_CAR_RECYCLING_FEE;
@@ -17,6 +19,8 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR_RECYCL
 import static ru.wallentos.carworker.configuration.ConfigDataPool.RUB;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.USD;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.conversionRatesMap;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.electricCarPowerToExciseRateMap;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.electricCarPriceToFeesMap;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.feeRateMap;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.manualConversionRatesMapInRubles;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.newCarCustomsMap;
@@ -28,6 +32,7 @@ import java.time.Period;
 import java.time.YearMonth;
 import java.util.Map;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
@@ -37,6 +42,7 @@ import ru.wallentos.carworker.model.Province;
 import ru.wallentos.carworker.model.UserCarInputData;
 
 @Service
+@Slf4j
 public class ExecutionService {
     private RestService restService;
     private ConfigDataPool configDataPool;
@@ -87,22 +93,24 @@ public class ExecutionService {
             userCarInputData.setSanctionCar(isSanctionCar(userCarInputData.getPrice()));
         }
         resultData.setAge(userCarInputData.getAge());
-        resultData.setFeeRate(getFeeRateFromCarPriceInRubles(userCarInputData.getPriceInEuro()));
-        resultData.setDuty(calculateDutyInRubles(userCarInputData.getPriceInEuro(), getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume()));
-        resultData.setRecyclingFee(calculateRecyclingFeeInRubles(getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume()));
+        resultData.setRecyclingFee(calculateRecyclingFeeInRubles(userCarInputData));
         resultData.setFirstPriceInRubles(calculateFirstCarPriceInRublesByUserCarData(userCarInputData));
 //валютная надбавка  и рублёвая надбавка (Брокерские расходы, СВХ, СБКТС)
-        double extraPayAmountRublePart = executeRubExtraPayAmountInRublesByUserCarData(userCarInputData.getCurrency());
-        double extraPayAmountCurrencyPart = executeValuteExtraPayAmountInRublesByUserCarData(userCarInputData.getCurrency(), userCarInputData.isSanctionCar());
+        double extraPayAmountRublePart = executeRubExtraPayAmountInRublesManualRate(userCarInputData.getCurrency());
+        double extraPayAmountCurrencyPartInRubles = executeValuteExtraPayAmountInRublesManualRate(userCarInputData.getCurrency(), userCarInputData.isSanctionCar());
+        double extraPayAmountCurrencyPartInEuroCbr = convertMoneyToEuro(extraPayAmountCurrencyPartInRubles, RUB);
+
+        resultData.setDuty(calculateDutyInRubles(userCarInputData));
+        resultData.setFeeRate(getFeeRateFromCarPriceInRubles(userCarInputData.getPriceInEuro() + extraPayAmountCurrencyPartInEuroCbr));
+
         resultData.setExtraPayAmountRublePart(extraPayAmountRublePart);
-        resultData.setExtraPayAmountValutePart(extraPayAmountCurrencyPart);
+        resultData.setExtraPayAmountValutePartInRubles(extraPayAmountCurrencyPartInRubles);
         // Стоимость логистики из провинции Китая
         if (Objects.nonNull(userCarInputData.getProvince())) {
             resultData.setProvincePriceInRubles(executeProvincePriceInRublesToSuyfynkhe(userCarInputData.getCurrency(), userCarInputData.getProvince()));
             resultData.setProvinceName(userCarInputData.getProvince().getProvinceFullName());
         }
 
-        resultData.setExtraPayAmountValutePart(extraPayAmountCurrencyPart);
         resultData.setStock(executeStock(userCarInputData.getCurrency()));
         resultData.setLocation(executeLocation(userCarInputData.getCurrency()));
         return resultData;
@@ -132,65 +140,28 @@ public class ExecutionService {
      * @return
      */
     private double executeProvincePriceInRublesToSuyfynkhe(String currency, Province province) {
-        return manualConversionRatesMapInRubles.get(currency) * province.getProvincePriceInCurrencyToSuyfynkhe();
+        return convertMoneyToRublesManualRate(province.getProvincePriceInCurrencyToSuyfynkhe(), currency);
     }
 
-
     /**
-     * Расчёт ставки аукциона исходя из данных пользователя.
+     * Чистая стоимость авто без надбавок В РУБЛЯХ. КУРС БОТА
      *
      * @param userCarInputData
      * @return
      */
-    public int executeAuctionResultInKrw(UserCarInputData userCarInputData) {
-        double resultAuctionPriceInKrw;
-        double auctionCleanPriceInRub = userCarInputData.getUserAuctionStartPrice()
-                - executeRubExtraPayAmountInRublesByUserCarData(KRW)
-                - 100_000 // Брокерские расходы 100 тыс. руб.
-                - executeValuteExtraPayAmountInRublesByUserCarData(KRW, true);
-        double dutyAuctionInRubles;
-        // Для новой тачки считаем таможню в евро от 70% чистой стоимости (без комиссий)
-        // Для авто от 3 лет считаем таможню как для цены 10 000EUR
-        if (userCarInputData.getAge().equals(NEW_CAR)) {
-            dutyAuctionInRubles =
-                    calculateDutyInRubles(convertMoneyToEuro(auctionCleanPriceInRub * (1 - configDataPool.auctionCoefficient), RUB),
-                            getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume());
-        } else {
-            dutyAuctionInRubles = calculateDutyInRubles(10_000, getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume());
-        }
-        double resultAuctionPriceInRub = auctionCleanPriceInRub - dutyAuctionInRubles;
-        resultAuctionPriceInKrw =
-                (resultAuctionPriceInRub) / ConfigDataPool.manualConversionRatesMapInRubles.get(KRW);
-
-        return roundDoubleToInt(resultAuctionPriceInKrw, 50_000); // округляем в меньшую сторону
-    }
-
-    /**
-     * Округлить число
-     *
-     * @param resultAuctionPriceInKrw
-     */
-    private int roundDoubleToInt(double resultAuctionPriceInKrw, int round) {
-        return ((int) resultAuctionPriceInKrw / round) * round;
-    }
-
     private double calculateFirstCarPriceInRublesByUserCarData(UserCarInputData userCarInputData) {
         String currentCurrency = userCarInputData.getCurrency();
         // добавить двойную конвертацию
         if (currentCurrency.equals(KRW) && !configDataPool.disableDoubleConvertation && !userCarInputData.isSanctionCar()) {
-            return (userCarInputData.getPrice() / restService.getCbrUsdKrwMinus20()) * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
+            return convertMoneyToRublesManualRate(userCarInputData.getPrice() / restService.getCbrUsdKrwMinus20(), USD);
         } else {
-            return userCarInputData.getPrice() * ConfigDataPool.manualConversionRatesMapInRubles.get(currentCurrency);
+            return convertMoneyToRublesManualRate(userCarInputData.getPrice(), currentCurrency);
         }
     }
 
     private boolean isSanctionCar(double priceInKrw) {
         return priceInKrw / restService.getCbrUsdKrwMinus20() > 50_000;
     }
-
-//стоимость которую ввел пользователь + extra pay 
-
-    //пошлина
 
     /**
      * Определяем рынок по валюте
@@ -229,7 +200,7 @@ public class ExecutionService {
     /**
      * Рассчитываем доп взносы. Рублёвая часть. Брокерские расходы, СВХ, СБКТС.
      */
-    private double executeRubExtraPayAmountInRublesByUserCarData(String currency) {
+    private double executeRubExtraPayAmountInRublesManualRate(String currency) {
         switch (currency) {
             case KRW, USD:
                 return configDataPool.EXTRA_PAY_AMOUNT_KOREA_RUB;
@@ -243,23 +214,37 @@ public class ExecutionService {
 
     /**
      * Рассчитываем доп взносы. Валютная часть. если тачка дешевле 50 000 USD - то двойная
-     * конвертация.
+     * конвертация. КУРС БОТА.
      */
-    private double executeValuteExtraPayAmountInRublesByUserCarData(String currency, boolean isSanctionCar) {
+    private double executeValuteExtraPayAmountInRublesManualRate(String currency, boolean isSanctionCar) {
         switch (currency) {
             case KRW:
                 return (configDataPool.disableDoubleConvertation || isSanctionCar ? getExtraKrwPayAmountNormalConvertation() : getExtraKrwPayAmountDoubleConvertation());
             case USD:
                 return getExtraKrwPayAmountNormalConvertation();
             case CNY:
-                return configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY * ConfigDataPool.manualConversionRatesMapInRubles.get(CNY);
+                return convertMoneyToRublesManualRate(configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY, CNY);
+            default:
+                return 0;
+        }
+    }
+
+    /**
+     * Получить валютную надбавку для валюты.
+     */
+    private int getValuteExtraPayInValute(String currency) {
+        switch (currency) {
+            case KRW:
+                return configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW;
+            case CNY:
+                return configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY;
             default:
                 return 0;
         }
     }
 
     private double getExtraKrwPayAmountNormalConvertation() {
-        return configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW * ConfigDataPool.manualConversionRatesMapInRubles.get(KRW);
+        return convertMoneyToRublesManualRate(configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW, KRW);
     }
 
     /**
@@ -268,9 +253,19 @@ public class ExecutionService {
      */
     private double getExtraKrwPayAmountDoubleConvertation() {
         double usdAmount = configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW / restService.getCbrUsdKrwMinus20();
-        return usdAmount * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
+        return convertMoneyToRublesManualRate(usdAmount, USD);
     }
 
+    /**
+     * Перевод в рубли по курсу ЦБ.
+     *
+     * @param amount
+     * @param fromCurrency
+     * @return
+     */
+    private double convertMoneyToRubles(double amount, String fromCurrency) {
+        return (conversionRatesMap.get(RUB) * amount) / conversionRatesMap.get(fromCurrency);
+    }
 
     private double convertMoneyFromEuro(double count, String toCurrency) {
         return count * conversionRatesMap.get(toCurrency);
@@ -280,14 +275,18 @@ public class ExecutionService {
         return count / conversionRatesMap.get(fromCurrency);
     }
 
+    public double convertMoneyToRublesManualRate(double count, String fromCurrency) {
+        return count * manualConversionRatesMapInRubles.get(fromCurrency);
+    }
+
     /**
-     * Вычисляем пошлину авто.
+     * Вычисляем пошлину авто с топливным двигателем.
      *
      * @param rawCarPriceInEuro стоимость авто
      * @param carCategory       возврастная категория авто
      * @return стоимость пошлины
      */
-    private double calculateDutyInRubles(double rawCarPriceInEuro, int carCategory, int carVolume) {
+    private double calculateCommonDutyInRubles(double rawCarPriceInEuro, int carCategory, int carVolume) {
         if (carCategory == 1) {
             return calculateNewCarDutyInRubles(rawCarPriceInEuro, carVolume);
         } else if (carCategory == 2) {
@@ -295,6 +294,52 @@ public class ExecutionService {
         } else {
             return calculateOldCarDutyInRubles(carVolume);
         }
+    }
+
+    /**
+     * Вычисляем пошлину авто.
+     * Для топливных расчёт в евро ЦБ.
+     * Для электро расчёт в рублях ЦБ.
+     *
+     * @param userCarInputData входные данные по тачке.
+     * @return стоимость пошлины
+     */
+    private double calculateDutyInRubles(UserCarInputData userCarInputData) {
+        double priceInEuroCbr = userCarInputData.getPriceInEuro(); // цена авто в евро ЦБ
+        String currency = userCarInputData.getCurrency();
+        double firstPriceInRublesCbr = convertMoneyFromEuro(priceInEuroCbr, RUB); // цена авто в рублях ЦБ
+
+        if (userCarInputData.isElectric()) { // расчёт электро таможни
+            double extraPayAmountCurrencyPartInRublesCbr = // надбавка в РУБЛЯХ по курсу ЦБ - электро
+                    convertMoneyToRubles(getValuteExtraPayInValute(currency), currency);
+            return calculateElectricDutyInRubles(firstPriceInRublesCbr + extraPayAmountCurrencyPartInRublesCbr, userCarInputData.getPower());
+        } else { // расчёт топливной таможни
+            double extraPayAmountCurrencyPartInEuroCbr = // надбавка в ЕВРО по курсу ЦБ - топливный
+                    convertMoneyToEuro(getValuteExtraPayInValute(currency), currency);
+            return calculateCommonDutyInRubles(priceInEuroCbr + extraPayAmountCurrencyPartInEuroCbr, getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume());
+        }
+    }
+
+    /**
+     * Вычисляем пошлину авто с электродвигателем.
+     *
+     * @param price цена авто
+     * @param power мощность авто
+     * @return пошлина без утиль сбора.
+     */
+    private double calculateElectricDutyInRubles(double price, int power) {
+        int fee = calculateElectricCarFeeInRubles(price);
+        double importDuty = calculateElectricCarImportDutyInRubles(price);
+        int excise = calculateElectricCarExciseInRubles(power);
+        double vat = calculateElectricCarVATInRubles(price);
+        log.info("""
+                Расчёт электромобильной таможни:
+                Сбор за таможенное оформление: {}
+                Ввозная пошлина: {}
+                Акциз: {}
+                НДС: {}
+                """, fee, importDuty, excise, vat);
+        return fee + importDuty + excise + vat;
     }
 
     /**
@@ -349,6 +394,59 @@ public class ExecutionService {
     }
 
     /**
+     * Вычисляем сборы для пошлины электромобиля.
+     *
+     * @param carPrice цена авто
+     * @return стоимость сборов.
+     */
+    private int calculateElectricCarFeeInRubles(double carPrice) {
+        for (Map.Entry<Integer, Integer> pair : electricCarPriceToFeesMap.entrySet()) {
+            if (carPrice <= pair.getKey()) {
+                return pair.getValue();
+            }
+        }
+        return ELECTRIC_CAR_FEE_MAX;
+    }
+
+    /**
+     * Вычисляем Акциз для электромобиля.
+     *
+     * @param power мощность авто
+     * @return стоимость сборов.
+     */
+    private int calculateElectricCarExciseInRubles(int power) {
+        int exciseRate = ELECTRIC_CAR_EXCISE_RATE_MAX;
+        for (Map.Entry<Integer, Integer> pair : electricCarPowerToExciseRateMap.entrySet()) {
+            if (power <= pair.getKey()) {
+                exciseRate = pair.getValue();
+                break;
+            }
+        }
+        return exciseRate * power;
+    }
+
+    /**
+     * Вычисляем ввозную пошлину электромобиля.
+     *
+     * @param carPrice цена авто
+     * @return стоимость сборов.
+     */
+    private double calculateElectricCarImportDutyInRubles(double carPrice) {
+        return carPrice * 0.15;
+    }
+
+    /**
+     * Вычисляем НДС электромобиля.
+     *
+     * @param carPrice цена авто
+     * @return стоимость сборов.
+     */
+    private double calculateElectricCarVATInRubles(double carPrice) {
+        return carPrice * 0.2;
+    }
+
+
+    /**
      * Рассчёт утилизационного сбора.
      * <p>
      * На автомобили до трех лет, объемом двигателя от 3001 до 3500 включительно утилизационный
@@ -361,7 +459,7 @@ public class ExecutionService {
      * @param carCategory категория авто
      * @return стоимость утилизационного сбора
      */
-    private int calculateRecyclingFeeInRubles(int carCategory, int volume) {
+    private int calculateFuelRecyclingFeeInRubles(int carCategory, int volume) {
         if (volume <= 3000) {
             return carCategory > 1 ? OLD_CAR_RECYCLING_FEE : NEW_CAR_RECYCLING_FEE;
         } else if (volume <= 3500) {
@@ -369,6 +467,35 @@ public class ExecutionService {
         } else {
             return carCategory > 1 ? NORMAL_BIG_CAR_RECYCLING_FEE : NEW_BIG_CAR_RECYCLING_FEE;
         }
+    }
+
+    /**
+     * Рассчёт утилизационного сбора в зависимости от типа двигателя.
+     *
+     * @param userCarInputData исходные данные по тачке.
+     * @return стоимость утилизационного сбора
+     */
+    private int calculateRecyclingFeeInRubles(UserCarInputData userCarInputData) {
+        if (userCarInputData.isElectric()) {
+            return calculateElectricRecyclingFeeInRubles(getCarCategory(userCarInputData.getAge()));
+        } else {
+            return calculateFuelRecyclingFeeInRubles(getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume());
+        }
+    }
+
+    /**
+     * Рассчёт утилизационного сбора для электромобиля.
+     * <p>
+     * На автомобили до трех лет 20000х0.17=3400₽
+     * На автомобили от трех лет 20000х0.26=5200₽
+     *
+     * @param carCategory категория авто
+     * @return стоимость утилизационного сбора
+     */
+    private int calculateElectricRecyclingFeeInRubles(int carCategory) {
+        if (carCategory > 1) {
+            return OLD_CAR_RECYCLING_FEE;
+        } else return NEW_CAR_RECYCLING_FEE;
     }
 
     /**
@@ -447,21 +574,6 @@ public class ExecutionService {
                 return configDataPool.isEnableKrwLinkMode();
             case CNY:
                 return configDataPool.isEnableCnyLinkMode();
-            default:
-                return false;
-        }
-    }
-
-    /**
-     * Проверка, включен ли МОД для расчёта ставки на аукционе.
-     *
-     * @param currency
-     * @return
-     */
-    public boolean isAuctionModeEnabled(String currency) {
-        switch (currency) {
-            case KRW:
-                return configDataPool.isEnableKrwAuctionMode();
             default:
                 return false;
         }

@@ -8,7 +8,9 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.manualConversi
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -58,17 +60,21 @@ public class RestService {
     private ConfigDataPool configDataPool;
     private double cbrUsdKrwMinus20;
     private RecaptchaService recaptchaService;
+    private GoogleService googleService;
+    private static List<String> ELECTRIC_FUEL_TYPE_LIST = List.of("수소", "전기");
 
     @Autowired
     public RestService(RestTemplate restTemplate, UtilService utilService,
                        CarConverter carConverter, RedisTemplate redisTemplate,
-                       RecaptchaService recaptchaService, ConfigDataPool configDataPool) {
+                       RecaptchaService recaptchaService, ConfigDataPool configDataPool,
+                       GoogleService googleService) {
         this.restTemplate = restTemplate;
         this.utilService = utilService;
         this.carConverter = carConverter;
         this.redisTemplate = redisTemplate;
         this.recaptchaService = recaptchaService;
         this.configDataPool = configDataPool;
+        this.googleService = googleService;
         mapper = new ObjectMapper();
     }
 
@@ -152,6 +158,7 @@ public class RestService {
                         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36").ignoreContentType(true);
         return mapper.readTree(connection.execute().body());
     }
+    @Deprecated
 
     public CarDto getEncarDataByJsoup(String carId) throws GetCarDetailException, RecaptchaException {
         try {
@@ -183,7 +190,8 @@ public class RestService {
                     jsonDetail.get("cars").get("base").get("category").get("yearMonth").asText().substring(0, 4),
                     jsonDetail.get("cars").get("base").get("category").get("yearMonth").asText().substring(4, 6),
                     jsonDetail.get("cars").get("base").get("spec").get("displacement").asText(),
-                    null, myAccidentCost, otherAccidentCost, hasInsuranceInfo);
+                    null,
+                    null, myAccidentCost, otherAccidentCost, hasInsuranceInfo, false);
             return carConverter.convertToDto(encarEntity);
         } catch (IOException | NullPointerException e) {
             String errorMessage = String.format("Error while getting info by id %s",
@@ -192,6 +200,12 @@ public class RestService {
         }
     }
 
+    /**
+     * Текущий актуальный метод получения encar data
+     * @param carId
+     * @return
+     * @throws GetCarDetailException
+     */
     public CarDto getEncarDataByJsoupAjax(String carId) throws GetCarDetailException {
         try {
             JsonNode jsonDetail = getEncarDetailJsonDataByJsoupAjax(carId);
@@ -207,14 +221,37 @@ public class RestService {
             } catch (IOException e) {
                 log.warn("cannot get insurance information by carId {}", carId);
             }
+            boolean isElectric = false;
+            String carVolume = jsonDetail.get("displacement").asText();
+            String carPrice = jsonDetail.get("price").asText();
+            String carYear = jsonDetail.get("year").asText().substring(0, 4);
+            String carMonth = jsonDetail.get("year").asText().substring(4, 6);
+            String carName = jsonDetail.get("modelNm").asText() + jsonDetail.get("badgeNm").asText();
+            String fuelName = jsonDetail.get("fuelNm").asText();
+            String carPower = "0";
+            log.info("""
+                    Получаем данные с encar:
+                    car id {}
+                    car Volume {}
+                    car Price: {}
+                    car Year: {}
+                    car Month: {}
+                    car Name: {}
+                    car fuel name: {}
+                    """, carId, carVolume, carPrice, carYear, carMonth, carName, fuelName);
+            if (ELECTRIC_FUEL_TYPE_LIST.contains(fuelName)) {
+                carPower = googleService.getCarPowerByCarName(carName);
+                isElectric = true;
+                log.info("Авто определено как электро, мощность авто из справочника {} л.с", carPower);
+            }
 
-            var encarEntity = new CarEntity(
+            CarEntity encarEntity = new CarEntity(
                     carId,
-                    jsonDetail.get("price").asText(),
-                    jsonDetail.get("year").asText().substring(0, 4),
-                    jsonDetail.get("year").asText().substring(4, 6),
-                    jsonDetail.get("displacement").asText(),
-                    null, myAccidentCost, otherAccidentCost, hasInsuranceInfo);
+                    carPrice,
+                    carYear,
+                    carMonth,
+                    carVolume, carPower, null,
+                    myAccidentCost, otherAccidentCost, hasInsuranceInfo, isElectric);
             return carConverter.convertToDto(encarEntity);
         } catch (IOException | NullPointerException e) {
             String errorMessage = String.format("Error while getting info by id %s",
@@ -250,8 +287,16 @@ public class RestService {
         return managerCoefficient * (conversionRatesMap.get(CNY) / conversionRatesMap.get(USD));
     }
 
+    /**
+     * Получить данные по китайскому авто.
+     *
+     * @param carId
+     * @return
+     * @throws GetCarDetailException
+     * @throws RecaptchaException
+     */
     public CarDto getCheDataByJsoup(String carId) throws GetCarDetailException, RecaptchaException {
-        Document startDocument = null;
+        Document startDocument;
         try {
             var startConnection = Jsoup.connect(cheStartMethod).data("infoid", carId).userAgent(
                     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
@@ -275,14 +320,21 @@ public class RestService {
                                     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
             String detailString = Jsoup.parse(detailConnection.execute().body()).text().replace(
                     "\n", "");
-            String rawCarPower = utilService.parseCheCarPower(detailString);
+            String rawCarVolume = utilService.parseCheCarVolume(detailString);
+            String rawCarPower = null;
 
-// 排量(mL)
+            boolean isElectric = false;
+            if (Objects.isNull(rawCarVolume)) {
+                rawCarPower = utilService.parseCheCarPower(detailString);
+                isElectric = true;
+            }
+// 排量(mL) - объём двигателя
+// 电动机(Ps) - лошадиные силы
             var cheCarEntity = new CarEntity(
                     carId,
                     String.valueOf(rawCarPrice),
-                    rawCarYear, rawCarMonth, rawCarPower, rawCarProvinceName, 0, 0, false
-            );
+                    rawCarYear, rawCarMonth, rawCarVolume, rawCarPower, rawCarProvinceName, 0, 0,
+                    false, isElectric);
             return carConverter.convertToDto(cheCarEntity);
 
 

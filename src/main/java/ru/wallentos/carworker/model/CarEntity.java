@@ -13,9 +13,11 @@ public class CarEntity {
     private String rawCarPrice;
     private String rawCarYear;
     private String rawCarMonth;
+    private String rawCarVolume;
     private String rawCarPower;
     private String rawCarProvinceName;
     private int myAccidentCost;
     private int otherAccidentCost;
     private boolean hasInsuranceInfo;
+    private boolean isElectric;
 }

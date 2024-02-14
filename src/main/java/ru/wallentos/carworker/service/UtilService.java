@@ -143,8 +143,18 @@ public class UtilService {
     /**
      * Вытащить объём двигателя из строки che168.
      */
-    public String parseCheCarPower(String string) {
+    public String parseCheCarVolume(String string) {
         Pattern pattern = Pattern.compile("排量\\(mL\\)\\\", \"id\": \\d+, \"value\\\": \\\"(\\d+)");
+        Matcher matcher = pattern.matcher(string);
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else return null;
+    }
+    /**
+     * Вытащить мощность двигателя из строки che168. 电动机(Ps)
+     */
+    public String parseCheCarPower(String string) {
+        Pattern pattern = Pattern.compile("电动机\\(Ps\\)\\\", \"id\": \\d+, \"value\\\": \\\"(\\d+)");
         Matcher matcher = pattern.matcher(string);
         if (matcher.find()) {
             return matcher.group(1);
