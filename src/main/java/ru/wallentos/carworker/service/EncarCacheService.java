@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.wallentos.carworker.cache.EncarCache;
+import ru.wallentos.carworker.exceptions.ElectricCarNotFoundException;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
 import ru.wallentos.carworker.model.CarDto;
@@ -27,7 +28,8 @@ public class EncarCacheService {
      * @param carId
      * @return
      */
-    public CarDto fetchAndUpdateEncarDtoByCarId(String carId) throws GetCarDetailException, RecaptchaException { // сделать приватным
+    public CarDto fetchAndUpdateEncarDtoByCarId(String carId) throws GetCarDetailException,
+            RecaptchaException, ElectricCarNotFoundException { // сделать приватным
         CarDto result = encarCache.getById(carId);
         if (Objects.nonNull(result)) {
             log.info("Получили в КЭШе авто id {}", carId);

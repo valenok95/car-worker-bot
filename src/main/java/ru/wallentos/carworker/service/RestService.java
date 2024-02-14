@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
+import ru.wallentos.carworker.exceptions.ElectricCarNotFoundException;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
 import ru.wallentos.carworker.model.CarConverter;
@@ -158,6 +159,7 @@ public class RestService {
                         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36").ignoreContentType(true);
         return mapper.readTree(connection.execute().body());
     }
+
     @Deprecated
 
     public CarDto getEncarDataByJsoup(String carId) throws GetCarDetailException, RecaptchaException {
@@ -202,6 +204,7 @@ public class RestService {
 
     /**
      * Текущий актуальный метод получения encar data
+     *
      * @param carId
      * @return
      * @throws GetCarDetailException
@@ -253,6 +256,9 @@ public class RestService {
                     carVolume, carPower, null,
                     myAccidentCost, otherAccidentCost, hasInsuranceInfo, isElectric);
             return carConverter.convertToDto(encarEntity);
+        } catch (ElectricCarNotFoundException e) {
+            String errorMessage = String.format("Can not find electric car in google list %s", e.getMessage());
+            throw new ElectricCarNotFoundException(errorMessage);
         } catch (IOException | NullPointerException e) {
             String errorMessage = String.format("Error while getting info by id %s",
                     carId);
@@ -269,7 +275,8 @@ public class RestService {
      * @throws GetCarDetailException
      * @throws RecaptchaException
      */
-    public CarDto getEncarData(String carId) throws GetCarDetailException, RecaptchaException {
+    public CarDto getEncarData(String carId) throws GetCarDetailException, RecaptchaException,
+            ElectricCarNotFoundException {
         if (isAjax) {
             return getEncarDataByJsoupAjax(carId);
         } else {

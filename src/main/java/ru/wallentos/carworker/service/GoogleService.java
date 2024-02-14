@@ -227,7 +227,7 @@ public class GoogleService {
     }
 
 
-    public String getCarPowerByCarName(String carName) throws IOException {
+    public String getCarPowerByCarName(String carName) throws ElectricCarNotFoundException {
         Map<String, String> encarElectricPowerMap = getEncarElectricPowerMap();
         String resultCarPower = encarElectricPowerMap.get(carName);
         if (Objects.isNull(resultCarPower)) {

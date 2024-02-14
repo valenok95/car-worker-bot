@@ -51,6 +51,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.wallentos.carworker.cache.UserDataCache;
 import ru.wallentos.carworker.configuration.BotConfiguration;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
+import ru.wallentos.carworker.exceptions.ElectricCarNotFoundException;
 import ru.wallentos.carworker.exceptions.GetCarDetailException;
 import ru.wallentos.carworker.exceptions.RecaptchaException;
 import ru.wallentos.carworker.model.BotState;
@@ -546,8 +547,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     clientContactReceivedCommand(chatId, update);
                     break;
                 case ASK_CHINA_LINK:
-                    processCalculateByCheCarLinkForManagers(update.getMessage(),
-                            update.getMessage().getText());
+                    processCalculateByCheCarLinkForManagers(update.getMessage(), update.getMessage().getText());
                     break;
                 default:
                     break;
@@ -715,17 +715,15 @@ public class TelegramBotService extends TelegramLongPollingBot {
         CarPriceResultData resultData = executionService.executeCarPriceResultData(data);
         int carId = data.getCarId();
         log.info("""
-                        Данные рассчёта:
-                        First price in rubles {},
-                        Extra pay amount RUB {},
-                        Extra pay amount curr {},
-                        Extra pay amount {},
-                        Fee rate {},
-                        Duty {},
-                        Recycling fee {}
-                        """, resultData.getFirstPriceInRubles(), resultData.getExtraPayAmountRublePart(),
-                resultData.getExtraPayAmountValutePartInRubles(), resultData.getExtraPayAmountValutePartInRubles(),
-                resultData.getFeeRate(), resultData.getDuty(), resultData.getRecyclingFee());
+                Данные рассчёта:
+                First price in rubles {},
+                Extra pay amount RUB {},
+                Extra pay amount curr {},
+                Extra pay amount {},
+                Fee rate {},
+                Duty {},
+                Recycling fee {}
+                """, resultData.getFirstPriceInRubles(), resultData.getExtraPayAmountRublePart(), resultData.getExtraPayAmountValutePartInRubles(), resultData.getExtraPayAmountValutePartInRubles(), resultData.getFeeRate(), resultData.getDuty(), resultData.getRecyclingFee());
         String text = utilMessageService.getResultHeaderMessageByBotNameAndCurrency(config.getName(), data.getCurrency(), resultData);
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
@@ -1057,7 +1055,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
             } else {
                 carDto = restService.getEncarData(carId);
             }
-        } catch (GetCarDetailException | RecaptchaException e) {
+        } catch (GetCarDetailException | ElectricCarNotFoundException e) {
             String errorMessage = """
                     Ошибка получения данных с сайта Encar.com
                                         
@@ -1065,6 +1063,14 @@ public class TelegramBotService extends TelegramLongPollingBot {
                                         
                     Если вы пытались отправить ссылку с мобильной версии сайта, пожалуйста, отправьте ссылку с полной версии сайта(внизу кнопка <b>PC버전</b>).
                     """;
+            if (e instanceof ElectricCarNotFoundException) {
+                errorMessage = String.format("""
+                                Ошибка получения данных с сайта Encar.com
+
+                                Отсутствует электромобиль %s в справочнике.
+                        """, e.getMessage());
+            }
+
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> rows = new ArrayList<>();
             List<InlineKeyboardButton> row = new ArrayList<>();
@@ -1154,16 +1160,13 @@ public class TelegramBotService extends TelegramLongPollingBot {
         restService.refreshExchangeRates();
         CarTotalResultData resultData = executionService.executeCarTotalResultData(data);
         log.info("""
-                        Данные рассчёта:
-                        price in CNY {},
-                        provinceName {},
-                        carId {}
-                        """, resultData.getCnyPrice(),
-                resultData.getProvince().getProvinceFullName(), resultData.getCarId());
-        String textUssuriysk =
-                utilMessageService.getKorexManagerCnyMessageToUssuriyskByResultData(resultData);
-        String textBishkek =
-                utilMessageService.getKorexManagerCnyMessageToBishkekByResultData(resultData);
+                Данные рассчёта:
+                price in CNY {},
+                provinceName {},
+                carId {}
+                """, resultData.getCnyPrice(), resultData.getProvince().getProvinceFullName(), resultData.getCarId());
+        String textUssuriysk = utilMessageService.getKorexManagerCnyMessageToUssuriyskByResultData(resultData);
+        String textBishkek = utilMessageService.getKorexManagerCnyMessageToBishkekByResultData(resultData);
         executeMessage(utilMessageService.prepareSendMessage(chatId, textUssuriysk));
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
