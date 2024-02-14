@@ -5,7 +5,7 @@ bot:
 ru:
   wallentos:
     carworker:
-33260      encar-electric-spreedsheet-id: ${ENCAR_ELECTRIC_SPREEDSHEET_ID}
+      encar-electric-spreedsheet-id: ${ENCAR_ELECTRIC_SPREEDSHEET_ID}
       manager-link: T.me/mikhail_ung
       admin-list: mikhail_ung, wallentoss
       client-request-group-id: -1001801658754
