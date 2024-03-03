@@ -160,7 +160,8 @@ public class RestService {
         return mapper.readTree(connection.execute().body());
     }
 
-    @Deprecated
+    @Deprecated 
+    //TODO кривую версию сайта парсить может, надо проверить с ВПН og:title description http://www.encar.com/dc/dc_cardetailview.do?carid=36112102
 
     public CarDto getEncarDataByJsoup(String carId) throws GetCarDetailException, RecaptchaException {
         try {
