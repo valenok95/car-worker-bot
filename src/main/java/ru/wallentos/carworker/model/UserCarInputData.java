@@ -29,6 +29,7 @@ public class UserCarInputData {
     boolean hasInsuranceInfo;
     String userContact;
     String clientMessage;
+    int inputExtraPayAmountKoreaKrw;
 
     @Override
     public String toString() {

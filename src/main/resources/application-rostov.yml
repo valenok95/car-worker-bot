@@ -10,7 +10,6 @@ ru:
       client-request-spreedsheet-id: ${CLIENT_REQUEST_SPREEDSHEET_ID}
       enable-krw-auction-mode: true
       auction-coefficient: ${AUCTION_COEFFICIENT}
-      disable-double-convertation: true
       manager-link: https://t.me/Roman_autodiler
       client-request-group-id: -1001950549646
       enable-client-request: true
