@@ -12,6 +12,7 @@ ru:
       client-request-spreedsheet-id: 160dFiu2oswiYji4QUI-mlUVuFoTzH-sqX1OlQvaFuIc
       client-request-group-id: -1001854156002
       enable-client-request: ${ENABLE_CLIENT_REQUEST}
+      disable-double-convertation: true
       enable-encar-report-mode: true
       enable-result-detalization: true
       check-channel-subscribers: true

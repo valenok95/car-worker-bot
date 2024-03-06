@@ -15,6 +15,7 @@ ru:
       enable-result-detalization: true
       exchange-manager-coefficient: 1.009
       is-cbr-rate-to-calculate: true
+      disable-double-convertation: true
       admin-list: Wallentoss
       check-channel-subscribers: false
       channel-subscribers-id: -1002123611967
