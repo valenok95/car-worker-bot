@@ -136,8 +136,7 @@ public class UtilMessageService {
         return String.format(Locale.FRANCE, """
                         Стоимость автомобиля под ключ во Владивостоке:
                         <u><b>%,.0f ₽</b></u>
-                        %s
-                        %s
+                        %s%s
                         Стоимость "под ключ" включает в себя все расходы до г. Владивосток, а именно: оформление экспорта в Корее, фрахт, услуги брокера, склады временного хранения, прохождение лаборатории для получения СБКТС и таможенную пошлину️.
                                                 
                         Актуальные курсы валют вы можете посмотреть в Меню.
@@ -149,8 +148,7 @@ public class UtilMessageService {
                         """,
                 resultData.getResultPrice(),
                 utilService.getEncarLinkStringByCarId(resultData.getCarId()),
-                resultData.isSanctionCar() ? "Данный авто попадает под санкции, пожалуйста " +
-                        "уточните возможность отправки в вашу страну у менеджера @KOREXKOREA.\n" 
+                resultData.isSanctionCar() ? "\nДанный авто попадает под санкции, пожалуйста уточните возможность отправки в вашу страну у менеджера @KOREXKOREA.\n"
                         : "");
     }
 
