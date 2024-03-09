@@ -9,7 +9,6 @@ ru:
       enable-cny-link-mode: ${ENABLE_CNY_LINK_MODE}
       enable-krw-auction-mode: true
       auction-coefficient: ${AUCTION_COEFFICIENT}
-      disable-double-convertation: true
       admin-list: ${ADMIN_LIST}
       manager-link: https://t.me/Korexkorea
       user-prefix: "user_demo_"

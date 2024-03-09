@@ -15,11 +15,13 @@ ru:
       enable-result-detalization: true
       exchange-manager-coefficient: 1.009
       is-cbr-rate-to-calculate: true
-      disable-double-convertation: true
       admin-list: Wallentoss
       check-channel-subscribers: false
       channel-subscribers-id: -1002123611967
       channel-subscribers-link: https://t.me/MikhailValTest
+      enable-double-convertation: true
+      sanction-car-volume-limit: 2000
+      enable-dynamic-valute-part: true
       update-cache-job:
         master-bot: ${IS_MASTER_BOT}
         cron: ${CRON}

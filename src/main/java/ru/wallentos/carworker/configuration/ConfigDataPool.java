@@ -43,6 +43,8 @@ public class ConfigDataPool {
     private List<String> whiteManagerList;
     @Value(value = "${ru.wallentos.carworker.parent-link:link}")
     private String parentLink;
+    @Value("#{${ru.wallentos.carworker.dynamic-krw-valute-part-map}}")
+    private Map<Integer, Integer> dynamicKrwValutePartMap;
     public static final String EUR = "EUR";
     public static final String RUB = "RUB";
     public static final String USD = "USD";
@@ -70,8 +72,12 @@ public class ConfigDataPool {
     public boolean enableCnyLinkMode;
     @Value("${ru.wallentos.carworker.enable-krw-auction-mode:false}")
     public boolean enableKrwAuctionMode;
-    @Value("${ru.wallentos.carworker.disable-double-convertation:false}")
-    public boolean disableDoubleConvertation;
+    @Value("${ru.wallentos.carworker.enable-double-convertation:false}")
+    public boolean enableDoubleConvertation;
+    @Value("${ru.wallentos.carworker.sanction-car-volume-limit:0}")
+    public int sanctionCarVolumeLimit;
+    @Value("${ru.wallentos.carworker.enable-dynamic-valute-part:false}")
+    public boolean enableDymanicValutePart;
     @Value("${ru.wallentos.carworker.extra-pay-corea.krw}")
     public int EXTRA_PAY_AMOUNT_KOREA_KRW;
     @Value("${ru.wallentos.carworker.extra-pay-corea.rub}")
@@ -159,7 +165,7 @@ public class ConfigDataPool {
     /**
      * Карта рассчёта таможенной стоимости.
      */
-    public static final Map<Integer, Integer> feeRateMap = new LinkedHashMap<>() {
+    public static final Map<Integer, Integer> FEE_RATE_MAP = new LinkedHashMap<>() {
         {
             put(CUSTOMS_VALUE_1, FEE_RATE_1);
             put(CUSTOMS_VALUE_2, FEE_RATE_2);

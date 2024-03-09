@@ -10,7 +10,6 @@ ru:
       enable-krw-auction-mode: true
       client-request-spreedsheet-id: ${CLIENT_REQUEST_SPREEDSHEET_ID}
       auction-coefficient: ${AUCTION_COEFFICIENT}
-      disable-double-convertation: true
       manager-link: https://t.me/EastWayAdmin
       client-request-group-id: -1001812961296
       enable-client-request: true

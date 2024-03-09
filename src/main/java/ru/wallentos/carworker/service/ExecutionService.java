@@ -1,6 +1,7 @@
 package ru.wallentos.carworker.service;
 
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.FEE_RATE_MAP;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.KRW;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.LAST_FEE_RATE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_BIG_CAR_RECYCLING_FEE;
@@ -17,7 +18,6 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR_RECYCL
 import static ru.wallentos.carworker.configuration.ConfigDataPool.RUB;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.USD;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.conversionRatesMap;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.feeRateMap;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.manualConversionRatesMapInRubles;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.newCarCustomsMap;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.normalCarCustomsMap;
@@ -28,6 +28,7 @@ import java.time.Period;
 import java.time.YearMonth;
 import java.util.Map;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.wallentos.carworker.configuration.ConfigDataPool;
@@ -37,6 +38,7 @@ import ru.wallentos.carworker.model.Province;
 import ru.wallentos.carworker.model.UserCarInputData;
 
 @Service
+@Slf4j
 public class ExecutionService {
     private RestService restService;
     private ConfigDataPool configDataPool;
@@ -62,7 +64,7 @@ public class ExecutionService {
     private double getFeeRateFromCarPriceInRubles(double rawCarPriceInEuro) {
         double carPriceInRubles = convertMoneyFromEuro(rawCarPriceInEuro, RUB);
         int resultFeeRate = LAST_FEE_RATE;
-        for (Map.Entry<Integer, Integer> pair : feeRateMap.entrySet()) {
+        for (Map.Entry<Integer, Integer> pair : FEE_RATE_MAP.entrySet()) {
             if (carPriceInRubles < pair.getKey()) {
                 resultFeeRate = pair.getValue();
                 break;
@@ -83,29 +85,71 @@ public class ExecutionService {
         resultData.setCarId(userCarInputData.getCarId());
         resultData.setCarCategory(getCarCategory(userCarInputData.getAge()));
         resultData.setAge(userCarInputData.getAge());
-        if (KRW.equals(userCarInputData.getCurrency())) {
-            userCarInputData.setSanctionCar(isSanctionCar(userCarInputData.getPrice()));
+        if (KRW.equals(userCarInputData.getCurrency()) && configDataPool.isEnableDoubleConvertation()) {
+            userCarInputData.setSanctionCar(isSanctionCar(userCarInputData));
+            resultData.setSanctionCar(userCarInputData.isSanctionCar());
         }
         resultData.setAge(userCarInputData.getAge());
         resultData.setFeeRate(getFeeRateFromCarPriceInRubles(userCarInputData.getPriceInEuro()));
         resultData.setDuty(calculateDutyInRubles(userCarInputData.getPriceInEuro(), getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume()));
         resultData.setRecyclingFee(calculateRecyclingFeeInRubles(getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume()));
         resultData.setFirstPriceInRubles(calculateFirstCarPriceInRublesByUserCarData(userCarInputData));
+//теперь считаем валютную надбавку в зависимости от настройки (динамичная либо конфиг)
+        userCarInputData.setInputExtraPayAmountKoreaKrw(getValutePartInKrw(resultData.getFirstPriceInRubles()));
 //валютная надбавка  и рублёвая надбавка (Брокерские расходы, СВХ, СБКТС)
         double extraPayAmountRublePart = executeRubExtraPayAmountInRublesByUserCarData(userCarInputData.getCurrency());
-        double extraPayAmountCurrencyPart = executeValuteExtraPayAmountInRublesByUserCarData(userCarInputData.getCurrency(), userCarInputData.isSanctionCar());
+        double extraPayAmountCurrencyPart =
+                executeValuteExtraPayAmountInRublesByUserCarData(userCarInputData); // в рублях
         resultData.setExtraPayAmountRublePart(extraPayAmountRublePart);
-        resultData.setExtraPayAmountValutePart(extraPayAmountCurrencyPart);
+        resultData.setExtraPayAmountValutePart(extraPayAmountCurrencyPart); // валютная надбавка
         // Стоимость логистики из провинции Китая
         if (Objects.nonNull(userCarInputData.getProvince())) {
             resultData.setProvincePriceInRubles(executeProvincePriceInRublesToSuyfynkhe(userCarInputData.getCurrency(), userCarInputData.getProvince()));
             resultData.setProvinceName(userCarInputData.getProvince().getProvinceFullName());
         }
-
-        resultData.setExtraPayAmountValutePart(extraPayAmountCurrencyPart);
         resultData.setStock(executeStock(userCarInputData.getCurrency()));
         resultData.setLocation(executeLocation(userCarInputData.getCurrency()));
         return resultData;
+    }
+
+    /**
+     * Гибкий расчет валютной надбавки KRW в зависимости от конфигов.
+     *
+     * @param priceInRubles - первичная цена в рублях
+     * @return
+     */
+    private int getValutePartInKrw(double priceInRubles) {
+        if (configDataPool.isEnableDymanicValutePart()) {
+            double manualUsdRate = manualConversionRatesMapInRubles.get(USD);
+            double priceInUsd = priceInRubles / manualUsdRate;
+            int extraPayAmountKoreaKrwResult =
+                    getDynamicValutePartByPriceInUsd(priceInUsd);
+            log.info("""
+                    Устанавливаем динамическую валютную надбавку для KRW:
+                    Цена в $ - это Цена в рублях {} поделить на ручной курс USD {} = {}$
+                    Соответствующая валютная надбавка - {} KRW.
+                    """, priceInRubles, manualUsdRate, priceInUsd, extraPayAmountKoreaKrwResult);
+            return extraPayAmountKoreaKrwResult;
+        } else {
+            return configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW;
+        }
+    }
+
+    /**
+     * Определить динамическую валютную надбавку исходя из стоимости авто в $.
+     *
+     * @param priceInUsd
+     * @return
+     */
+    public int getDynamicValutePartByPriceInUsd(double priceInUsd) {
+        int dynamicValutePartResult = 0;
+        for (Map.Entry<Integer, Integer> pair : configDataPool.getDynamicKrwValutePartMap().entrySet()) {
+            if (priceInUsd < pair.getKey()) {
+                dynamicValutePartResult = pair.getValue();
+                break;
+            }
+        }
+        return dynamicValutePartResult;
     }
 
     /**
@@ -143,26 +187,7 @@ public class ExecutionService {
      * @return
      */
     public int executeAuctionResultInKrw(UserCarInputData userCarInputData) {
-        double resultAuctionPriceInKrw;
-        double auctionCleanPriceInRub = userCarInputData.getUserAuctionStartPrice()
-                - executeRubExtraPayAmountInRublesByUserCarData(KRW)
-                - 100_000 // Брокерские расходы 100 тыс. руб.
-                - executeValuteExtraPayAmountInRublesByUserCarData(KRW, true);
-        double dutyAuctionInRubles;
-        // Для новой тачки считаем таможню в евро от 70% чистой стоимости (без комиссий)
-        // Для авто от 3 лет считаем таможню как для цены 10 000EUR
-        if (userCarInputData.getAge().equals(NEW_CAR)) {
-            dutyAuctionInRubles =
-                    calculateDutyInRubles(convertMoneyToEuro(auctionCleanPriceInRub * (1 - configDataPool.auctionCoefficient), RUB),
-                            getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume());
-        } else {
-            dutyAuctionInRubles = calculateDutyInRubles(10_000, getCarCategory(userCarInputData.getAge()), userCarInputData.getVolume());
-        }
-        double resultAuctionPriceInRub = auctionCleanPriceInRub - dutyAuctionInRubles;
-        resultAuctionPriceInKrw =
-                (resultAuctionPriceInRub) / ConfigDataPool.manualConversionRatesMapInRubles.get(KRW);
-
-        return roundDoubleToInt(resultAuctionPriceInKrw, 50_000); // округляем в меньшую сторону
+        return 0;
     }
 
     /**
@@ -174,20 +199,55 @@ public class ExecutionService {
         return ((int) resultAuctionPriceInKrw / round) * round;
     }
 
+    /**
+     * Вычислить первичную стоимость автомобиля в рублях.
+     *
+     * @param userCarInputData
+     * @return
+     */
     private double calculateFirstCarPriceInRublesByUserCarData(UserCarInputData userCarInputData) {
         String currentCurrency = userCarInputData.getCurrency();
+        int price = userCarInputData.getPrice();
+        double result;
+        log.info("Вычисляем первичную стоимость автомобиля для валюты {}:", currentCurrency);
         // добавить двойную конвертацию
-        if (currentCurrency.equals(KRW) && !configDataPool.disableDoubleConvertation && !userCarInputData.isSanctionCar()) {
-            return (userCarInputData.getPrice() / restService.getCbrUsdKrwMinus20()) * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
+        if (currentCurrency.equals(KRW) && configDataPool.enableDoubleConvertation && userCarInputData.isSanctionCar()) {
+            result = (price / restService.getCbrUsdKrwMinus20()) * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
+            log.info("""
+                            Режим двойной конвертации:
+                            Стоимость автомобиля {} {} поделённая на курс USD/KRW-20 {} и умноженная на ручной курс USD/RUB {} = {} RUB""", price
+                    , currentCurrency,
+                    restService.getCbrUsdKrwMinus20(), ConfigDataPool.manualConversionRatesMapInRubles.get(USD), result);
         } else {
-            return userCarInputData.getPrice() * ConfigDataPool.manualConversionRatesMapInRubles.get(currentCurrency);
+            double manualConversionRate =
+                    ConfigDataPool.manualConversionRatesMapInRubles.get(currentCurrency);
+            result = price * manualConversionRate;
+            log.info("Режим стандартной конвертации:" +
+                            "Стоимость автомобиля {} {} * {} = {} RUB", price, currentCurrency,
+                    manualConversionRate, result);
         }
+        return result;
     }
 
-    private boolean isSanctionCar(double priceInKrw) {
-        return priceInKrw / restService.getCbrUsdKrwMinus20() > 50_000;
+    /**
+     * Определение санкционности авто: либо она дороже 50К$, либо она объемнее 2К.
+     *
+     * @param userCarInputData исходные данные о тачке.
+     * @return
+     */
+    private boolean isSanctionCar(UserCarInputData userCarInputData) {
+        int priceInUsd = (int) (userCarInputData.getPrice() / restService.getCbrUsdKrwMinus20());
+        boolean isSanctionCarResult =
+                priceInUsd > 50_000 || userCarInputData.getVolume() >= configDataPool.getSanctionCarVolumeLimit();
+        log.info("""
+                Определяем санкционность авто.
+                Стоимость: {} $
+                Объём двигателя: {} cc.
+                Результат:  {}
+                """, priceInUsd, userCarInputData.getVolume(), isSanctionCarResult ? "Авто - санкционный!" :
+                "Авто - НЕ санкционный!");
+        return isSanctionCarResult;
     }
-
 //стоимость которую ввел пользователь + extra pay 
 
     //пошлина
@@ -242,33 +302,90 @@ public class ExecutionService {
 
 
     /**
-     * Рассчитываем доп взносы. Валютная часть. если тачка дешевле 50 000 USD - то двойная
-     * конвертация.
+     * Рассчитываем доп взносы. Валютная часть. если тачка дороже 50 000 USD - то двойная
+     * конвертация. Иначе необходим объём двигателя >2000 чтобы тачка считалась санкционной.
      */
-    private double executeValuteExtraPayAmountInRublesByUserCarData(String currency, boolean isSanctionCar) {
+    private double executeValuteExtraPayAmountInRublesByUserCarData(UserCarInputData userCarInputData) {
+        String currency = userCarInputData.getCurrency();
+        boolean isSanctionCar = userCarInputData.isSanctionCar();
         switch (currency) {
             case KRW:
-                return (configDataPool.disableDoubleConvertation || isSanctionCar ? getExtraKrwPayAmountNormalConvertation() : getExtraKrwPayAmountDoubleConvertation());
-            case USD:
-                return getExtraKrwPayAmountNormalConvertation();
+                int inputExtraPayInKrw = userCarInputData.getInputExtraPayAmountKoreaKrw();
+                log.info("Расчёт валютной надбавки:");
+                boolean ifWeNeedDoubleConvertation =
+                        configDataPool.enableDoubleConvertation && isSanctionCar;
+                return ifWeNeedDoubleConvertation ?
+                        getExtraKrwPayAmountDoubleConvertation(inputExtraPayInKrw) :
+                        getExtraPayKrwAmountNormalConvertationInRub(inputExtraPayInKrw);
             case CNY:
-                return configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY * ConfigDataPool.manualConversionRatesMapInRubles.get(CNY);
+                return getExtraPayAmountNormalConvertationInRub(CNY);
             default:
                 return 0;
         }
     }
 
-    private double getExtraKrwPayAmountNormalConvertation() {
-        return configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW * ConfigDataPool.manualConversionRatesMapInRubles.get(KRW);
+    /**
+     * Считаем доп взносы переведенные в рубли по нормальной конвертации ДЛЯ КОРЕИ.
+     *
+     * @param inputExtraPayAmountInKrw - исходная валютная надбавка в KRW
+     * @return
+     */
+    private double getExtraPayKrwAmountNormalConvertationInRub(int inputExtraPayAmountInKrw) {
+        double rate = ConfigDataPool.manualConversionRatesMapInRubles.get(KRW);
+        double result;
+        result = inputExtraPayAmountInKrw * rate;
+        log.info("""
+                В режиме нормальной конвертации в рублях:
+                Надбавка {} KRW * ручной курс {} = {} RUB
+                """, inputExtraPayAmountInKrw, rate, result);
+        return result;
+    }
+
+    /**
+     * Считаем доп взносы переведенные в рубли по нормальной конвертации.
+     *
+     * @param currency
+     * @return
+     */
+    private double getExtraPayAmountNormalConvertationInRub(String currency) {
+        double rate = ConfigDataPool.manualConversionRatesMapInRubles.get(currency);
+        double result;
+        switch (currency) {
+            case KRW:
+                result = configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW * rate;
+                log.info("""
+                        В режиме нормальной конвертации в рублях:
+                        Надбавка {} KRW * ручной курс {} = {} RUB
+                        """, configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW, rate, result);
+                return result;
+            case CNY:
+                result = configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY * rate;
+                log.info("""
+                        В режиме нормальной конвертации в рублях:
+                        Надбавка {} CNY * ручной курс {} = {} RUB
+                        """, configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY, rate, result);
+                return result;
+            default:
+                return 0;
+        }
     }
 
     /**
      * Если эквивалент тачки стоит меньше, чем 50 000$ то (KRW для взносов делим на (курс KRW/USD по
      * ЦБ минус 20) и умножаем на ручной курс USD.
      */
-    private double getExtraKrwPayAmountDoubleConvertation() {
-        double usdAmount = configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW / restService.getCbrUsdKrwMinus20();
-        return usdAmount * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
+    private double getExtraKrwPayAmountDoubleConvertation(int extraPayInKrw) {
+        double manualRate = ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
+        double minus20Rate = restService.getCbrUsdKrwMinus20();
+        double usdAmount = extraPayInKrw / minus20Rate;
+        double result = usdAmount * manualRate;
+        log.info("""
+                        В режиме двойной конвертации.
+                        Валютная надбавка в USD: надбавка {} KRW * курс-20 {} = {} USD
+                        Валютная надбавка в рублях: {} USD * ручной курс {} = {} RUB
+                        """, extraPayInKrw, minus20Rate, usdAmount,
+                usdAmount, manualRate, result);
+        return result;
     }
 
 
