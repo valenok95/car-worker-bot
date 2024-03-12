@@ -128,7 +128,10 @@ public class TelegramBotService extends TelegramLongPollingBot {
             log.info("message received: " + receivedText);
             switch (receivedText) {
                 case "/start":
-                    startCommandReceivedUniversal(update.getMessage());
+                    startCommandReceivedUniversal(update.getMessage(), false);
+                    break;
+                case "/manualmode":
+                    startManualCommandReceived(update.getMessage());
                     break;
                 case "/cbr":
                     cbrCommandReceived(chatId);
@@ -224,7 +227,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         BotState currentState = cache.getUsersCurrentBotState(chatId);
         switch (callbackData) {
             case RESET_CALLBACK, CANCEL_BUTTON:
-                startCommandReceivedUniversal(update.getCallbackQuery().getMessage());
+                startCommandReceivedUniversal(update.getCallbackQuery().getMessage(), true);
                 return;
             case TO_SET_CURRENCY_MENU:
                 setCurrencyCommandReceived(chatId, update.getCallbackQuery().getMessage());
@@ -260,8 +263,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 break;
         }
         switch (currentState) {
-            case ASK_CURRENCY:
-                applyCurrencyAndDefineCalculateMode(update.getCallbackQuery().getMessage(), callbackData);
+            case ASK_CURRENCY_MANUAL_MODE:
+                applyCurrencyAndManualCalculateMode(update.getCallbackQuery().getMessage(), callbackData);
                 break;
             case SET_CURRENCY_MENU:
                 processChooseCurrencyToSet(update, callbackData);
@@ -939,8 +942,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         executeMessage(utilMessageService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
     }
 
-
-    private void startCommandReceived(Message message) {
+    /**
+     * Старая команда по началу общения.
+     * @param message
+     */
+    private void startManualCommandReceived(Message message) {
         long chatId = message.getChatId();
         String name = message.getChat().getFirstName();
 
@@ -997,7 +1003,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(utilMessageService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
-        cache.setUsersCurrentBotState(chatId, BotState.ASK_CURRENCY);
+        cache.setUsersCurrentBotState(chatId, BotState.ASK_CURRENCY_MANUAL_MODE);
         restService.refreshExchangeRates();
         subscribeService.subscribeUser(chatId);
     }
@@ -1007,7 +1013,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
      *
      * @param message
      */
-    private void startCommandReceivedUniversal(Message message) {
+    private void startCommandReceivedUniversal(Message message, boolean isCallback) {
         long chatId = message.getChatId();
         String name = message.getChat().getFirstName();
 
@@ -1047,14 +1053,27 @@ public class TelegramBotService extends TelegramLongPollingBot {
             subscribeService.subscribeUser(chatId);
             return;
         }
-        String text = String.format("""
-                Здравствуйте, %s!
-                Я бот для расчета стоимости авто до Владивостока, просто отправьте мне ссылку на авто и я рассчитаю вам конечную стоимость автомобиля с учетом всех расходов до Владивостока 💪
-                """, name);
+        String text = getStartMessage(isCallback, name);
         executeMessage(utilMessageService.prepareSendMessage(chatId, text));
         cache.setUsersCurrentBotState(chatId, BotState.WAITING_FOR_LINK);
         restService.refreshExchangeRates();
         subscribeService.subscribeUser(chatId);
+    }
+
+    private static String getStartMessage(boolean isCallback, String name) {
+        if (!isCallback) {
+            return String.format("""
+                    Здравствуйте, %s!
+                    Я бот для расчета стоимости авто до Владивостока!
+                                    
+                    Просто отправьте мне ссылку на авто, с сайта www.encar.com или www.che168.com, и я рассчитаю вам конечную стоимость автомобиля с учетом абсолютно всех расходов до Владивостока. ✅""", name);
+
+        } else {
+            return """
+                    Пожалуйста отправьте мне ссылку на автомобиль с сайта 🔗www.encar.com или 🔗www.che168.com
+                                        
+                    Калькулятор для расчета конечной стоимости автомобиля вручную, вы можете найти в меню. ↙️""";
+        }
     }
 
     private void cbrCommandReceived(long chatId) {
@@ -1135,6 +1154,27 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     /**
+     * callback process.
+     * Применяем manualMode для валюты.
+     *
+     * @param currency
+     */
+    private void applyCurrencyAndManualCalculateMode(Message message, String currency) {
+        long chatId = message.getChatId();
+        UserCarInputData data = cache.getUserCarData(chatId);
+        data.setCurrency(currency);
+        data.setStock(executionService.executeStock(currency));
+
+        // Если в сообщении на удаление есть Здравствуйте, значит можно удалять
+        if (message.getText().contains("Здравствуйте")) {
+            deleteMessage(message);
+        }
+
+        cache.saveUserCarData(chatId, data);
+        processManualCalculation(message);
+    }
+
+    /**
      * Расчёт автомобиля ВРУЧНУЮ.
      */
     private void processManualCalculation(Message message) {
@@ -1147,7 +1187,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         String currency = data.getCurrency();
         String text = String.format("""
-                Тип валюты: %s 
+                Тип валюты: %s
                                                 
                 Пожалуйста, введите стоимость автомобиля в валюте.
                 """, currency);
@@ -1159,8 +1199,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     /**
-     * Процесс выбора расчёта ВРУЧНУЮ/ПО ССЫЛКЕ/АУКЦИОН. До трёх кнопок.
+     * Процесс выбора расчёта ВРУЧНУЮ/ПО ССЫЛКЕ/АУКЦИОН. До трёх кнопок. 
      */
+    //TODO ВЫПИЛИТЬ
     private void processChooseModeForCalculation(long chatId, boolean isLinkModeEnabled, boolean isAuctionModeEnabled) {
         String message = """
                 Вы можете выбрать тип расчёта 🔻
