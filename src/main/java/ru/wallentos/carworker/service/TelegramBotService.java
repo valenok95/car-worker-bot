@@ -67,6 +67,8 @@ import ru.wallentos.carworker.model.UserCarInputData;
 @Slf4j
 public class TelegramBotService extends TelegramLongPollingBot {
 
+    private static final String CNY_BUTTON = "Китай";
+    private static final String KRW_BUTTON = "Корея";
     @Value("${ru.wallentos.carworker.manager-link}")
     public String managerLink;
     @Autowired
@@ -944,6 +946,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     /**
      * Старая команда по началу общения.
+     *
      * @param message
      */
     private void startManualCommandReceived(Message message) {
@@ -986,20 +989,16 @@ public class TelegramBotService extends TelegramLongPollingBot {
             subscribeService.subscribeUser(chatId);
             return;
         }
-        String text = String.format("""
-                Здравствуйте, %s!
-                        
-                Для расчёта автомобиля из южной Кореи, пожалуйста, выберите KRW, для автомобиля из Китая CNY.
-                """, name);
+        String text = "Пожалуйста выберете рынок для расчета:";
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
-        InlineKeyboardButton cnyButton = new InlineKeyboardButton(CNY);
-        InlineKeyboardButton krwButton = new InlineKeyboardButton(KRW);
-        cnyButton.setCallbackData(CNY);
+        InlineKeyboardButton krwButton = new InlineKeyboardButton(KRW_BUTTON);
+        InlineKeyboardButton cnyButton = new InlineKeyboardButton(CNY_BUTTON);
         krwButton.setCallbackData(KRW);
-        row.add(cnyButton);
+        cnyButton.setCallbackData(CNY);
         row.add(krwButton);
+        row.add(cnyButton);
         rows.add(row);
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(utilMessageService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
@@ -1199,7 +1198,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     /**
-     * Процесс выбора расчёта ВРУЧНУЮ/ПО ССЫЛКЕ/АУКЦИОН. До трёх кнопок. 
+     * Процесс выбора расчёта ВРУЧНУЮ/ПО ССЫЛКЕ/АУКЦИОН. До трёх кнопок.
      */
     //TODO ВЫПИЛИТЬ
     private void processChooseModeForCalculation(long chatId, boolean isLinkModeEnabled, boolean isAuctionModeEnabled) {
