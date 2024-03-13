@@ -350,7 +350,7 @@ public class ExecutionService {
      * @return
      */
     private double getExtraPayKrwAmountNormalConvertationInRub(int inputExtraPayAmountInKrw) {
-        double rate = convertMoneyToRublesManualRate(configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW, KRW);
+        double rate = manualConversionRatesMapInRubles.get(KRW);
         double result;
         result = inputExtraPayAmountInKrw * rate;
         log.info("""
@@ -396,7 +396,7 @@ public class ExecutionService {
     private double getExtraKrwPayAmountDoubleConvertation(int extraPayInKrw) {
         double minus20Rate = restService.getCbrUsdKrwMinus20();
         double usdAmount = extraPayInKrw / minus20Rate;
-        double manualRate = convertMoneyToRublesManualRate(usdAmount, USD);
+        double manualRate = manualConversionRatesMapInRubles.get(USD);
         double result = usdAmount * manualRate;
         log.info("""
                         В режиме двойной конвертации.

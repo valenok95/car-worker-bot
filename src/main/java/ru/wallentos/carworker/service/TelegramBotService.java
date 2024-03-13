@@ -1,28 +1,11 @@
 package ru.wallentos.carworker.service;
 
-import static ru.wallentos.carworker.configuration.ConfigDataPool.CANCEL_BUTTON;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.CANCEL_MAILING_BUTTON;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.CAR_REPORT_BUTTON_CALLBACK;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.CAR_REPORT_BUTTON_TEXT;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.CAR_RESULT_DETAIL_BUTTON_CALLBACK;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.CAR_RESULT_DETAIL_BUTTON_TEXT;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.CLIENT_REQUEST_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.CONFIRM_MAILING_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.KRW;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.LINK_BUTTON;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.MANAGER_MESSAGE;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.MANUAL_BUTTON;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.READY_BUTTON;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.RESET_CALLBACK;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.RESET_MANAGER_BUTTON;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.RESET_MANAGER_CALLBACK;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.RESET_MESSAGE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.RUB;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.TO_SET_CURRENCY_MENU;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.USD;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.conversionRatesMap;
 
@@ -41,6 +24,7 @@ import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMem
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
@@ -65,9 +49,32 @@ import ru.wallentos.carworker.model.UserCarInputData;
 @Data
 @Slf4j
 public class TelegramBotService extends TelegramLongPollingBot {
+    private static final String CONFIRM_MAILING_BUTTON = "Подтвердить";
+    private static final String CANCEL_MAILING_BUTTON = "Отменить";
+    private static final String LINK_BUTTON = "Расчёт по ссылке";
+    private static final String READY_BUTTON = "Готово";
+    private static final String MANUAL_BUTTON = "Расчёт вручную";
+    private static final String CANCEL_BUTTON = "Отмена";
+    private static final String RESET_MANAGER_BUTTON = "Расчет стоимости Total to Ussuriysk/Bishkek";
+    private static final String RESET_MESSAGE = "Рассчитать стоимость другого автомобиля";
 
+    private static final String TO_SET_CURRENCY_MENU = "Меню установки валюты";
+    private static final String MANAGER_MESSAGE = "Связаться с менеджером";
+    private static final String CAR_RESULT_DETAIL_BUTTON_TEXT = "Детализация расчёта";
+    private static final String CAR_REPORT_BUTTON_TEXT = "Технический отчёт об автомобиле";
+
+    private static final String CLIENT_REQUEST_BUTTON = "Оставить заявку";
     private static final String CNY_BUTTON = "Китай";
     private static final String KRW_BUTTON = "Корея";
+    private static final String BENSIN_BUTTON = "ДВС";
+    private static final String ELECTRIC_BUTTON = "ЭЛЕКТРО";
+
+    private static final String CAR_RESULT_DETAIL_BUTTON_CALLBACK = "result_details_callback";
+    private static final String CAR_REPORT_BUTTON_CALLBACK = "report_callback";
+    private static final String RESET_CALLBACK = "reset_callback";
+    private static final String RESET_MANAGER_CALLBACK = "reset_manager_callback";
+    private static final String BENSIN_TYPE_CALLBACK = "bensin_callback";
+    private static final String ELECTRIC_TYPE_CALLBACK = "electric_callback";
     @Value("${ru.wallentos.carworker.manager-link}")
     public String managerLink;
     @Autowired
@@ -270,6 +277,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 break;
             case ASK_ISSUE_DATE:
                 processIssueDate(update.getCallbackQuery().getMessage(), callbackData);
+                break;
+            case ASK_ENGINE_TYPE:
+                processAcceptEngineType(update.getCallbackQuery());
                 break;
             default:
                 break;
@@ -537,6 +547,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 case ASK_VOLUME:
                     processVolume(update.getMessage(), receivedText);
                     break;
+                case ASK_POWER:
+                    processPower(update.getMessage(), receivedText);
+                    break;
                 case SET_CURRENCY:
                     processSetCurrency(chatId, receivedText);
                     break;
@@ -560,17 +573,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
             }
         } catch (IllegalArgumentException e) {
             executeMessage(utilMessageService.prepareSendMessage(chatId, "Некорректный формат данных, попробуйте ещё раз."));
-            return;
         }
-    }
-
-    /**
-     * Получена ссылка на che168 , посчитать тачки и вывести ответ манагерам.
-     *
-     * @param chatId
-     * @param update
-     */
-    private void executeChinaResult(long chatId, Update update) {
     }
 
     /**
@@ -675,11 +678,21 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         UserCarInputData data = cache.getUserCarData(chatId);
         data.setAge(receivedText);
-        cache.setUsersCurrentBotState(chatId, BotState.ASK_VOLUME);
-        String text = """
-                Пожалуйста, введите объем двигателя в кубических сантиметрах.
-                                
-                Пример: 1995""";
+        String text;
+        if (data.isElectric()) {
+            cache.setUsersCurrentBotState(chatId, BotState.ASK_POWER);
+            text = """
+                    Пожалуйста, введите мощность двигателя в лошадиных силах.
+                                    
+                    Пример: 145""";
+        } else {
+            cache.setUsersCurrentBotState(chatId, BotState.ASK_VOLUME);
+            text = """
+                    Пожалуйста, введите объем двигателя в кубических сантиметрах.
+                                    
+                    Пример: 1995""";
+        }
+
 
         Message sendOutMessage = executeMessage(utilMessageService.prepareSendMessage(chatId, text));
         data.setLastMessageToDelete(sendOutMessage);
@@ -700,6 +713,25 @@ public class TelegramBotService extends TelegramLongPollingBot {
         deleteMessage(message);
 
         data.setVolume(Integer.parseInt(receivedText));
+        cache.saveUserCarData(chatId, data);
+        cache.setUsersCurrentBotState(chatId, BotState.DATA_PREPARED);
+        processExecuteResultAndShowHeader(data, chatId);
+    }
+
+    /**
+     * Процесс ввода мощности двигателя для электромобилей. (запускает расчёт).
+     *
+     * @param receivedText
+     */
+    private void processPower(Message message, String receivedText) {
+        long chatId = message.getChatId();
+        UserCarInputData data = cache.getUserCarData(chatId);
+
+        // Удаляем сообщения
+        deleteMessage(data.getLastMessageToDelete());
+        deleteMessage(message);
+
+        data.setPower(Integer.parseInt(receivedText));
         cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.DATA_PREPARED);
         processExecuteResultAndShowHeader(data, chatId);
@@ -885,7 +917,10 @@ public class TelegramBotService extends TelegramLongPollingBot {
             return;
         }
         String text = getStartMessage(isCallback, name);
-        executeMessage(utilMessageService.prepareSendMessage(chatId, text));
+
+        Message sendOutMessage = executeMessage(utilMessageService.prepareSendMessage(chatId, text));
+        data.setLastMessageToDelete(sendOutMessage);
+        cache.saveUserCarData(chatId, data);
         cache.setUsersCurrentBotState(chatId, BotState.WAITING_FOR_LINK);
         restService.refreshExchangeRates();
         subscribeService.subscribeUser(chatId);
@@ -1012,6 +1047,40 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         UserCarInputData data = cache.getUserCarData(chatId);
 
+        deleteMessage(data.getLastMessageToDelete());
+        deleteMessage(message);
+
+        String text = "Пожалуйста выберите тип автомобиля:";
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> row = new ArrayList<>();
+        InlineKeyboardButton bensinButton = new InlineKeyboardButton(BENSIN_BUTTON);
+        InlineKeyboardButton electricButton = new InlineKeyboardButton(ELECTRIC_BUTTON);
+        bensinButton.setCallbackData(BENSIN_TYPE_CALLBACK);
+        electricButton.setCallbackData(ELECTRIC_TYPE_CALLBACK);
+        row.add(bensinButton);
+        row.add(electricButton);
+        rows.add(row);
+        inlineKeyboardMarkup.setKeyboard(rows);
+        Message sendOutMessage = executeMessage(utilMessageService.prepareSendMessage(chatId,
+                text, inlineKeyboardMarkup));
+        data.setLastMessageToDelete(sendOutMessage);
+        cache.saveUserCarData(chatId, data);
+
+        cache.setUsersCurrentBotState(chatId, BotState.ASK_ENGINE_TYPE);
+    }
+
+    /**
+     * Обработка типа двигателя авто. Далее запрос стоимости.
+     */
+    private void processAcceptEngineType(CallbackQuery callbackQuery) {
+        Message message = callbackQuery.getMessage();
+        String callbackData = callbackQuery.getData();
+        long chatId = message.getChatId();
+        UserCarInputData data = cache.getUserCarData(chatId);
+        if (callbackData.equals(ELECTRIC_TYPE_CALLBACK)) {
+            data.setElectric(true);
+        }
         deleteMessage(data.getLastMessageToDelete());
         deleteMessage(message);
 
@@ -1146,6 +1215,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
     private void processCalculateByLinkUniversal(Message message, String link) {
         long chatId = message.getChatId();
         String currentCurrency;
+        // удалить сообщения
+        UserCarInputData data = cache.getUserCarData(chatId);
         try {
             currentCurrency = utilService.defineCurrencyByLink(link);
         } catch (GetCarDetailException e) {
@@ -1161,14 +1232,12 @@ public class TelegramBotService extends TelegramLongPollingBot {
             Message sendOutMessage = executeMessage(utilMessageService.prepareSendMessage(chatId, errorMessage, inlineKeyboardMarkup));
 
             // запомнить сообщение для удаления
-            UserCarInputData data = cache.getUserCarData(chatId);
             deleteMessage(data.getLastMessageToDelete());
             data.setLastMessageToDelete(sendOutMessage);
             data.setPreLastMessageToDelete(message);
             cache.saveUserCarData(chatId, data);
             return;
         }
-        var data = cache.getUserCarData(chatId);
         data.setCurrency(currentCurrency);
         cache.saveUserCarData(chatId, data);
         switch (data.getCurrency()) {
@@ -1242,11 +1311,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
             data.setMyAccidentCost(carDto.getMyAccidentCost());
             data.setHasInsuranceInfo(carDto.isHasInsuranceInfo());
         }
-
-        // Удаляем сообщения
         deleteMessage(data.getLastMessageToDelete());
         deleteMessage(message);
-
         processExecuteResultAndShowHeader(data, chatId);
     }
 

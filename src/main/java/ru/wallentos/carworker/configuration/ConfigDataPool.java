@@ -54,11 +54,7 @@ public class ConfigDataPool {
     public static final String USD = "USD";
     public static final String KRW = "KRW";
     public static final String CNY = "CNY";
-    public static final String CONFIRM_MAILING_BUTTON = "Подтвердить";
-    public static final String CANCEL_MAILING_BUTTON = "Отменить";
-    public static final String LINK_BUTTON = "Расчёт по ссылке";
-    public static final String READY_BUTTON = "Готово";
-    public static final String MANUAL_BUTTON = "Расчёт вручную";
+
     @Value("${ru.wallentos.carworker.exchange-coefficient}")
     public double coefficient;
     @Value("${ru.wallentos.carworker.extra-pay-china.cny}")
@@ -195,19 +191,7 @@ public class ConfigDataPool {
     public static final String NEW_CAR = "До 3 лет";
     public static final String NORMAL_CAR = "От 3 до 5 лет";
     public static final String OLD_CAR = "От 5 лет";
-    public static final String CANCEL_BUTTON = "Отмена";
-    public static final String RESET_MANAGER_BUTTON = "Расчет стоимости Total to Ussuriysk/Bishkek";
-    public static final String RESET_MESSAGE = "Рассчитать стоимость другого автомобиля";
-    public static final String RESET_CALLBACK = "reset_callback";
-    public static final String RESET_MANAGER_CALLBACK = "reset_manager_callback";
-    public static final String TO_SET_CURRENCY_MENU = "Меню установки валюты";
-    public static final String MANAGER_MESSAGE = "Связаться с менеджером";
-    public static final String CAR_RESULT_DETAIL_BUTTON_TEXT = "Детализация расчёта";
-    public static final String CAR_RESULT_DETAIL_BUTTON_CALLBACK = "result_details_callback";
 
-    public static final String CAR_REPORT_BUTTON_TEXT = "Технический отчёт об автомобиле";
-    public static final String CAR_REPORT_BUTTON_CALLBACK = "report_callback";
-    public static final String CLIENT_REQUEST_BUTTON = "Оставить заявку";
 
     /**
      * Карта рассчёта таможенной стоимости.
