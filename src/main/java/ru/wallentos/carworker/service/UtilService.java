@@ -77,7 +77,24 @@ public class UtilService {
             log.error(errorMessage);
             throw new GetCarDetailException(errorMessage);
         }
+    }
 
+    /**
+     * Определить валюту по ссылке.
+     *
+     * @param link
+     * @return
+     */
+    public String defineCurrencyByLink(String link) throws GetCarDetailException {
+        if (link.contains("encar")) {
+            return KRW;
+        } else if (link.contains("che168")) {
+            return CNY;
+        } else {
+            String errorMessage = "Ошибка при обработке ссылки";
+            log.error(errorMessage);
+            throw new GetCarDetailException(errorMessage);
+        }
     }
 
     /**

@@ -29,6 +29,7 @@ ru:
       update-cache-job:
         master-bot: false
         cron: 0 0/30 * * * *
+      dynamic-krw-valute-part-map: '{40000: 1600000 , 100000: 1000000}'
 
 spring:
   data:

@@ -52,7 +52,7 @@ public class UserDataCache implements DataCache {
     public BotState getUsersCurrentBotState(long userId) {
         BotState botState = usersBotStates.get(userId);
         if (botState == null) {
-            botState = BotState.ASK_CURRENCY;
+            botState = BotState.ASK_CURRENCY_MANUAL_MODE;
         }
 
         return botState;

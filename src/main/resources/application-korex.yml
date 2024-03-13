@@ -11,7 +11,9 @@ ru:
       client-request-spreedsheet-id: 160dFiu2oswiYji4QUI-mlUVuFoTzH-sqX1OlQvaFuIc
       client-request-group-id: -1001854156002
       enable-client-request: ${ENABLE_CLIENT_REQUEST}
-      disable-double-convertation: true
+      enable-double-convertation: true
+      sanction-car-volume-limit: 2000
+      enable-dynamic-valute-part: true
       enable-encar-report-mode: true
       enable-result-detalization: true
       check-channel-subscribers: true
@@ -28,3 +30,4 @@ ru:
         rub: ${EXTRA_PAY_CHINA_RUB}
       update-cache-job:
         master-bot: true
+      dynamic-krw-valute-part-map: ${DYNAMIC_VALUTE_PART_MAP}

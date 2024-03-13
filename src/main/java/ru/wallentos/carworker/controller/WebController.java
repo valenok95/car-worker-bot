@@ -3,6 +3,7 @@ package ru.wallentos.carworker.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.wallentos.carworker.cache.EncarCache;
@@ -107,6 +108,11 @@ public class WebController {
     public ResponseEntity<?> testGoogle() {
         googleService.appendClientRequestToGoogleSheet("clientText", "userName");
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/testDynamicValutePart/{amount}")
+    public ResponseEntity<Integer> testDynamicValutePart(@PathVariable double amount) {
+        return ResponseEntity.ok(executionService.getDynamicValutePartByPriceInUsd(amount));
     }
 }
 

@@ -24,6 +24,7 @@ public class CarPriceResultData {
     String stock;
     String age;
     String location;
+    boolean isSanctionCar;
     String sanctionMessage = "Санкционный авто, ";
     String currency;
 
