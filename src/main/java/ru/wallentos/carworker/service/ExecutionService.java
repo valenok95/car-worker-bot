@@ -1,9 +1,11 @@
 package ru.wallentos.carworker.service;
 
 import static ru.wallentos.carworker.configuration.ConfigDataPool.CNY;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.FEE_RATE_MAP;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.ELECTRIC_CAR_EXCISE_RATE_MAX;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.ELECTRIC_CAR_FEE_MAX;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.ELECTRIC_CAR_POWER_TO_EXCISE_RATE_MAP;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.ELECTRIC_CAR_PRICE_TO_FEES_MAP;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.FEE_RATE_MAP;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.KRW;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.LAST_FEE_RATE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_BIG_CAR_RECYCLING_FEE;
@@ -97,18 +99,14 @@ public class ExecutionService {
 //теперь считаем валютную надбавку в зависимости от настройки (динамичная либо конфиг)
         userCarInputData.setInputExtraPayAmountKoreaKrw(getValutePartInKrw(resultData.getFirstPriceInRubles()));
 //валютная надбавка  и рублёвая надбавка (Брокерские расходы, СВХ, СБКТС)
-        double extraPayAmountRublePart = executeRubExtraPayAmountInRublesByUserCarData(userCarInputData.getCurrency());
-        double extraPayAmountCurrencyPart =
-                executeValuteExtraPayAmountInRublesByUserCarData(userCarInputData); // в рублях
         double extraPayAmountRublePart = executeRubExtraPayAmountInRublesManualRate(userCarInputData.getCurrency());
-        double extraPayAmountCurrencyPartInRubles = executeValuteExtraPayAmountInRublesManualRate(userCarInputData.getCurrency(), userCarInputData.isSanctionCar());
+        double extraPayAmountCurrencyPartInRubles = executeValuteExtraPayAmountInRublesByUserCarData(userCarInputData);// в рублях
         double extraPayAmountCurrencyPartInEuroCbr = convertMoneyToEuro(extraPayAmountCurrencyPartInRubles, RUB);
 
         resultData.setDuty(calculateDutyInRubles(userCarInputData));
         resultData.setFeeRate(getFeeRateFromCarPriceInRubles(userCarInputData.getPriceInEuro() + extraPayAmountCurrencyPartInEuroCbr));
 
         resultData.setExtraPayAmountRublePart(extraPayAmountRublePart);
-        resultData.setExtraPayAmountValutePart(extraPayAmountCurrencyPart); // валютная надбавка
         resultData.setExtraPayAmountValutePartInRubles(extraPayAmountCurrencyPartInRubles);
         // Стоимость логистики из провинции Китая
         if (Objects.nonNull(userCarInputData.getProvince())) {
@@ -218,19 +216,16 @@ public class ExecutionService {
         double result;
         log.info("Вычисляем первичную стоимость автомобиля для валюты {}:", currentCurrency);
         // добавить двойную конвертацию
-        if (currentCurrency.equals(KRW) && !configDataPool.disableDoubleConvertation && !userCarInputData.isSanctionCar()) {
-            return convertMoneyToRublesManualRate(userCarInputData.getPrice() / restService.getCbrUsdKrwMinus20(), USD);
         if (currentCurrency.equals(KRW) && configDataPool.enableDoubleConvertation && userCarInputData.isSanctionCar()) {
-            result = (price / restService.getCbrUsdKrwMinus20()) * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
+            result =
+                    convertMoneyToRublesManualRate(userCarInputData.getPrice() / restService.getCbrUsdKrwMinus20(), USD);
             log.info("""
                             Режим двойной конвертации:
                             Стоимость автомобиля {} {} поделённая на курс USD/KRW-20 {} и умноженная на ручной курс USD/RUB {} = {} RUB""", price
                     , currentCurrency,
                     restService.getCbrUsdKrwMinus20(), ConfigDataPool.manualConversionRatesMapInRubles.get(USD), result);
         } else {
-            return convertMoneyToRublesManualRate(userCarInputData.getPrice(), currentCurrency);
-            double manualConversionRate =
-                    ConfigDataPool.manualConversionRatesMapInRubles.get(currentCurrency);
+            double manualConversionRate = ConfigDataPool.manualConversionRatesMapInRubles.get(currentCurrency);
             result = price * manualConversionRate;
             log.info("Режим стандартной конвертации:" +
                             "Стоимость автомобиля {} {} * {} = {} RUB", price, currentCurrency,
@@ -260,7 +255,7 @@ public class ExecutionService {
     }
 //стоимость которую ввел пользователь + extra pay 
 
-    //пошлина
+//пошлина
 
     /**
      * Определяем рынок по валюте
@@ -323,7 +318,7 @@ public class ExecutionService {
                 int inputExtraPayInKrw = userCarInputData.getInputExtraPayAmountKoreaKrw();
                 log.info("Расчёт валютной надбавки:");
                 boolean ifWeNeedDoubleConvertation =
-                        configDataPool.enableDoubleConvertation && isSanctionCar;
+                        configDataPool.isEnableDoubleConvertation() && isSanctionCar;
                 return ifWeNeedDoubleConvertation ?
                         getExtraKrwPayAmountDoubleConvertation(inputExtraPayInKrw) :
                         getExtraPayKrwAmountNormalConvertationInRub(inputExtraPayInKrw);
@@ -334,20 +329,20 @@ public class ExecutionService {
         }
     }
 
-        /**
-         * Получить валютную надбавку для валюты.
-         */
-        private int getValuteExtraPayInValute(String currency) {
-            switch (currency) {
-                case KRW:
-                    return configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW;
-                case CNY:
-                    return configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY;
-                default:
-                    return 0;
-            }
+    /**
+     * Получить валютную надбавку для валюты.
+     */
+    private int getValuteExtraPayInValute(String currency) {
+        switch (currency) {
+            case KRW:
+                return configDataPool.EXTRA_PAY_AMOUNT_KOREA_KRW;
+            case CNY:
+                return configDataPool.EXTRA_PAY_AMOUNT_CHINA_CNY;
+            default:
+                return 0;
         }
-    
+    }
+
     /**
      * Считаем доп взносы переведенные в рубли по нормальной конвертации ДЛЯ КОРЕИ.
      *
@@ -395,13 +390,13 @@ public class ExecutionService {
     }
 
     /**
-     * Если эквивалент тачки стоит меньше, чем 50 000$ то (KRW для взносов делим на (курс KRW/USD по
+     * Если эквивалент тачки стоит меньше, чем 50 000$, то (KRW для взносов делим на (курс KRW/USD по
      * ЦБ минус 20) и умножаем на ручной курс USD.
      */
     private double getExtraKrwPayAmountDoubleConvertation(int extraPayInKrw) {
-        double manualRate = convertMoneyToRublesManualRate(usdAmount, USD);
         double minus20Rate = restService.getCbrUsdKrwMinus20();
         double usdAmount = extraPayInKrw / minus20Rate;
+        double manualRate = convertMoneyToRublesManualRate(usdAmount, USD);
         double result = usdAmount * manualRate;
         log.info("""
                         В режиме двойной конвертации.
@@ -556,7 +551,7 @@ public class ExecutionService {
      * @return стоимость сборов.
      */
     private int calculateElectricCarFeeInRubles(double carPrice) {
-        for (Map.Entry<Integer, Integer> pair : electricCarPriceToFeesMap.entrySet()) {
+        for (Map.Entry<Integer, Integer> pair : ELECTRIC_CAR_PRICE_TO_FEES_MAP.entrySet()) {
             if (carPrice <= pair.getKey()) {
                 return pair.getValue();
             }
@@ -572,7 +567,7 @@ public class ExecutionService {
      */
     private int calculateElectricCarExciseInRubles(int power) {
         int exciseRate = ELECTRIC_CAR_EXCISE_RATE_MAX;
-        for (Map.Entry<Integer, Integer> pair : electricCarPowerToExciseRateMap.entrySet()) {
+        for (Map.Entry<Integer, Integer> pair : ELECTRIC_CAR_POWER_TO_EXCISE_RATE_MAP.entrySet()) {
             if (power <= pair.getKey()) {
                 exciseRate = pair.getValue();
                 break;
@@ -709,7 +704,7 @@ public class ExecutionService {
     }
 
     /**
-     * Считаем наибольшее значение пошлины, либо по кубам либо по умножению на процент.
+     * Считаем наибольшее значение пошлины, либо по кубам, либо по умножению на процент.
      */
     private double getMaxFromPair(Map.Entry<Double, Double> pair, double carPriceInEuro, int carVolume) {
         double priceByPercent = pair.getKey() * carPriceInEuro;

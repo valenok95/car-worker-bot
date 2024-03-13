@@ -269,7 +269,7 @@ public class ConfigDataPool {
      * Карта для сбора за таможенное оформление электромобиля.
      * СТОИМОСТЬ АВТО В РУБЛЯХ -> СБОР
      */
-    public static final Map<Integer, Integer> electricCarPriceToFeesMap =
+    public static final Map<Integer, Integer> ELECTRIC_CAR_PRICE_TO_FEES_MAP =
             new LinkedHashMap<>() {
                 {
                     put(ELECTRIC_CAR_PRICE_LIMIT_1, ELECTRIC_CAR_FEE_1);
@@ -289,7 +289,7 @@ public class ConfigDataPool {
      * Карта для расчёта акциза электромобиля.
      * МОЩНОСТЬ -> СТОИМОСТЬ ЗА ЛС
      */
-    public static final Map<Integer, Integer> electricCarPowerToExciseRateMap =
+    public static final Map<Integer, Integer> ELECTRIC_CAR_POWER_TO_EXCISE_RATE_MAP =
             new LinkedHashMap<>() {
                 {
                     put(ELECTRIC_CAR_POWER_1, ELECTRIC_CAR_EXCISE_RATE_1);

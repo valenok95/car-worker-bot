@@ -96,6 +96,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         this.config = config;
         List<BotCommand> listofCommands = new ArrayList<>();
         listofCommands.add(new BotCommand("/start", "Старт"));
+        listofCommands.add(new BotCommand("/manualmode", "Режим ручного расчета"));
         listofCommands.add(new BotCommand("/cbr", "курс ЦБ"));
         listofCommands.add(new BotCommand("/currencyrates", "Актуальный курс оплаты"));
         listofCommands.add(new BotCommand("/settingservice", "Сервис"));
@@ -780,7 +781,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
 
-    private void startCommandReceived(Message message) {
+    private void startManualCommandReceived(Message message) {
         long chatId = message.getChatId();
         String name = message.getChat().getFirstName();
 
@@ -1016,11 +1017,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         String currency = data.getCurrency();
         String textCurrency;
-switch (currency){
-    case KRW-> textCurrency=currency+ "(Вона)";
-    case CNY-> textCurrency=currency+ "(Юань)";
-    default -> textCurrency=currency;
-}
+        switch (currency) {
+            case KRW -> textCurrency = currency + "(Вона)";
+            case CNY -> textCurrency = currency + "(Юань)";
+            default -> textCurrency = currency;
+        }
         String text = String.format("""
                 Тип валюты: %s
                                                 
@@ -1037,8 +1038,7 @@ switch (currency){
      * Процесс выбора расчёта ВРУЧНУЮ/ПО ССЫЛКЕ. До трёх кнопок.
      */
     private void processChooseModeForCalculation(long chatId, boolean isLinkModeEnabled) {
-    //TODO ВЫПИЛИТЬ
-    private void processChooseModeForCalculation(long chatId, boolean isLinkModeEnabled, boolean isAuctionModeEnabled) {
+        //TODO ВЫПИЛИТЬ
         String message = """
                 Вы можете выбрать тип расчёта 🔻
                 """;
