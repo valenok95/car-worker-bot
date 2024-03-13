@@ -1185,11 +1185,17 @@ public class TelegramBotService extends TelegramLongPollingBot {
         deleteMessage(message);
 
         String currency = data.getCurrency();
+        String textCurrency;
+switch (currency){
+    case KRW-> textCurrency=currency+ "(Вона)";
+    case CNY-> textCurrency=currency+ "(Юань)";
+    default -> textCurrency=currency;
+}
         String text = String.format("""
                 Тип валюты: %s
                                                 
                 Пожалуйста, введите стоимость автомобиля в валюте.
-                """, currency);
+                """, textCurrency);
         Message sendOutMessage = executeMessage(utilMessageService.prepareSendMessage(chatId, text));
         data.setLastMessageToDelete(sendOutMessage);
         cache.saveUserCarData(chatId, data);
