@@ -69,13 +69,13 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     private static final String CNY_BUTTON = "Китай";
     private static final String KRW_BUTTON = "Корея";
+    private final BotConfiguration config;
     @Value("${ru.wallentos.carworker.manager-link}")
     public String managerLink;
     @Autowired
     private RestService restService;
     @Autowired
     private ConfigDataPool configDataPool;
-    private final BotConfiguration config;
     @Autowired
     private UtilService utilService;
     @Autowired
@@ -104,6 +104,22 @@ public class TelegramBotService extends TelegramLongPollingBot {
             this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
         } catch (TelegramApiException e) {
             log.error("Error setting bot's command list: " + e.getMessage());
+        }
+    }
+
+    private static String getStartMessage(boolean isCallback, String name) {
+        if (!isCallback) {
+            return String.format("""
+                    Здравствуйте, %s!
+                    Я бот для расчета стоимости авто до Владивостока!
+                                    
+                    Просто отправьте мне ссылку на авто, с сайта www.encar.com или www.che168.com, и я рассчитаю вам конечную стоимость автомобиля с учетом абсолютно всех расходов до Владивостока. ✅""", name);
+
+        } else {
+            return """
+                    Пожалуйста отправьте мне ссылку на автомобиль с сайта 🔗www.encar.com или 🔗www.che168.com
+                                        
+                    Калькулятор для расчета конечной стоимости автомобиля вручную, вы можете найти в меню. ↙️""";
         }
     }
 
@@ -556,7 +572,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         subscribeService.cleanData();
     }
 
-
     private void handleMessage(Update update, String receivedText) {
         long chatId = update.getMessage().getChatId();
         BotState currentState = cache.getUsersCurrentBotState(chatId);
@@ -810,7 +825,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         processExecuteResultAndShowHeader(data, chatId);
     }
 
-
     /**
      * Процесс ввода объема двигателя для режима аукциона(запускает расчёт).
      *
@@ -1059,22 +1073,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         subscribeService.subscribeUser(chatId);
     }
 
-    private static String getStartMessage(boolean isCallback, String name) {
-        if (!isCallback) {
-            return String.format("""
-                    Здравствуйте, %s!
-                    Я бот для расчета стоимости авто до Владивостока!
-                                    
-                    Просто отправьте мне ссылку на авто, с сайта www.encar.com или www.che168.com, и я рассчитаю вам конечную стоимость автомобиля с учетом абсолютно всех расходов до Владивостока. ✅""", name);
-
-        } else {
-            return """
-                    Пожалуйста отправьте мне ссылку на автомобиль с сайта 🔗www.encar.com или 🔗www.che168.com
-                                        
-                    Калькулятор для расчета конечной стоимости автомобиля вручную, вы можете найти в меню. ↙️""";
-        }
-    }
-
     private void cbrCommandReceived(long chatId) {
         restService.refreshExchangeRates();
         Map<String, Double> rates = conversionRatesMap;
@@ -1186,11 +1184,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         String currency = data.getCurrency();
         String textCurrency;
-switch (currency){
-    case KRW-> textCurrency=currency+ "(Вона)";
-    case CNY-> textCurrency=currency+ "(Юань)";
-    default -> textCurrency=currency;
-}
+        switch (currency) {
+            case KRW -> textCurrency = currency + "(Вона)";
+            case CNY -> textCurrency = currency + "(Юань)";
+            default -> textCurrency = currency;
+        }
         String text = String.format("""
                 Тип валюты: %s
                                                 
