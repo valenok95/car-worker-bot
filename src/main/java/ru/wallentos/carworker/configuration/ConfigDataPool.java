@@ -84,10 +84,10 @@ public class ConfigDataPool {
     public int EXTRA_PAY_AMOUNT_KOREA_RUB;
     public static Map<String, Double> manualConversionRatesMapInRubles = new HashMap<>();
     public static Map<String, Double> conversionRatesMap;
-    public static final int NEW_MID_CAR_RECYCLING_FEE = 970_000;
-    public static final int NEW_BIG_CAR_RECYCLING_FEE = 1_235_200;
-    public static final int NORMAL_MID_CAR_RECYCLING_FEE = 1_485_000;
-    public static final int NORMAL_BIG_CAR_RECYCLING_FEE = 1_623_800;
+    public static final int NEW_MID_CAR_RECYCLING_FEE = 1_794_600;
+    public static final int NEW_BIG_CAR_RECYCLING_FEE = 2_285_200;
+    public static final int NORMAL_MID_CAR_RECYCLING_FEE = 2_747_200;
+    public static final int NORMAL_BIG_CAR_RECYCLING_FEE = 3_004_000;
     public static final int NEW_CAR_RECYCLING_FEE = 3400;
     public static final int OLD_CAR_RECYCLING_FEE = 5200;
     public static final int CUSTOMS_VALUE_1 = 200_000;
