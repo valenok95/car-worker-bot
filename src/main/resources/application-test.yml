@@ -14,7 +14,6 @@ ru:
       enable-encar-report-mode: true
       enable-result-detalization: true
       exchange-manager-coefficient: 1.009
-      is-cbr-rate-to-calculate: true
       admin-list: Wallentoss
       check-channel-subscribers: false
       channel-subscribers-id: -1002123611967

@@ -25,8 +25,6 @@ public class ConfigDataPool {
     public boolean enableClientRequest;
     @Value("${ru.wallentos.carworker.korex-province-matrix:false}")
     public boolean isKorexProvinceMatrix;
-    @Value("${ru.wallentos.carworker.is-cbr-rate-to-calculate:false}")
-    public boolean isCbrRateToCalculate;
     @Value("${ru.wallentos.carworker.enable-result-detalization:false}")
     public boolean enableResultDetalization;
     @Value("${ru.wallentos.carworker.check-channel-subscribers:false}")
@@ -72,7 +70,7 @@ public class ConfigDataPool {
     public boolean enableCnyLinkMode;
     @Value("${ru.wallentos.carworker.enable-krw-auction-mode:false}")
     public boolean enableKrwAuctionMode;
-    @Value("${ru.wallentos.carworker.enable-double-convertation:false}")
+    @Value("${ru.wallentos.carworker.enable-double-convertation:true}")
     public boolean enableDoubleConvertation;
     @Value("${ru.wallentos.carworker.sanction-car-volume-limit:0}")
     public int sanctionCarVolumeLimit;

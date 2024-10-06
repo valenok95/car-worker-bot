@@ -48,10 +48,6 @@ public class ExecutionService {
         this.restService = restService;
         this.configDataPool = configDataPool;
         restService.refreshExchangeRates();
-        double rub = conversionRatesMap.get("RUB");
-        conversionRatesMap.forEach((key, value) -> {
-            ConfigDataPool.manualConversionRatesMapInRubles.put(key, rub * configDataPool.coefficient / value);
-        });
     }
 
     /**
@@ -211,7 +207,7 @@ public class ExecutionService {
         double result;
         log.info("Вычисляем первичную стоимость автомобиля для валюты {}:", currentCurrency);
         // добавить двойную конвертацию
-        if (currentCurrency.equals(KRW) && configDataPool.enableDoubleConvertation && userCarInputData.isSanctionCar()) {
+        if (currentCurrency.equals(KRW) && configDataPool.enableDoubleConvertation) {
             result = (price / restService.getCbrUsdKrwMinus20()) * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
             log.info("""
                             Режим двойной конвертации:
@@ -313,7 +309,7 @@ public class ExecutionService {
                 int inputExtraPayInKrw = userCarInputData.getInputExtraPayAmountKoreaKrw();
                 log.info("Расчёт валютной надбавки:");
                 boolean ifWeNeedDoubleConvertation =
-                        configDataPool.enableDoubleConvertation && isSanctionCar;
+                        configDataPool.enableDoubleConvertation;
                 return ifWeNeedDoubleConvertation ?
                         getExtraKrwPayAmountDoubleConvertation(inputExtraPayInKrw) :
                         getExtraPayKrwAmountNormalConvertationInRub(inputExtraPayInKrw);

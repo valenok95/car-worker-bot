@@ -36,6 +36,8 @@ public class RestService {
     private String cbrMethod;
     @Value("${ru.wallentos.carworker.exchange-api.host-naver}")
     private String naverMethod;
+    @Value("${ru.wallentos.carworker.exchange-api.host-profinance}")
+    private String profinanceMethod;
     @Value("${ru.wallentos.carworker.exchange-api.fem-encar-detail-url}")
     private String femEncarDetailUrl;
     @Value("${ru.wallentos.carworker.exchange-api.encar-detail-url}")
@@ -77,14 +79,25 @@ public class RestService {
                 = restTemplate.getForEntity(cbrMethod, String.class);
         conversionRatesMap =
                 utilService.backRatesToConversionRatesMap(response.getBody());
-        if (configDataPool.isCbrRateToCalculate()) {
-            conversionRatesMap.forEach((key, value) -> {
-                ConfigDataPool.manualConversionRatesMapInRubles.put(key, conversionRatesMap.get("RUB") * configDataPool.coefficient / value);
-            });
-            log.info("курс расчёта обновлён {}", manualConversionRatesMapInRubles);
-        }
-        log.info("курс обновлён {}", conversionRatesMap);
+
+        conversionRatesMap.entrySet().stream()//.filter(pair -> !pair.getKey().equals(USD))
+                .forEach(pair -> ConfigDataPool.manualConversionRatesMapInRubles.put(pair.getKey(),
+                        conversionRatesMap.get("RUB") * configDataPool.coefficient / pair.getValue()));
+        // курс расчёта доллара к рублю получаем отдельно в profinance.ru
+        //ConfigDataPool.manualConversionRatesMapInRubles.put(USD,getUsdRubProfinanceRate()); 
+        
+        log.info("курс расчёта обновлён {}", manualConversionRatesMapInRubles);
+
+        log.info("курс ЦБ обновлён {}", conversionRatesMap);
         cbrUsdKrwMinus20 = Double.parseDouble(getNaverRate()) - 20;
+    }
+
+    /**
+     * Получить курс доллара из источника profinance.ru
+     * @return курс USD/RUB из profinance.ru
+     */
+    private Double getUsdRubProfinanceRate() {
+        return null;
     }
 
     public String getNaverRate() {
