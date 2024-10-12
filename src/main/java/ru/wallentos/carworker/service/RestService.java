@@ -82,8 +82,11 @@ public class RestService {
         // курс расчёта доллара к рублю получаем отдельно в profinance.ru
         Double profinanceUsdRubRate = getUsdRubProfinanceRate();
         if (Objects.nonNull(profinanceUsdRubRate)) {
-            ConfigDataPool.manualConversionRatesMapInRubles.put(USD, getUsdRubProfinanceRate());
-            log.info("курс расчёта для доллара установлен из источника profinance {}", profinanceUsdRubRate);
+            ConfigDataPool.manualConversionRatesMapInRubles.put(USD,
+                    getUsdRubProfinanceRate() * configDataPool.coefficient);
+            log.info("курс расчёта для доллара установлен из источника profinance {} умноженный " +
+                            "на КФ настройки {}",
+                    profinanceUsdRubRate, configDataPool.coefficient);
         } else {
             log.error("НЕ удалось получить курс PROFINANCE, установлен курс ЦБ");
         }
