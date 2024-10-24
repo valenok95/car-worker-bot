@@ -34,6 +34,8 @@ import ru.wallentos.carworker.model.CarEntity;
 public class RestService {
     @Value("${ru.wallentos.carworker.exchange-manager-coefficient:1}")
     public double managerCoefficient;
+    @Value("${ru.wallentos.carworker.usd-krw-correction-rate:40}")
+    public double usdKrwCorrectionRate;
     @Value("${ru.wallentos.carworker.exchange-api.host-cbr}")
     private String cbrMethod;
     @Value("${ru.wallentos.carworker.exchange-api.host-naver}")
@@ -60,7 +62,7 @@ public class RestService {
     private CarConverter carConverter;
     private RedisTemplate redisTemplate;
     private ConfigDataPool configDataPool;
-    private double cbrUsdKrwMinus20;
+    private double cbrUsdKrwMinusCorrection;
     private RecaptchaService recaptchaService;
 
     @Autowired
@@ -92,7 +94,9 @@ public class RestService {
         }
         log.info("курс расчёта обновлён {}", manualConversionRatesMapInRubles);
         log.info("курс ЦБ обновлён {}", conversionRatesMap);
-        cbrUsdKrwMinus20 = Double.parseDouble(getNaverRate()) - 20;
+        cbrUsdKrwMinusCorrection = Double.parseDouble(getNaverRate()) - usdKrwCorrectionRate;
+        log.info("Курс ЦБ USD/KRW минус коррекция ({}) обновлён: {}", usdKrwCorrectionRate,
+                cbrUsdKrwMinusCorrection);
     }
 
     /**

@@ -208,12 +208,12 @@ public class ExecutionService {
         log.info("Вычисляем первичную стоимость автомобиля для валюты {}:", currentCurrency);
         // добавить двойную конвертацию
         if (currentCurrency.equals(KRW) && configDataPool.enableDoubleConvertation) {
-            result = (price / restService.getCbrUsdKrwMinus20()) * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
+            result = (price / restService.getCbrUsdKrwMinusCorrection()) * ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
             log.info("""
                             Режим двойной конвертации:
-                            Стоимость автомобиля {} {} поделённая на курс USD/KRW-20 {} и умноженная на ручной курс USD/RUB {} = {} RUB""", price
+                            Стоимость автомобиля {} {} поделённая на курс USD/KRW-коррекция {} и умноженная на ручной курс USD/RUB {} = {} RUB""", price
                     , currentCurrency,
-                    restService.getCbrUsdKrwMinus20(), ConfigDataPool.manualConversionRatesMapInRubles.get(USD), result);
+                    restService.getCbrUsdKrwMinusCorrection(), ConfigDataPool.manualConversionRatesMapInRubles.get(USD), result);
         } else {
             double manualConversionRate =
                     ConfigDataPool.manualConversionRatesMapInRubles.get(currentCurrency);
@@ -232,7 +232,7 @@ public class ExecutionService {
      * @return
      */
     private boolean isSanctionCar(UserCarInputData userCarInputData) {
-        int priceInUsd = (int) (userCarInputData.getPrice() / restService.getCbrUsdKrwMinus20());
+        int priceInUsd = (int) (userCarInputData.getPrice() / restService.getCbrUsdKrwMinusCorrection());
         boolean isSanctionCarResult =
                 priceInUsd > 50_000 || userCarInputData.getVolume() >= configDataPool.getSanctionCarVolumeLimit();
         log.info("""
@@ -368,18 +368,18 @@ public class ExecutionService {
 
     /**
      * Если эквивалент тачки стоит меньше, чем 50 000$ то (KRW для взносов делим на (курс KRW/USD по
-     * ЦБ минус 20) и умножаем на ручной курс USD.
+     * ЦБ минус коррекция) и умножаем на ручной курс USD.
      */
     private double getExtraKrwPayAmountDoubleConvertation(int extraPayInKrw) {
         double manualRate = ConfigDataPool.manualConversionRatesMapInRubles.get(USD);
-        double minus20Rate = restService.getCbrUsdKrwMinus20();
-        double usdAmount = extraPayInKrw / minus20Rate;
+        double usdKrwMinusCorrectionRate = restService.getCbrUsdKrwMinusCorrection();
+        double usdAmount = extraPayInKrw / usdKrwMinusCorrectionRate;
         double result = usdAmount * manualRate;
         log.info("""
                         В режиме двойной конвертации.
-                        Валютная надбавка в USD: надбавка {} KRW * курс-20 {} = {} USD
+                        Валютная надбавка в USD: надбавка {} KRW * курс-коррекция {} = {} USD
                         Валютная надбавка в рублях: {} USD * ручной курс {} = {} RUB
-                        """, extraPayInKrw, minus20Rate, usdAmount,
+                        """, extraPayInKrw, usdKrwMinusCorrectionRate, usdAmount,
                 usdAmount, manualRate, result);
         return result;
     }

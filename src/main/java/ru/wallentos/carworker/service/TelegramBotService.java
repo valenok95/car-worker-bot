@@ -1105,7 +1105,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
             builder.append(String.format("%n%s = %,.4f  ₽", currency, ConfigDataPool.manualConversionRatesMapInRubles.get(currency)));
         });
         if (configDataPool.getCurrencies().contains(KRW)) {
-            builder.append(String.format("%nUSD = %,.2f ₩", restService.getCbrUsdKrwMinus20()));
+            builder.append(String.format("%nUSD = %,.2f ₩", restService.getCbrUsdKrwMinusCorrection()));
         }
         String message = String.format("""
                 Актуальный курс оплаты:

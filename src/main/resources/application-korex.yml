@@ -4,6 +4,7 @@ bot:
 ru:
   wallentos:
     carworker:
+      usd-krw-correction-rate: ${USD_KRW_CORRECTION_RATE}
       currencies: KRW, CNY
       enable-krw-link-mode: ${ENABLE_KRW_LINK_MODE}
       enable-cny-link-mode: ${ENABLE_CNY_LINK_MODE}
