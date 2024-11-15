@@ -138,6 +138,16 @@ public class UtilService {
     }
 
     /**
+     * Вытащить курс доллара из profinance response со знаком ПЛЮС+  //A=-99.858;L
+     */
+    public String parseProfinanceResponseToPositiveRate(String rawProfinanceRate) {
+        Pattern pattern = Pattern.compile("(\\d+\\.\\d+)");
+        Matcher matcher = pattern.matcher(rawProfinanceRate);
+        matcher.find();
+        return matcher.group();
+    }
+
+    /**
      * Вытащить siteKey со строки каптчи.
      */
     public String parseCaptchaKey(String string) {

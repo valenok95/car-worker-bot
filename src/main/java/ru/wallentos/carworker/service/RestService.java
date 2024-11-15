@@ -109,7 +109,9 @@ public class RestService {
             Connection tokenConnection = Jsoup.connect(profinanceMethod).userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36");
             String token = tokenConnection.execute().body();
             Connection rateConnection = Jsoup.connect(profinanceMethod).userAgent("Mozilla/5.0 (X11; Linux x86_64) " + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36").requestBody(String.format("1;SID=%s;A=;I=29;S=USD/RUB;\n", token));
-            String rateString = rateConnection.post().body().childNodes().get(0).toString().substring(32, 38);
+            String rawRateString =
+                    rateConnection.post().body().childNodes().get(0).toString().substring(30, 40);
+            String rateString = utilService.parseProfinanceResponseToPositiveRate(rawRateString);
             return Double.parseDouble(rateString);
         } catch (IOException e) {
             return null;
