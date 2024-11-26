@@ -22,7 +22,7 @@ ru:
       channel-subscribers-id: -1001423584530
       channel-subscribers-link: https://t.me/korex_official
       auction-coefficient: ${AUCTION_COEFFICIENT}
-      manager-link: T.me/Korex_Consultant
+      manager-link: T.me/KOREXKOREA
       user-prefix: "user_korex_"
       extra-pay-corea:
         krw: ${EXTRA_PAY_KOREA_KRW}
