@@ -8,10 +8,10 @@ import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_BIG_CAR_RE
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_CAR_RECYCLING_FEE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NEW_MID_CAR_RECYCLING_FEE;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_BIG_CAR_RECYCLING_FEE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_BIG_CAR_RECYCLING_FEE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_CAR_PRICE_FLAT_RATE_MAX;
-import static ru.wallentos.carworker.configuration.ConfigDataPool.NORMAL_MID_CAR_RECYCLING_FEE;
+import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_MID_CAR_RECYCLING_FEE;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR_PRICE_FLAT_RATE_MAX;
 import static ru.wallentos.carworker.configuration.ConfigDataPool.OLD_CAR_RECYCLING_FEE;
@@ -478,9 +478,9 @@ public class ExecutionService {
         if (volume <= 3000) {
             return carCategory > 1 ? OLD_CAR_RECYCLING_FEE : NEW_CAR_RECYCLING_FEE;
         } else if (volume <= 3500) {
-            return carCategory > 1 ? NORMAL_MID_CAR_RECYCLING_FEE : NEW_MID_CAR_RECYCLING_FEE;
+            return carCategory > 1 ? OLD_MID_CAR_RECYCLING_FEE : NEW_MID_CAR_RECYCLING_FEE;
         } else {
-            return carCategory > 1 ? NORMAL_BIG_CAR_RECYCLING_FEE : NEW_BIG_CAR_RECYCLING_FEE;
+            return carCategory > 1 ? OLD_BIG_CAR_RECYCLING_FEE : NEW_BIG_CAR_RECYCLING_FEE;
         }
     }
 
