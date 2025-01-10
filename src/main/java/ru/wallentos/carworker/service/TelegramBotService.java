@@ -999,7 +999,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         if (configDataPool.isSingleCurrencyMode()) { //singleCurrencyMode не спрашиваем валюту
             processSingleCurrencyStart(message, name);
-            restService.refreshExchangeRates();
+            restService.refreshDutyExchangeRates();
             subscribeService.subscribeUser(chatId);
             return;
         }
@@ -1017,7 +1017,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         inlineKeyboardMarkup.setKeyboard(rows);
         executeMessage(utilMessageService.prepareSendMessage(chatId, text, inlineKeyboardMarkup));
         cache.setUsersCurrentBotState(chatId, BotState.ASK_CURRENCY_MANUAL_MODE);
-        restService.refreshExchangeRates();
+        restService.refreshDutyExchangeRates();
         subscribeService.subscribeUser(chatId);
     }
 
@@ -1062,19 +1062,19 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         if (configDataPool.isSingleCurrencyMode()) { //singleCurrencyMode не спрашиваем валюту
             processSingleCurrencyStart(message, name);
-            restService.refreshExchangeRates();
+            restService.refreshDutyExchangeRates();
             subscribeService.subscribeUser(chatId);
             return;
         }
         String text = getStartMessage(isCallback, name);
         executeMessage(utilMessageService.prepareSendMessage(chatId, text));
         cache.setUsersCurrentBotState(chatId, BotState.WAITING_FOR_LINK);
-        restService.refreshExchangeRates();
+        restService.refreshDutyExchangeRates();
         subscribeService.subscribeUser(chatId);
     }
 
     private void cbrCommandReceived(long chatId) {
-        restService.refreshExchangeRates();
+        restService.refreshDutyExchangeRates();
         Map<String, Double> rates = conversionRatesMap;
         StringBuilder builder = new StringBuilder("");
         configDataPool.getCurrencies().forEach(currency -> {
@@ -1456,7 +1456,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
      * @param chatId
      */
     private void processExecuteResultForChinaManagers(UserCarInputData data, long chatId) {
-        restService.refreshExchangeRates();
+        restService.refreshDutyExchangeRates();
         CarTotalResultData resultData = executionService.executeCarTotalResultData(data);
         log.info("""
                         Данные рассчёта:

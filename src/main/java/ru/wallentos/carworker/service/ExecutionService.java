@@ -47,7 +47,8 @@ public class ExecutionService {
     public ExecutionService(RestService restService, ConfigDataPool configDataPool) {
         this.restService = restService;
         this.configDataPool = configDataPool;
-        restService.refreshExchangeRates();
+        restService.refreshDutyExchangeRates();
+        restService.initManualExchangeRates();
     }
 
     /**
@@ -266,7 +267,7 @@ public class ExecutionService {
     }
 
     /**
-     * Опрежеляем до куда доставка
+     * Определяем до куда доставка
      *
      * @param currency
      * @return

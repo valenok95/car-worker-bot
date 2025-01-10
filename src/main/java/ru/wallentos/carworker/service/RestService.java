@@ -76,11 +76,24 @@ public class RestService {
         mapper = new ObjectMapper();
     }
 
-    public void refreshExchangeRates() {
+    /**
+     * Обновляем курс для расчёта таможни.
+     */
+    public void refreshDutyExchangeRates() {
         ResponseEntity<String> response = restTemplate.getForEntity(cbrMethod, String.class);
         conversionRatesMap = utilService.backRatesToConversionRatesMap(response.getBody());
+        
+        log.info("курс ЦБ обновлён {}", conversionRatesMap);
+        cbrUsdKrwMinusCorrection = Double.parseDouble(getNaverRate()) - usdKrwCorrectionRate;
+        log.info("Курс ЦБ USD/KRW минус коррекция ({}) обновлён: {}", usdKrwCorrectionRate,
+                cbrUsdKrwMinusCorrection);
+    }
 
-        conversionRatesMap.entrySet().forEach(pair -> ConfigDataPool.manualConversionRatesMapInRubles.put(pair.getKey(), conversionRatesMap.get("RUB") * configDataPool.coefficient / pair.getValue()));
+    /**
+     * Инициализируем ручной курс для расчёта автомобилей.
+     */
+    public void initManualExchangeRates() {
+        conversionRatesMap.forEach((key, value) -> ConfigDataPool.manualConversionRatesMapInRubles.put(key, conversionRatesMap.get("RUB") * configDataPool.coefficient / value));
         // курс расчёта доллара к рублю получаем отдельно в profinance.ru
         Double profinanceUsdRubRate = getUsdRubProfinanceRate();
         if (Objects.nonNull(profinanceUsdRubRate)) {
@@ -93,10 +106,6 @@ public class RestService {
             log.error("НЕ удалось получить курс PROFINANCE, установлен курс ЦБ");
         }
         log.info("курс расчёта обновлён {}", manualConversionRatesMapInRubles);
-        log.info("курс ЦБ обновлён {}", conversionRatesMap);
-        cbrUsdKrwMinusCorrection = Double.parseDouble(getNaverRate()) - usdKrwCorrectionRate;
-        log.info("Курс ЦБ USD/KRW минус коррекция ({}) обновлён: {}", usdKrwCorrectionRate,
-                cbrUsdKrwMinusCorrection);
     }
 
     /**

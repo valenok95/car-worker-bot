@@ -1,7 +1,5 @@
 package ru.wallentos.carworker;
 
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,7 +14,7 @@ public class RestServiceTests extends BaseWebClientTest {
 
     @Test
     public void restTest() throws InterruptedException {
-        service.refreshExchangeRates();
+        service.refreshDutyExchangeRates();
     }
 
     public void someTest() {
