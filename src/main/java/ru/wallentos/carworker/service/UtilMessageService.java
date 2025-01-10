@@ -150,7 +150,7 @@ public class UtilMessageService {
                 utilService.getEncarLinkStringByCarId(resultData.getCarId()),
                 resultData.isSanctionCar() ? "\nДанный авто попадает под санкции, пожалуйста уточните возможность отправки в вашу страну у менеджера @KOREXKOREA.\n"
                         : "");
-    }
+    } 
 
     private String getKorexCnyMessageByResultData(CarPriceResultData resultData) {
         return String.format(Locale.FRANCE, """
