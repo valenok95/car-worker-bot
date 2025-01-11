@@ -56,7 +56,12 @@ public class WebController {
 
     @GetMapping("/getEncarByIdJsoup")
     public ResponseEntity<?> getCarByIdJsoup(@RequestParam String carId) throws GetCarDetailException, RecaptchaException {
-        return ResponseEntity.accepted().body(restService.getEncarDataByJsoup(carId));
+        return ResponseEntity.accepted().body(restService.getEncarDataByApi(carId));
+    }
+
+    @GetMapping("/getEncarByIdRestTemplate")
+    public ResponseEntity<?> getCarByIdRestTemplate(@RequestParam String carId) throws GetCarDetailException, RecaptchaException {
+        return ResponseEntity.accepted().body(restService.getEncarDetailJsonDataByRestTemplate(carId));
     }
 
     @GetMapping("/getEncarByIdJsoupAjax")

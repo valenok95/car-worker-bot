@@ -24,4 +24,3 @@ ru:
       update-cache-job:
         master-bot: ${IS_MASTER_BOT}
         cron: ${CRON}
-        

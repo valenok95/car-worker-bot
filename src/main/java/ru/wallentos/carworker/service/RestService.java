@@ -152,6 +152,18 @@ public class RestService {
         return mapper.readTree(valueJson);
     }
 
+
+    /**
+     * Получить информацию по автомобилю encar
+     *
+     * @param carId идентификатор авто
+     * @return данные со страницы ответа в json
+     * @throws IOException
+     */
+    public JsonNode getEncarDetailJsonDataByRestTemplate(String carId) {
+        return restTemplate.getForEntity(encarVehicleUrl + carId, JsonNode.class).getBody();
+    }
+
     /**
      * Получить информацию по автомобилю encar AJAX
      *
@@ -181,9 +193,9 @@ public class RestService {
         return mapper.readTree(connection.execute().body());
     }
 
-    public CarDto getEncarDataByJsoup(String carId) throws GetCarDetailException, RecaptchaException {
+    public CarDto getEncarDataByApi(String carId) throws GetCarDetailException, RecaptchaException {
         try {
-            JsonNode jsonDetail = getEncarDetailJsonDataByJsoup(carId);
+            JsonNode jsonDetail = getEncarDetailJsonDataByRestTemplate(carId);
             int myAccidentCost = 0;
             int otherAccidentCost = 0;
             boolean hasInsuranceInfo = false;
@@ -198,16 +210,16 @@ public class RestService {
             }
 
 
-            var status = jsonDetail.get("cars").get("base").get("advertisement").get("status").asText();
+            var status = jsonDetail.get("advertisement").get("status").asText();
             if ("SOLD".equals(status) || "WAIT".equals(status)) {
                 String errorMessage = String.format("The car %s has been sold", carId);
                 throw new GetCarDetailException(errorMessage);
             } else if (!"ADVERTISE".equals(status)) {
                 log.warn("unhandled car status {} by carId {}", status, carId);
             }
-            var encarEntity = new CarEntity(carId, jsonDetail.get("cars").get("base").get("advertisement").get("price").asText(), jsonDetail.get("cars").get("base").get("category").get("yearMonth").asText().substring(0, 4), jsonDetail.get("cars").get("base").get("category").get("yearMonth").asText().substring(4, 6), jsonDetail.get("cars").get("base").get("spec").get("displacement").asText(), null, myAccidentCost, otherAccidentCost, hasInsuranceInfo);
+            var encarEntity = new CarEntity(carId, jsonDetail.get("advertisement").get("price").asText(), jsonDetail.get("category").get("yearMonth").asText().substring(0, 4), jsonDetail.get("category").get("yearMonth").asText().substring(4, 6), jsonDetail.get("spec").get("displacement").asText(), null, myAccidentCost, otherAccidentCost, hasInsuranceInfo);
             return carConverter.convertToDto(encarEntity);
-        } catch (IOException | NullPointerException e) {
+        } catch (NullPointerException e) {
             String errorMessage = String.format("Error while getting info by id %s", carId);
             throw new GetCarDetailException(errorMessage);
         }
@@ -250,7 +262,7 @@ public class RestService {
         if (isAjax) {
             return getEncarDataByJsoupAjax(carId);
         } else {
-            return getEncarDataByJsoup(carId);
+            return getEncarDataByApi(carId);
         }
     }
 
