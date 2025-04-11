@@ -63,15 +63,13 @@ public class RestService {
     private RedisTemplate redisTemplate;
     private ConfigDataPool configDataPool;
     private double cbrUsdKrwMinusCorrection;
-    private RecaptchaService recaptchaService;
 
     @Autowired
-    public RestService(RestTemplate restTemplate, UtilService utilService, CarConverter carConverter, RedisTemplate redisTemplate, RecaptchaService recaptchaService, ConfigDataPool configDataPool) {
+    public RestService(RestTemplate restTemplate, UtilService utilService, CarConverter carConverter, RedisTemplate redisTemplate, ConfigDataPool configDataPool) {
         this.restTemplate = restTemplate;
         this.utilService = utilService;
         this.carConverter = carConverter;
         this.redisTemplate = redisTemplate;
-        this.recaptchaService = recaptchaService;
         this.configDataPool = configDataPool;
         mapper = new ObjectMapper();
     }
@@ -82,7 +80,7 @@ public class RestService {
     public void refreshDutyExchangeRates() {
         ResponseEntity<String> response = restTemplate.getForEntity(cbrMethod, String.class);
         conversionRatesMap = utilService.backRatesToConversionRatesMap(response.getBody());
-        
+
         log.info("курс ЦБ обновлён {}", conversionRatesMap);
         cbrUsdKrwMinusCorrection = Double.parseDouble(getNaverRate()) - usdKrwCorrectionRate;
         log.info("Курс ЦБ USD/KRW минус коррекция ({}) обновлён: {}", usdKrwCorrectionRate,

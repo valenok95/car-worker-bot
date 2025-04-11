@@ -33,6 +33,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -64,6 +65,7 @@ import ru.wallentos.carworker.model.UserCarInputData;
 
 @Service
 @Data
+@EqualsAndHashCode(callSuper=false)
 @Slf4j
 public class TelegramBotService extends TelegramLongPollingBot {
 

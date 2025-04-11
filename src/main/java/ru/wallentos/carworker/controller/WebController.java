@@ -13,7 +13,6 @@ import ru.wallentos.carworker.service.CheCarCacheService;
 import ru.wallentos.carworker.service.EncarCacheService;
 import ru.wallentos.carworker.service.ExecutionService;
 import ru.wallentos.carworker.service.GoogleService;
-import ru.wallentos.carworker.service.RecaptchaService;
 import ru.wallentos.carworker.service.RestService;
 import ru.wallentos.carworker.service.SubscribeService;
 import ru.wallentos.carworker.service.UtilService;
@@ -26,7 +25,6 @@ public class WebController {
     private final EncarCacheService encarCacheService;
     private final CheCarCacheService cheCarCacheService;
     private final UtilService utilService;
-    private final RecaptchaService recaptchaService;
     private final SubscribeService subscribeService;
     private final GoogleService googleService;
 
@@ -34,14 +32,13 @@ public class WebController {
     public WebController(RestService restService, EncarCache encarCache,
                          EncarCacheService encarCacheService,
                          CheCarCacheService cheCarCacheService, UtilService utilService,
-                         RecaptchaService recaptchaService, SubscribeService subscribeService,
+                         SubscribeService subscribeService,
                          GoogleService googleService, ExecutionService executionService) {
         this.restService = restService;
         this.encarCache = encarCache;
         this.encarCacheService = encarCacheService;
         this.cheCarCacheService = cheCarCacheService;
         this.utilService = utilService;
-        this.recaptchaService = recaptchaService;
         this.subscribeService = subscribeService;
         this.googleService = googleService;
         this.executionService = executionService;
@@ -101,12 +98,6 @@ public class WebController {
     @GetMapping("/parseFemLink")
     public ResponseEntity<?> parseFemLink(@RequestParam String input) throws GetCarDetailException {
         return ResponseEntity.ok(utilService.parseLinkToCarId(input));
-    }
-
-    @GetMapping("/solveCaptcha")
-    public ResponseEntity<?> parseFemLink() {
-        recaptchaService.solveReCaptchaDemo();
-        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/appendGoogle")
